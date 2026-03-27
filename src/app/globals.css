@@ -1,0 +1,90 @@
+@import "tailwindcss";
+
+:root {
+  /* Base palette (light) */
+  --background: 0 0% 100%;
+  --foreground: 224 71% 4%;
+  --card: 0 0% 100%;
+  --card-foreground: 224 71% 4%;
+
+  --border: 214 32% 91%;
+  --ring: 214 32% 91%;
+
+  /* Brand */
+  --brand-primary: 222 84% 56%;
+  --brand-foreground: 0 0% 100%;
+  --brand-muted: 222 84% 92%;
+
+  /* Feedback */
+  --success: 142 69% 45%;
+  --success-foreground: 0 0% 100%;
+  --warning: 38 92% 50%;
+  --warning-foreground: 0 0% 100%;
+  --danger: 0 84% 60%;
+  --danger-foreground: 0 0% 100%;
+
+  /* Typography scale hook (optional custom font) */
+  --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+
+  /* Brand + accents (map the design palette) */
+  --brand-primary: 217 91% 60%; /* #3b82f6 */
+  --success: 160 84% 39%;       /* #10b981 */
+  --error: 0 84% 63%;           /* #ef4444 */
+  --warning: 42 94% 56%;        /* #f59e0b */
+
+  /* Sidebar + surfaces */
+  --sidebar-bg: 215 28% 17%;    /* #1f2937 */
+  --sidebar-muted: 220 14% 63%; /* #9ca3af */
+  --main-bg: 210 20% 98%;       /* #f9fafb */
+}
+
+/* Custom thin scrollbar for chat workspace panels */
+.thin-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.thin-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+}
+
+.thin-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+/* Firefox support */
+.thin-scrollbar {
+  scrollbar-width: thin;
+}
+/* Premium gradient animation for headers */
+@keyframes gradient-x {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient-x 3s ease infinite;
+}
+
+/* Pulse glow effect for interactive elements */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(99, 102, 241, 0.6);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}

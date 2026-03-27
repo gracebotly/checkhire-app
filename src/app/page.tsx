@@ -1,5 +1,11 @@
-import { createClient } from "@/lib/supabase/server"
-import { redirect } from "next/navigation"
+import { createClient } from "@/lib/supabase/server";
+import { createClient as createServiceClient } from "@supabase/supabase-js";
+import { redirect } from "next/navigation";
+
+const supabaseAdmin = createServiceClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 export default async function HomePage({
   searchParams,
@@ -8,8 +14,6 @@ export default async function HomePage({
 }) {
   const params = await searchParams;
 
-  // Supabase sends OAuth errors to the Site URL (this page), not to /auth/callback
-  // Catch them and redirect to login with a friendly error
   if (params.error || params.error_code) {
     redirect("/login?error=auth_failed");
   }
@@ -20,7 +24,17 @@ export default async function HomePage({
   } = await supabase.auth.getUser();
 
   if (user) {
-    redirect("/control-panel/connections");
+    // Route based on user_type
+    const { data: profile } = await supabaseAdmin
+      .from("user_profiles")
+      .select("user_type")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (profile?.user_type === "employer") {
+      redirect("/employer/dashboard");
+    }
+    redirect("/jobs");
   }
 
   redirect("/login");

@@ -36,7 +36,7 @@ export function DangerTab() {
       // Extract filename from Content-Disposition header if available
       const disposition = res.headers.get("Content-Disposition");
       const match = disposition?.match(/filename="?([^"]+)"?/);
-      a.download = match?.[1] ?? "getflowetic-export.json";
+      a.download = match?.[1] ?? "checkhire-export.json";
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);

@@ -92,7 +92,7 @@ export function BlockedPage({ reason }: { reason: BlockReason }) {
         <p className="mt-4 text-xs text-slate-400">
           Need help?{" "}
           <a
-            href="/control-panel/help"
+            href="/employer/settings"
             className="font-medium text-slate-500 underline decoration-slate-300 hover:text-slate-700"
           >
             Contact support

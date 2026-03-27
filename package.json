@@ -1,18 +1,13 @@
 {
-  "name": "flowetic-app",
+  "name": "checkhire-app",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev --turbo=false",
-    "dev:mastra": "mastra dev --dir ./mastra",
-    "mastra:dev": "mastra dev --dir ./mastra",
-    "mastra:dev:nocache": "MASTRA_DEV_NO_CACHE=1 mastra dev --dir ./mastra",
     "build": "next build",
-    "build:mastra": "mastra build --dir ./mastra",
     "start": "next start",
     "lint": "eslint",
-    "typecheck": "tsc --noEmit --pretty false",
-    "import-uiux-data": "tsx scripts/import-uiux-data-to-supabase.ts"
+    "typecheck": "tsc --noEmit --pretty false"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.0.5",
@@ -31,10 +26,10 @@
     "next": "16.1.1",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "tailwind-merge": "^2.2.1",
-    "zod": "^3.25.76",
+    "resend": "^4.7.0",
     "stripe": "^18.5.0",
-    "resend": "^4.7.0"
+    "tailwind-merge": "^2.2.1",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

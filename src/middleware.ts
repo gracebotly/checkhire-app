@@ -1,9 +1,12 @@
-import { updateSession } from '@/lib/supabase/middleware';
 import { NextResponse, type NextRequest } from 'next/server';
+import { updateSession } from '@/lib/supabase/middleware';
 
 export async function middleware(request: NextRequest) {
   const response = await updateSession(request);
+
+  // Pass pathname to server components via header
   response.headers.set('x-next-pathname', request.nextUrl.pathname);
+
   return response;
 }
 

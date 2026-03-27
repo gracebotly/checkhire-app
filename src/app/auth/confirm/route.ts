@@ -1,21 +1,7 @@
-// src/app/auth/confirm/route.ts
-//
-// Handles email links that use the token_hash format:
-//   /auth/confirm?token_hash=xxx&type=recovery&next=/control-panel/connections
-//
-// This is the recommended Supabase pattern for:
-//   - Password recovery (type=recovery)
-//   - Email confirmation (type=email)
-//   - Magic links (type=magiclink)
-//
-// After verifying the token, the user has an active session and is
-// redirected to the `next` param (or /control-panel/connections).
-//
 import { type EmailOtpType } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
-import { TRIAL_DAYS_WITHOUT_CARD } from "@/lib/plans/constants";
 
 export const runtime = "nodejs";
 
@@ -29,7 +15,6 @@ export async function GET(request: Request) {
 
   const tokenHash = searchParams.get("token_hash");
   const type = searchParams.get("type") as EmailOtpType | null;
-  const next = searchParams.get("next") ?? "/control-panel/connections";
 
   if (!tokenHash || !type) {
     return NextResponse.redirect(
@@ -51,70 +36,41 @@ export async function GET(request: Request) {
     );
   }
 
-  // User is now authenticated — check if they need a tenant
+  // User is now authenticated — check if they need a profile
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (user) {
-    const { data: memberships } = await supabaseAdmin
-      .from("memberships")
-      .select("tenant_id")
-      .eq("user_id", user.id)
-      .limit(1);
+    const { data: profile } = await supabaseAdmin
+      .from("user_profiles")
+      .select("user_type")
+      .eq("id", user.id)
+      .maybeSingle();
 
-    const isNewUser = !memberships || memberships.length === 0;
+    if (!profile && type === "email") {
+      // New signup confirmation — create profile as job_seeker by default
+      // (employers sign up through a different flow with user_type param)
+      const userType = user.user_metadata?.user_type ?? "job_seeker";
+      const validType = userType === "employer" ? "employer" : "job_seeker";
 
-    if (isNewUser && type === "email") {
-      // This is a new signup confirmation — create tenant + membership
-      // Derive workspace name from email domain when possible.
-      const genericDomains = new Set([
-        'gmail.com', 'googlemail.com', 'outlook.com', 'hotmail.com', 'live.com',
-        'yahoo.com', 'yahoo.co.uk', 'aol.com', 'icloud.com', 'me.com',
-        'mail.com', 'protonmail.com', 'proton.me', 'zoho.com', 'yandex.com',
-      ]);
+      await supabaseAdmin.from("user_profiles").insert({
+        id: user.id,
+        user_type: validType,
+        full_name: user.user_metadata?.name || null,
+      });
 
-      let workspaceName = "My Workspace";
-      if (user.email) {
-        const [localPart, domain] = user.email.split("@");
-        if (domain && !genericDomains.has(domain.toLowerCase())) {
-          const domainName = domain.split("@")[0].split(".")[0];
-          workspaceName = domainName.charAt(0).toUpperCase() + domainName.slice(1);
-        } else if (localPart) {
-          workspaceName = `${localPart}'s Workspace`;
-        }
+      if (validType === "employer") {
+        return NextResponse.redirect(new URL("/employer/dashboard", request.url));
       }
-
-      const { data: tenant, error: tErr } = await supabaseAdmin
-        .from("tenants")
-        .insert({
-          name: workspaceName,
-          plan: "agency",
-          plan_status: "trialing",
-          has_card_on_file: false,
-          trial_ends_at: new Date(
-            Date.now() + TRIAL_DAYS_WITHOUT_CARD * 24 * 60 * 60 * 1000
-          ).toISOString(),
-        })
-        .select()
-        .single();
-
-      if (!tErr && tenant) {
-        await supabaseAdmin.from("memberships").insert({
-          tenant_id: tenant.id,
-          user_id: user.id,
-          role: "admin",
-        });
-        console.log(
-          `[auth/confirm] Created tenant ${tenant.id} for new user ${user.id}`
-        );
-      }
+      return NextResponse.redirect(new URL("/jobs", request.url));
     }
-    // For type=recovery or type=magiclink, the user already has a tenant.
-    // They just get signed in and redirected.
+
+    // Existing user — route based on type
+    if (profile?.user_type === "employer") {
+      return NextResponse.redirect(new URL("/employer/dashboard", request.url));
+    }
   }
 
-  // Redirect to the intended destination
-  const destination = next.startsWith("/") ? next : "/control-panel/connections";
-  return NextResponse.redirect(new URL(destination, request.url));
+  return NextResponse.redirect(new URL("/jobs", request.url));
 }

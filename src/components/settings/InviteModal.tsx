@@ -42,7 +42,7 @@ export function InviteModal({ onClose, onInvited }: InviteModalProps) {
   const [inviteResult, setInviteResult] = useState<{
     email: string;
     role: string;
-    tenant_name: string;
+    company_name: string;
     invite_link: string;
   } | null>(null);
   const [copied, setCopied] = useState(false);
@@ -90,7 +90,7 @@ export function InviteModal({ onClose, onInvited }: InviteModalProps) {
         setInviteResult({
           email: data.invite.email,
           role: data.invite.role,
-          tenant_name: data.invite.tenant_name,
+          company_name: data.invite.company_name,
           invite_link: data.invite.invite_link,
         });
       } else {
@@ -188,7 +188,7 @@ export function InviteModal({ onClose, onInvited }: InviteModalProps) {
                 </p>
                 <p className="mt-1 text-xs text-slate-600">
                   They&apos;ll receive an email with a link to join{" "}
-                  {inviteResult.tenant_name} as{" "}
+                  {inviteResult.company_name} as{" "}
                   {VALID_ROLES.find((r) => r.value === inviteResult.role)?.label || inviteResult.role}.
                 </p>
               </div>

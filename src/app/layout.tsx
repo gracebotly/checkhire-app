@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Flowetic - AI Dashboard Builder",
-  description: "Universal AI agent dashboard builder",
+  title: "CheckHire - Trust-First Job Board",
+  description: "The job board that eliminates scams, ghost jobs, and data harvesting",
 };
 
 export default function RootLayout({

@@ -1,2 +1,0 @@
-
-export { navigateTo } from "./navigateTo";

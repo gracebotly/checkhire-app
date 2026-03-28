@@ -1,7 +1,6 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { TierBadge } from "@/components/jobs/TierBadge";
 import { SlidersHorizontal, RotateCcw } from "lucide-react";
@@ -57,7 +56,6 @@ export function JobFilters() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Read current filter state from URL
   const activeJobTypes = searchParams.get("jobType")?.split(",").filter(Boolean) || [];
   const activePayTypes = searchParams.get("payType")?.split(",").filter(Boolean) || [];
   const activeRemoteTypes = searchParams.get("remoteType")?.split(",").filter(Boolean) || [];
@@ -79,34 +77,28 @@ export function JobFilters() {
     !!salaryMin || !!salaryMax,
   ].filter(Boolean).length;
 
-  const updateParam = useCallback(
-    (key: string, value: string) => {
-      const params = new URLSearchParams(searchParams.toString());
-      if (value) {
-        params.set(key, value);
-      } else {
-        params.delete(key);
-      }
-      params.delete("page");
-      router.push(`/jobs?${params.toString()}`, { scroll: false });
-    },
-    [router, searchParams]
-  );
+  function updateParam(key: string, value: string) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value) {
+      params.set(key, value);
+    } else {
+      params.delete(key);
+    }
+    params.delete("page");
+    router.push(`/jobs?${params.toString()}`, { scroll: false });
+  }
 
-  const toggleInList = useCallback(
-    (key: string, value: string) => {
-      const current = searchParams.get(key)?.split(",").filter(Boolean) || [];
-      const next = current.includes(value)
-        ? current.filter((v) => v !== value)
-        : [...current, value];
-      updateParam(key, next.join(","));
-    },
-    [searchParams, updateParam]
-  );
+  function toggleInList(key: string, value: string) {
+    const current = searchParams.get(key)?.split(",").filter(Boolean) || [];
+    const next = current.includes(value)
+      ? current.filter((v) => v !== value)
+      : [...current, value];
+    updateParam(key, next.join(","));
+  }
 
-  const clearAll = useCallback(() => {
+  function clearAll() {
     router.push("/jobs", { scroll: false });
-  }, [router]);
+  }
 
   return (
     <aside className="w-64 shrink-0 space-y-6">

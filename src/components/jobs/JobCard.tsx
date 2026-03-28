@@ -3,7 +3,6 @@
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { cn } from "@/lib/utils";
 import { TierBadge } from "@/components/jobs/TierBadge";
 import { CompensationDisplay } from "@/components/jobs/CompensationDisplay";
 import { CommissionWarning } from "@/components/jobs/CommissionWarning";

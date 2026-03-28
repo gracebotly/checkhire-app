@@ -193,7 +193,7 @@ export default async function EmployerProfilePage({
         </h2>
         {listings && listings.length > 0 ? (
           <div className="mt-4 space-y-4">
-            {listings.map((listing: any, index: number) => (
+            {listings.map((listing: JobListingWithEmployer, index: number) => (
               <JobCard
                 key={listing.id}
                 listing={listing as JobListingWithEmployer}

@@ -1,5 +1,7 @@
 import { withApiHandler } from "@/lib/api/withApiHandler";
 import { getEmployerForUser } from "@/lib/employer/getEmployerForUser";
+import { logCandidateAccess } from "@/lib/api/auditLog";
+import { checkCandidateViewRateLimit } from "@/lib/api/rateLimitCandidateViews";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 
@@ -19,6 +21,14 @@ const VALID_TRANSITIONS: Record<string, string[]> = {
   offered: ["hired", "rejected"],
 };
 
+/**
+ * PATCH /api/employer/applications/[id]/status
+ *
+ * Body: { status: string }
+ *
+ * Updates application status. Validates the transition is allowed.
+ * Rate limited and audit logged.
+ */
 export const PATCH = withApiHandler(async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -32,6 +42,10 @@ export const PATCH = withApiHandler(async function PATCH(
     );
   }
 
+  // Rate limit check
+  const rl = await checkCandidateViewRateLimit(ctx.employerId, req);
+  if (!rl.allowed) return rl.response;
+
   const body = await req.json().catch(() => ({}));
   const newStatus = body.status as string;
 
@@ -42,6 +56,7 @@ export const PATCH = withApiHandler(async function PATCH(
     );
   }
 
+  // Fetch application and verify ownership
   const { data: application } = await supabaseAdmin
     .from("applications")
     .select("id, status, job_listing_id, disclosure_level")
@@ -73,6 +88,7 @@ export const PATCH = withApiHandler(async function PATCH(
     );
   }
 
+  // Validate status transition
   const allowed = VALID_TRANSITIONS[application.status];
   if (!allowed || !allowed.includes(newStatus)) {
     return NextResponse.json(
@@ -85,6 +101,7 @@ export const PATCH = withApiHandler(async function PATCH(
     );
   }
 
+  // Update status
   const { error: updateError } = await supabaseAdmin
     .from("applications")
     .update({ status: newStatus })
@@ -97,15 +114,15 @@ export const PATCH = withApiHandler(async function PATCH(
     );
   }
 
-  await supabaseAdmin.from("access_audit_log").insert({
-    employer_id: ctx.employerId,
-    employer_user_id: ctx.userId,
-    action_type: "stage_advance",
-    application_id: id,
-    disclosure_level_at_time: application.disclosure_level,
-    ip_address: req.headers.get("x-forwarded-for") || null,
-    user_agent: req.headers.get("user-agent") || null,
-  });
+  // Log access using centralized utility
+  await logCandidateAccess(
+    ctx.employerId,
+    ctx.userId,
+    "stage_advance",
+    id,
+    application.disclosure_level,
+    req
+  );
 
   return NextResponse.json({ ok: true, status: newStatus });
 });

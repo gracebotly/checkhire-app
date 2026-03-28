@@ -1,6 +1,8 @@
 import { withApiHandler } from "@/lib/api/withApiHandler";
 import { getEmployerForUser } from "@/lib/employer/getEmployerForUser";
 import { buildCandidateView } from "@/lib/seeker/disclosureGate";
+import { logCandidateAccess } from "@/lib/api/auditLog";
+import { checkCandidateViewRateLimit } from "@/lib/api/rateLimitCandidateViews";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import type { Application, SeekerProfile } from "@/types/database";
@@ -12,6 +14,13 @@ const supabaseAdmin = createServiceClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+/**
+ * GET /api/employer/applications?listing_id=UUID&status=applied
+ *
+ * Returns disclosure-gated candidate views for a specific listing.
+ * Rate limited: 30 candidate views per hour per employer.
+ * Every access is logged to access_audit_log.
+ */
 export const GET = withApiHandler(async function GET(req: Request) {
   const ctx = await getEmployerForUser();
   if (!ctx) {
@@ -20,6 +29,10 @@ export const GET = withApiHandler(async function GET(req: Request) {
       { status: 403 }
     );
   }
+
+  // Rate limit check — 30 views per hour per employer
+  const rl = await checkCandidateViewRateLimit(ctx.employerId, req);
+  if (!rl.allowed) return rl.response;
 
   const { searchParams } = new URL(req.url);
   const listingId = searchParams.get("listing_id");
@@ -36,6 +49,7 @@ export const GET = withApiHandler(async function GET(req: Request) {
     );
   }
 
+  // Verify this listing belongs to the employer
   const { data: listing } = await supabaseAdmin
     .from("job_listings")
     .select("id, employer_id")
@@ -54,6 +68,7 @@ export const GET = withApiHandler(async function GET(req: Request) {
     );
   }
 
+  // Fetch applications for this listing
   let query = supabaseAdmin
     .from("applications")
     .select("*")
@@ -77,6 +92,7 @@ export const GET = withApiHandler(async function GET(req: Request) {
     return NextResponse.json({ ok: true, candidates: [] });
   }
 
+  // Fetch seeker profiles and user_profiles for all applicants
   const userIds = applications.map((a: Application) => a.user_id);
 
   const { data: seekerProfiles } = await supabaseAdmin
@@ -99,6 +115,7 @@ export const GET = withApiHandler(async function GET(req: Request) {
     ])
   );
 
+  // Build disclosure-gated views
   const candidates = applications.map((app: Application) => {
     const seeker = seekerMap.get(app.user_id);
     const fullName = nameMap.get(app.user_id) || null;
@@ -127,15 +144,15 @@ export const GET = withApiHandler(async function GET(req: Request) {
     return buildCandidateView(app, seeker as SeekerProfile, fullName);
   });
 
-  await supabaseAdmin.from("access_audit_log").insert({
-    employer_id: ctx.employerId,
-    employer_user_id: ctx.userId,
-    action_type: "candidate_view",
-    application_id: null,
-    disclosure_level_at_time: 1,
-    ip_address: req.headers.get("x-forwarded-for") || null,
-    user_agent: req.headers.get("user-agent") || null,
-  });
+  // Log access using centralized utility
+  await logCandidateAccess(
+    ctx.employerId,
+    ctx.userId,
+    "candidate_view",
+    null,
+    1,
+    req
+  );
 
   return NextResponse.json({ ok: true, candidates });
 });

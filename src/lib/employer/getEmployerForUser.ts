@@ -60,7 +60,13 @@ export async function getEmployerForUser(): Promise<EmployerContext | null> {
 
   if (!employerUser || !employerUser.employers) return null;
 
-  const employer = employerUser.employers as EmployerContext["employer"];
+  const rawEmployer = employerUser.employers as
+    | EmployerContext["employer"][]
+    | EmployerContext["employer"]
+    | null;
+  const employer = Array.isArray(rawEmployer) ? rawEmployer[0] : rawEmployer;
+
+  if (!employer) return null;
 
   return {
     employerId: employerUser.employer_id,

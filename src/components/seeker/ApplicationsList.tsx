@@ -5,30 +5,34 @@ import { Briefcase } from "lucide-react";
 import Link from "next/link";
 import { ApplicationCard } from "./ApplicationCard";
 
+interface ListingEmployer {
+  company_name: string;
+  tier_level: number;
+  logo_url: string | null;
+  slug: string | null;
+}
+
+interface ListingData {
+  title: string;
+  slug: string;
+  job_type: string;
+  pay_type: string;
+  salary_min: number | null;
+  salary_max: number | null;
+  remote_type: string;
+  status: string;
+  created_at: string;
+  expires_at: string;
+  employers: ListingEmployer | ListingEmployer[];
+}
+
 interface ApplicationData {
   id: string;
   pseudonym: string;
   disclosure_level: number;
   status: string;
   created_at: string;
-  job_listings: {
-    title: string;
-    slug: string;
-    job_type: string;
-    pay_type: string;
-    salary_min: number | null;
-    salary_max: number | null;
-    remote_type: string;
-    status: string;
-    created_at: string;
-    expires_at: string;
-    employers: {
-      company_name: string;
-      tier_level: number;
-      logo_url: string | null;
-      slug: string | null;
-    };
-  };
+  job_listings: ListingData | ListingData[];
 }
 
 interface ApplicationsListProps {

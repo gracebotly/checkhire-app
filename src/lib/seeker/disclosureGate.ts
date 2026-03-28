@@ -42,6 +42,8 @@ export function buildCandidateView(
     parsed_certifications: seekerProfile.parsed_certifications ?? [],
     parsed_summary: seekerProfile.parsed_summary,
     screening_responses: application.screening_responses,
+    video_responses: application.video_responses ?? [],
+    screening_score: application.screening_score ?? null,
   };
 
   // Stage 2 — first name

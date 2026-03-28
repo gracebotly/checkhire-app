@@ -72,6 +72,19 @@ export const POST = withApiHandler(async function POST(req: Request) {
     );
   }
 
+  // Guard: employer must have verified domain email before posting
+  if (!ctx.employer.domain_email_verified_at) {
+    return NextResponse.json(
+      {
+        ok: false,
+        code: "DOMAIN_NOT_VERIFIED",
+        message:
+          "You must verify your company email before posting a listing. Go to Settings → Verify Email.",
+      },
+      { status: 403 }
+    );
+  }
+
   const body = await req.json().catch(() => ({}));
 
   // Validate listing fields

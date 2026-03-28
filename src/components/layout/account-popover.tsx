@@ -7,9 +7,10 @@ import { createClient } from "@/lib/supabase/client"
 
 interface AccountCardProps {
   email: string
+  settingsPath?: string
 }
 
-export function AccountCardPanel({ email }: AccountCardProps) {
+export function AccountCardPanel({ email, settingsPath = "/employer/settings" }: AccountCardProps) {
   const router = useRouter()
   const [copied, setCopied] = useState(false)
 
@@ -33,10 +34,10 @@ export function AccountCardPanel({ email }: AccountCardProps) {
       {/* Header */}
       <div className="border-b border-gray-100 px-4 py-3">
         <div className="flex items-center gap-1.5">
-          <p className="truncate text-sm font-medium text-gray-900">{email}</p>
+          <p className="truncate text-sm font-medium text-slate-900">{email}</p>
           <button
             onClick={copyEmail}
-            className="shrink-0 rounded p-0.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+            className="shrink-0 cursor-pointer rounded p-0.5 text-slate-600 transition-colors duration-200 hover:bg-gray-100 hover:text-slate-900"
             aria-label="Copy email"
           >
             <Copy size={12} />
@@ -50,10 +51,10 @@ export function AccountCardPanel({ email }: AccountCardProps) {
       {/* Navigation */}
       <div className="p-1.5">
         <button
-          onClick={() => router.push("/employer/settings")}
-          className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+          onClick={() => router.push(settingsPath)}
+          className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-slate-600 transition-colors duration-200 hover:bg-gray-50 hover:text-slate-900"
         >
-          <Settings size={16} className="text-gray-400" />
+          <Settings size={16} className="text-slate-600" />
           Settings
         </button>
       </div>
@@ -62,9 +63,9 @@ export function AccountCardPanel({ email }: AccountCardProps) {
       <div className="border-t border-gray-100 p-1.5">
         <button
           onClick={handleLogout}
-          className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-red-50 hover:text-red-600"
+          className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-slate-600 transition-colors duration-200 hover:bg-red-50 hover:text-red-600"
         >
-          <LogOut size={16} className="text-gray-400" />
+          <LogOut size={16} className="text-slate-600" />
           Log Out
         </button>
       </div>

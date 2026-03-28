@@ -47,7 +47,7 @@ export async function GET(request: Request) {
     if (profile.user_type === "employer") {
       return NextResponse.redirect(new URL("/employer/dashboard", request.url));
     }
-    return NextResponse.redirect(new URL("/jobs", request.url));
+    return NextResponse.redirect(new URL("/seeker/applications", request.url));
   }
 
   // New user signing up — create user_profile
@@ -72,7 +72,12 @@ export async function GET(request: Request) {
       return NextResponse.redirect(new URL("/employer/dashboard", request.url));
     }
 
-    return NextResponse.redirect(new URL("/jobs", request.url));
+    // Create empty seeker_profiles row for job seekers
+    await supabaseAdmin.from("seeker_profiles").insert({
+      id: user.id,
+    });
+
+    return NextResponse.redirect(new URL("/seeker/profile", request.url));
   }
 
   // Signin but no profile — shouldn't happen, send to jobs as fallback

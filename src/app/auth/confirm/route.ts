@@ -69,7 +69,12 @@ export async function GET(request: Request) {
         return NextResponse.redirect(new URL("/employer/dashboard", request.url));
       }
 
-      return NextResponse.redirect(new URL("/jobs", request.url));
+      // Create empty seeker_profiles row for job seekers
+      await supabaseAdmin.from("seeker_profiles").insert({
+        id: user.id,
+      });
+
+      return NextResponse.redirect(new URL("/seeker/profile", request.url));
     }
 
     // Existing user — route based on type
@@ -78,5 +83,5 @@ export async function GET(request: Request) {
     }
   }
 
-  return NextResponse.redirect(new URL("/jobs", request.url));
+  return NextResponse.redirect(new URL("/seeker/applications", request.url));
 }

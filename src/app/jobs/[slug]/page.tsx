@@ -9,7 +9,6 @@ import {
   Building,
   Calendar,
   ExternalLink,
-  Briefcase,
 } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/service";
 import { TierBadge } from "@/components/jobs/TierBadge";
@@ -22,9 +21,10 @@ import { ApplicationCount } from "@/components/jobs/ApplicationCount";
 import { TrustSignalBar } from "@/components/jobs/TrustSignalBar";
 import { ScreeningRequirements } from "@/components/jobs/ScreeningRequirements";
 import { JobDetailStickyBar } from "@/components/jobs/JobDetailStickyBar";
+import { ApplyButton } from "@/components/jobs/ApplyButton";
 import { formatPostedDate } from "@/lib/formatting";
 import { generateListingMetadata, generateJobPostingJsonLd } from "@/lib/seo";
-import type { TierLevel, CommissionStructure } from "@/types/database";
+import type { TierLevel, CommissionStructure, ScreeningQuestion } from "@/types/database";
 
 // ─── Metadata ───
 export async function generateMetadata({
@@ -312,18 +312,15 @@ export default async function JobDetailPage({
           {/* Sidebar */}
           <div className="w-full space-y-4 lg:w-72">
             {/* Apply CTA */}
-            <div className="rounded-xl border border-gray-200 bg-white p-5">
-              <Link
-                href="/signup"
-                className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-brand px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-brand-hover"
-              >
-                <Briefcase className="h-4 w-4" />
-                Sign up to apply
-              </Link>
-              <p className="mt-2 text-center text-xs text-slate-600">
-                Apply anonymously with a pseudonym
-              </p>
-            </div>
+            <ApplyButton
+              listingId={listing.id}
+              listingTitle={listing.title}
+              requiresScreeningQuiz={listing.requires_screening_quiz}
+              screeningQuestions={(questions || []) as ScreeningQuestion[]}
+              applicationsClosed={
+                listing.current_application_count >= listing.max_applications
+              }
+            />
 
             {/* Screening requirements */}
             <ScreeningRequirements

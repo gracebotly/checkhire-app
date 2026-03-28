@@ -2,6 +2,7 @@ import { type EmailOtpType } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
+import { createEmployerOnSignup } from "@/lib/employer/createEmployerOnSignup";
 
 export const runtime = "nodejs";
 
@@ -49,8 +50,7 @@ export async function GET(request: Request) {
       .maybeSingle();
 
     if (!profile && type === "email") {
-      // New signup confirmation — create profile as job_seeker by default
-      // (employers sign up through a different flow with user_type param)
+      // New signup confirmation — create profile
       const userType = user.user_metadata?.user_type ?? "job_seeker";
       const validType = userType === "employer" ? "employer" : "job_seeker";
 
@@ -60,9 +60,15 @@ export async function GET(request: Request) {
         full_name: user.user_metadata?.name || null,
       });
 
+      // If employer, also create employer + employer_users records
       if (validType === "employer") {
+        const companyName =
+          user.user_metadata?.company_name || "My Company";
+
+        await createEmployerOnSignup(user.id, companyName);
         return NextResponse.redirect(new URL("/employer/dashboard", request.url));
       }
+
       return NextResponse.redirect(new URL("/jobs", request.url));
     }
 

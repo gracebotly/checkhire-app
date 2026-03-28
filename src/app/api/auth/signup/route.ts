@@ -22,6 +22,7 @@ export const POST = withApiHandler(async function POST(req: Request) {
   const password = (body?.password ?? "").toString();
   const userType = (body?.user_type ?? "job_seeker").toString();
   const validUserType = userType === "employer" ? "employer" : "job_seeker";
+  const companyName = (body?.company_name ?? "").toString().trim();
 
   if (!email || !password) {
     return NextResponse.json(
@@ -44,13 +45,35 @@ export const POST = withApiHandler(async function POST(req: Request) {
     );
   }
 
-  const redirectTo = `${siteUrl(req)}/auth/callback?intent=signup&user_type=${validUserType}`;
+  // Employer-specific validation
+  if (validUserType === "employer" && !companyName) {
+    return NextResponse.json(
+      { ok: false, message: "Company name is required for employer accounts." },
+      { status: 400 }
+    );
+  }
+
+  // Build redirect URL with company_name for the callback
+  const params = new URLSearchParams({
+    intent: "signup",
+    user_type: validUserType,
+  });
+  if (validUserType === "employer" && companyName) {
+    params.set("company_name", companyName);
+  }
+  const redirectTo = `${siteUrl(req)}/auth/callback?${params.toString()}`;
 
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      data: { name, user_type: validUserType },
+      data: {
+        name,
+        user_type: validUserType,
+        ...(validUserType === "employer" && companyName
+          ? { company_name: companyName }
+          : {}),
+      },
       emailRedirectTo: redirectTo,
     },
   });

@@ -3,12 +3,8 @@
 import { useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { PageHeader } from "@/components/layout/page-header";
-import {
-  Building2,
-  Users,
-  AlertTriangle,
-} from "lucide-react";
-import { WorkspaceTab } from "@/components/settings/WorkspaceTab";
+import { Building2, Users, AlertTriangle } from "lucide-react";
+import { CompanyProfileTab } from "@/components/settings/CompanyProfileTab";
 import { TeamTab } from "@/components/settings/TeamTab";
 import { DangerTab } from "@/components/settings/DangerTab";
 
@@ -54,10 +50,10 @@ export default function SettingsPage() {
                 <button
                   key={tab.key}
                   onClick={() => handleTabChange(tab.key)}
-                  className={`inline-flex shrink-0 items-center gap-1.5 border-b-2 px-1 py-3 text-sm font-medium transition ${
+                  className={`inline-flex shrink-0 cursor-pointer items-center gap-1.5 border-b-2 px-1 py-3 text-sm font-medium transition-colors duration-200 ${
                     isActive
-                      ? "border-blue-500 text-blue-600"
-                      : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                      ? "border-brand text-brand"
+                      : "border-transparent text-slate-600 hover:border-gray-300 hover:text-slate-900"
                   }`}
                 >
                   <Icon className="h-4 w-4" />
@@ -69,7 +65,7 @@ export default function SettingsPage() {
         </div>
 
         <div className="mt-6">
-          {activeTab === "company" && <WorkspaceTab />}
+          {activeTab === "company" && <CompanyProfileTab />}
           {activeTab === "team" && <TeamTab />}
           {activeTab === "danger" && <DangerTab />}
         </div>

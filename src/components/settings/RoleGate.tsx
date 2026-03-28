@@ -19,7 +19,7 @@ export function RoleGate({ allowed, children, message }: RoleGateProps) {
   return (
     <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-8 text-center">
       <ShieldAlert className="mx-auto h-8 w-8 text-gray-300" />
-      <p className="mt-3 text-sm font-medium text-gray-500">
+      <p className="mt-3 text-sm font-medium text-slate-600">
         {message ?? "Contact your admin to change these settings."}
       </p>
     </div>

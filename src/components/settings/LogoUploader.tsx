@@ -48,7 +48,7 @@ export function LogoUploader({
       const formData = new FormData();
       formData.append("file", file);
 
-      const res = await fetch("/api/settings/branding/logo", {
+      const res = await fetch("/api/employer/branding/logo", {
         method: "POST",
         body: formData,
       });
@@ -68,7 +68,7 @@ export function LogoUploader({
   const handleRemove = async () => {
     setRemoving(true);
     setError(null);
-    const res = await fetch("/api/settings/branding/logo", {
+    const res = await fetch("/api/employer/branding/logo", {
       method: "DELETE",
     });
     const json = await res.json();
@@ -102,7 +102,7 @@ export function LogoUploader({
         <div className="flex h-16 w-40 items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-white">
           <img
             src={displayUrl}
-            alt="Agency logo"
+            alt="Company logo"
             className="max-h-full max-w-full object-contain"
           />
         </div>
@@ -164,19 +164,18 @@ export function LogoUploader({
         {uploading ? (
           <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
         ) : (
-          <ImageIcon className="h-8 w-8 text-gray-400" />
+          <ImageIcon className="h-8 w-8 text-slate-600" />
         )}
         <p className="text-sm text-gray-600">
           {uploading
             ? "Uploading..."
             : "Drag & drop your logo, or click to browse"}
         </p>
-        <p className="text-xs text-gray-400">
+        <p className="text-xs text-slate-600">
           PNG, JPG, SVG, or WebP. Max 2MB.
         </p>
-        <p className="text-xs text-gray-400">
-          Best results: horizontal logo, at least 200px wide. Displays at 32px
-          tall in the portal header.
+        <p className="text-xs text-slate-600">
+          Best results: square or horizontal logo, at least 200px wide.
         </p>
       </div>
       <input

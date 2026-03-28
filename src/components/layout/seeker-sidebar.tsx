@@ -167,7 +167,7 @@ export function SeekerSidebar({ userEmail, displayName }: SeekerSidebarProps) {
                 sideOffset={12}
                 className="z-50 outline-none"
               >
-                <AccountCardPanel email={userEmail} />
+                <AccountCardPanel email={userEmail} settingsPath="/seeker/settings" />
               </Popover.Content>
             </Popover.Portal>
           </Popover.Root>

@@ -24,7 +24,7 @@ import { ScreeningRequirements } from "@/components/jobs/ScreeningRequirements";
 import { JobDetailStickyBar } from "@/components/jobs/JobDetailStickyBar";
 import { formatPostedDate } from "@/lib/formatting";
 import { generateListingMetadata, generateJobPostingJsonLd } from "@/lib/seo";
-import type { TierLevel } from "@/types/database";
+import type { TierLevel, CommissionStructure } from "@/types/database";
 
 // ─── Metadata ───
 export async function generateMetadata({
@@ -46,7 +46,7 @@ export async function generateMetadata({
     return { title: "Job Not Found" };
   }
 
-  return generateListingMetadata(listing as any);
+  return generateListingMetadata(listing as Parameters<typeof generateListingMetadata>[0]);
 }
 
 // ─── Page ───
@@ -85,7 +85,25 @@ export default async function JobDetailPage({
     .eq("job_listing_id", listing.id)
     .order("sort_order", { ascending: true });
 
-  const employer = listing.employers as any;
+  const employer = listing.employers as {
+    id: string;
+    company_name: string;
+    tier_level: number;
+    logo_url: string | null;
+    transparency_score: number;
+    industry: string | null;
+    company_size: string | null;
+    website_domain: string | null;
+    description: string | null;
+    country: string;
+    slug: string | null;
+    video_url: string | null;
+    identity_verified: boolean;
+    linkedin_verified: boolean;
+    domain_email_verified_at: string | null;
+    outreach_status: string | null;
+    verification_card_public: boolean;
+  };
   const companyInitial = employer.company_name?.charAt(0)?.toUpperCase() || "C";
   const location =
     listing.remote_type === "full_remote"
@@ -166,32 +184,35 @@ export default async function JobDetailPage({
             {listing.is_100_percent_commission ? (
               <div>
                 <CommissionWarning />
-                {listing.commission_structure && (
-                  <div className="mt-3 grid gap-3 text-sm text-slate-600 sm:grid-cols-3">
-                    {(listing.commission_structure as any).average_earnings && (
+                {listing.commission_structure && (() => {
+                  const cs = listing.commission_structure as CommissionStructure;
+                  return (
+                    <div className="mt-3 grid gap-3 text-sm text-slate-600 sm:grid-cols-3">
+                      {cs.average_earnings && (
+                        <div>
+                          <p className="text-xs text-slate-600">Avg. earnings</p>
+                          <p className="font-semibold tabular-nums text-slate-900">
+                            ${cs.average_earnings.toLocaleString()}/yr
+                          </p>
+                        </div>
+                      )}
+                      {cs.time_to_first_payment && (
+                        <div>
+                          <p className="text-xs text-slate-600">Time to first payment</p>
+                          <p className="font-semibold text-slate-900">
+                            {cs.time_to_first_payment}
+                          </p>
+                        </div>
+                      )}
                       <div>
-                        <p className="text-xs text-slate-600">Avg. earnings</p>
-                        <p className="font-semibold tabular-nums text-slate-900">
-                          ${((listing.commission_structure as any).average_earnings).toLocaleString()}/yr
-                        </p>
-                      </div>
-                    )}
-                    {(listing.commission_structure as any).time_to_first_payment && (
-                      <div>
-                        <p className="text-xs text-slate-600">Time to first payment</p>
+                        <p className="text-xs text-slate-600">Leads provided</p>
                         <p className="font-semibold text-slate-900">
-                          {(listing.commission_structure as any).time_to_first_payment}
+                          {cs.leads_provided ? "Yes" : "No — you generate your own"}
                         </p>
                       </div>
-                    )}
-                    <div>
-                      <p className="text-xs text-slate-600">Leads provided</p>
-                      <p className="font-semibold text-slate-900">
-                        {(listing.commission_structure as any).leads_provided ? "Yes" : "No — you generate your own"}
-                      </p>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
               </div>
             ) : (
               <CompensationDisplay

@@ -1,4 +1,4 @@
-import type { PayType, JobListing } from "@/types/database";
+import type { PayType } from "@/types/database";
 
 /**
  * Format a salary range for display.

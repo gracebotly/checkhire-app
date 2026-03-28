@@ -1,18 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Search, X } from "lucide-react";
 
 export function JobSearch() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [value, setValue] = useState(searchParams.get("search") || "");
-
-  // Sync input if URL changes externally
-  useEffect(() => {
-    setValue(searchParams.get("search") || "");
-  }, [searchParams]);
+  const currentSearch = searchParams.get("search") || "";
+  const [value, setValue] = useState(currentSearch);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,7 +18,7 @@ export function JobSearch() {
     } else {
       params.delete("search");
     }
-    params.delete("page"); // Reset to page 1 on new search
+    params.delete("page");
     router.push(`/jobs?${params.toString()}`);
   };
 

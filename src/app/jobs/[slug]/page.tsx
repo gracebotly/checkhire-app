@@ -46,7 +46,18 @@ export async function generateMetadata({
     return { title: "Job Not Found" };
   }
 
-  return generateListingMetadata(listing as Parameters<typeof generateListingMetadata>[0]);
+  const employerData = Array.isArray(listing.employers)
+    ? listing.employers[0]
+    : listing.employers;
+
+  return generateListingMetadata({
+    title: listing.title,
+    salary_min: listing.salary_min,
+    salary_max: listing.salary_max,
+    pay_type: listing.pay_type,
+    remote_type: listing.remote_type,
+    employers: employerData as { company_name: string },
+  });
 }
 
 // ─── Page ───

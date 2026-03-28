@@ -113,3 +113,130 @@ export type ScreeningQuestion = {
   sort_order: number;
   created_at: string;
 };
+
+// ─── Slice 3: Seeker & Application Types ───
+
+export type ApplicationStatus =
+  | "applied"
+  | "reviewed"
+  | "shortlisted"
+  | "interview_requested"
+  | "interview_accepted"
+  | "offered"
+  | "rejected"
+  | "hired";
+
+export type DisclosureLevel = 1 | 2 | 3;
+
+export type ParseStatus = "pending" | "parsed" | "failed";
+
+export type ParsedWorkHistoryEntry = {
+  title: string;
+  company: string;
+  start_date: string | null;
+  end_date: string | null;
+  description: string | null;
+};
+
+export type ParsedEducationEntry = {
+  degree: string;
+  school: string;
+  field: string | null;
+  graduation_year: number | null;
+};
+
+export type SeekerProfile = {
+  id: string;
+  skills: string[];
+  years_experience: number | null;
+  location_city: string | null;
+  location_state: string | null;
+  education_level: string | null;
+  education_field: string | null;
+  resume_file_url: string | null;
+  parsed_work_history: ParsedWorkHistoryEntry[];
+  parsed_education: ParsedEducationEntry[];
+  parsed_certifications: string[];
+  parsed_summary: string | null;
+  parse_status: ParseStatus;
+  created_at: string;
+  updated_at: string;
+};
+
+export type Application = {
+  id: string;
+  job_listing_id: string;
+  user_id: string;
+  pseudonym: string;
+  disclosure_level: DisclosureLevel;
+  status: ApplicationStatus;
+  screening_responses: Record<string, unknown> | null;
+  disclosed_at_stage2: string | null;
+  disclosed_at_stage3: string | null;
+  created_at: string;
+};
+
+export type ApplicationWithListing = Application & {
+  job_listings: Pick<
+    JobListing,
+    | "title"
+    | "slug"
+    | "job_type"
+    | "pay_type"
+    | "salary_min"
+    | "salary_max"
+    | "remote_type"
+    | "status"
+    | "created_at"
+    | "expires_at"
+  > & {
+    employers: Pick<Employer, "company_name" | "tier_level" | "logo_url" | "slug">;
+  };
+};
+
+/**
+ * What an employer sees when viewing a candidate at a given disclosure level.
+ * Fields are progressively revealed based on disclosure_level.
+ */
+export type CandidateView = {
+  application_id: string;
+  pseudonym: string;
+  disclosure_level: DisclosureLevel;
+  status: ApplicationStatus;
+  created_at: string;
+
+  // Always visible (Stage 1+)
+  skills: string[];
+  years_experience: number | null;
+  location_city: string | null;
+  location_state: string | null;
+  education_level: string | null;
+  education_field: string | null;
+  parsed_work_history: ParsedWorkHistoryEntry[];
+  parsed_education: ParsedEducationEntry[];
+  parsed_certifications: string[];
+  parsed_summary: string | null;
+  screening_responses: Record<string, unknown> | null;
+
+  // Stage 2+ only
+  first_name?: string;
+
+  // Stage 3+ only
+  full_name?: string;
+  resume_url?: string; // Signed, expiring URL
+};
+
+export type AccessAuditLogEntry = {
+  employer_id: string;
+  employer_user_id: string;
+  action_type:
+    | "candidate_view"
+    | "interview_request"
+    | "message_sent"
+    | "stage_advance"
+    | "resume_access";
+  application_id: string;
+  disclosure_level_at_time: DisclosureLevel;
+  ip_address: string | null;
+  user_agent: string | null;
+};

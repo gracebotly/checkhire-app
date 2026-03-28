@@ -6,6 +6,8 @@ import { sendMessageSchema } from "@/lib/validation/messageSchema";
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
+import { sendChatNotification } from "@/lib/email/chatNotification";
+import { canSendNotification } from "@/lib/email/notificationRateLimit";
 
 export const runtime = "nodejs";
 
@@ -278,6 +280,55 @@ export const POST = withApiHandler(async function POST(req: Request) {
       req
     );
   }
+
+  // Send email notification to the other party (rate-limited: 1 per thread per hour)
+  // Non-blocking — fire and forget
+  canSendNotification(application_id, "chat_message").then(async (canSend) => {
+    if (!canSend) return;
+    try {
+      // Get the recipient's email
+      const recipientUserId = isCandidate
+        ? null // candidate sent → notify employer (handled separately, employers check dashboard)
+        : application.user_id; // employer sent → notify candidate
+
+      if (recipientUserId) {
+        const { data: recipientAuth } = await supabaseAdmin.auth.admin.getUserById(recipientUserId);
+        const recipientEmail = recipientAuth?.user?.email;
+        if (recipientEmail) {
+          // Get listing title for the notification
+          const { data: listing } = await supabaseAdmin
+            .from("job_listings")
+            .select("title, employers(company_name)")
+            .eq("id", application.job_listing_id)
+            .maybeSingle();
+
+          const listingData = listing as { title: string; employers: { company_name: string } | { company_name: string }[] } | null;
+          const employer = listingData?.employers;
+          const companyName = Array.isArray(employer) ? employer[0]?.company_name : employer?.company_name;
+
+          await sendChatNotification({
+            to: recipientEmail,
+            recipientName: null,
+            listingTitle: listingData?.title || "a job listing",
+            senderLabel: companyName || "an employer",
+            applicationId: application_id,
+          });
+
+          // Tag the thread so we don't send another notification within the hour
+          await supabaseAdmin.from("messages").insert({
+            application_id,
+            sender_id: application.user_id,
+            sender_type: "system",
+            message_text: "",
+            message_type: "system",
+            metadata: { notification_type: "chat_message", silent: true },
+          }).then(() => {}).catch(() => {});
+        }
+      }
+    } catch (err) {
+      console.error("[messages/POST] Notification error:", err);
+    }
+  });
 
   return NextResponse.json({
     ok: true,

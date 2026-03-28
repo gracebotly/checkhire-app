@@ -8,10 +8,17 @@ import {
   Eye,
   GraduationCap,
   MapPin,
+  MessageSquare,
   Shield,
+  User,
   XCircle,
 } from "lucide-react";
 import { useState } from "react";
+import { InterviewRequestButton } from "./InterviewRequestButton";
+import { InterviewScheduleForm } from "@/components/chat/InterviewScheduleForm";
+import { DisclosureProgressBar } from "./DisclosureProgressBar";
+import { ConfirmInterviewDoneButton } from "@/components/chat/ConfirmInterviewDoneButton";
+import Link from "next/link";
 import type { CandidateView } from "@/types/database";
 
 interface CandidateCardProps {
@@ -27,10 +34,23 @@ export function CandidateCard({ candidate, onStatusChange }: CandidateCardProps)
     reviewed: "bg-cyan-50 text-cyan-700 border-cyan-200",
     shortlisted: "bg-emerald-50 text-emerald-700 border-emerald-200",
     interview_requested: "bg-amber-50 text-amber-700 border-amber-200",
+    interview_accepted: "bg-brand-muted text-brand border-brand/20",
+    offered: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    hired: "bg-emerald-50 text-emerald-800 border-emerald-200",
     rejected: "bg-gray-50 text-slate-600 border-gray-200",
   };
 
   const statusColor = STATUS_COLORS[candidate.status] || STATUS_COLORS.applied;
+
+  // Display name based on disclosure level
+  let displayName = candidate.pseudonym;
+  if (candidate.disclosure_level >= 3 && candidate.full_name) {
+    displayName = candidate.full_name;
+  } else if (candidate.disclosure_level >= 2 && candidate.first_name) {
+    displayName = candidate.first_name;
+  }
+
+  const showPseudonym = candidate.disclosure_level === 1;
 
   return (
     <div
@@ -39,16 +59,29 @@ export function CandidateCard({ candidate, onStatusChange }: CandidateCardProps)
     >
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
+          {/* Identity row */}
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-lg bg-brand-muted px-2.5 py-1 text-sm font-bold text-brand">
-              <Shield className="h-4 w-4" />
-              {candidate.pseudonym}
-            </span>
+            {showPseudonym ? (
+              <span className="inline-flex items-center gap-1.5 rounded-lg bg-brand-muted px-2.5 py-1 text-sm font-bold text-brand">
+                <Shield className="h-4 w-4" />
+                {candidate.pseudonym}
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 rounded-lg bg-brand-muted px-2.5 py-1 text-sm font-bold text-brand">
+                <User className="h-4 w-4" />
+                {displayName}
+              </span>
+            )}
             <span
               className={`inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium ${statusColor}`}
             >
-              {candidate.status.replace("_", " ")}
+              {candidate.status.replace(/_/g, " ")}
             </span>
+          </div>
+
+          {/* Disclosure indicator */}
+          <div className="mt-1.5">
+            <DisclosureProgressBar level={candidate.disclosure_level} />
           </div>
 
           <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-slate-600">
@@ -99,7 +132,18 @@ export function CandidateCard({ candidate, onStatusChange }: CandidateCardProps)
           )}
         </div>
 
+        {/* Actions column */}
         <div className="flex shrink-0 flex-col gap-1.5">
+          {/* Chat link — always available */}
+          <Link
+            href={`/employer/messages/${candidate.application_id}`}
+            className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-600 transition-colors duration-200 hover:bg-gray-50"
+          >
+            <MessageSquare className="h-3 w-3" />
+            Chat
+          </Link>
+
+          {/* Status-specific actions */}
           {candidate.status === "applied" && (
             <>
               <button
@@ -119,13 +163,39 @@ export function CandidateCard({ candidate, onStatusChange }: CandidateCardProps)
             </>
           )}
           {candidate.status === "reviewed" && (
-            <button
-              onClick={() => onStatusChange(candidate.application_id, "shortlisted")}
-              className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-xs font-medium text-emerald-700 transition-colors duration-200 hover:bg-emerald-100"
-            >
-              <CheckCircle className="h-3 w-3" />
-              Shortlist
-            </button>
+            <>
+              <button
+                onClick={() => onStatusChange(candidate.application_id, "shortlisted")}
+                className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-xs font-medium text-emerald-700 transition-colors duration-200 hover:bg-emerald-100"
+              >
+                <CheckCircle className="h-3 w-3" />
+                Shortlist
+              </button>
+              <InterviewRequestButton
+                applicationId={candidate.application_id}
+                currentStatus={candidate.status}
+                onStatusChange={onStatusChange}
+              />
+            </>
+          )}
+          {candidate.status === "shortlisted" && (
+            <InterviewRequestButton
+              applicationId={candidate.application_id}
+              currentStatus={candidate.status}
+              onStatusChange={onStatusChange}
+            />
+          )}
+          {candidate.status === "interview_accepted" && (
+            <>
+              <InterviewScheduleForm
+                applicationId={candidate.application_id}
+                candidateName={displayName}
+              />
+              <ConfirmInterviewDoneButton
+                applicationId={candidate.application_id}
+                applicationStatus={candidate.status}
+              />
+            </>
           )}
           {["applied", "reviewed", "shortlisted"].includes(candidate.status) && (
             <button
@@ -139,6 +209,7 @@ export function CandidateCard({ candidate, onStatusChange }: CandidateCardProps)
         </div>
       </div>
 
+      {/* Work history expandable */}
       {candidate.parsed_work_history.length > 0 && (
         <>
           <button

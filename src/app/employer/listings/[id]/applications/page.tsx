@@ -77,6 +77,10 @@ export default function EmployerApplicationsPage({
     { value: "applied", label: "New" },
     { value: "reviewed", label: "Reviewed" },
     { value: "shortlisted", label: "Shortlisted" },
+    { value: "interview_requested", label: "Interview Sent" },
+    { value: "interview_accepted", label: "Interviewing" },
+    { value: "offered", label: "Offered" },
+    { value: "hired", label: "Hired" },
     { value: "rejected", label: "Rejected" },
   ];
 

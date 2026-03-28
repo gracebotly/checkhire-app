@@ -105,6 +105,11 @@ export function ApplicationCard({
           >
             {statusInfo.label}
           </span>
+          {status === "interview_requested" && (
+            <span className="inline-flex items-center rounded-md border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700">
+              Action needed
+            </span>
+          )}
           <span className="flex items-center gap-1 text-xs text-slate-600">
             <RemoteIcon className="h-3 w-3" />
             {remoteType === "full_remote"

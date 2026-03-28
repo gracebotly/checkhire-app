@@ -8,6 +8,7 @@ import {
   ChevronLeft,
   ChevronRight,
   FileText,
+  MessageSquare,
   Settings as SettingsIcon,
   User,
 } from "lucide-react";
@@ -30,6 +31,7 @@ type NavItem = {
 const NAV: NavItem[] = [
   { href: "/seeker/profile", label: "Profile", icon: User },
   { href: "/seeker/applications", label: "Applications", icon: Briefcase },
+  { href: "/seeker/messages", label: "Messages", icon: MessageSquare },
   { href: "/seeker/settings", label: "Settings", icon: SettingsIcon },
 ];
 

@@ -46,6 +46,7 @@ export type Employer = {
   industry: string | null;
   company_size: string | null;
   country: string;
+  slug: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -99,7 +100,7 @@ export type JobListingWithEmployer = JobListing & {
     | "website_domain"
     | "description"
     | "country"
-  >;
+  > & { slug: string | null };
 };
 
 export type ScreeningQuestion = {

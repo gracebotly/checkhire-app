@@ -164,17 +164,17 @@ export function LogoUploader({
         {uploading ? (
           <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
         ) : (
-          <ImageIcon className="h-8 w-8 text-gray-400" />
+          <ImageIcon className="h-8 w-8 text-slate-600" />
         )}
         <p className="text-sm text-gray-600">
           {uploading
             ? "Uploading..."
             : "Drag & drop your logo, or click to browse"}
         </p>
-        <p className="text-xs text-gray-400">
+        <p className="text-xs text-slate-600">
           PNG, JPG, SVG, or WebP. Max 2MB.
         </p>
-        <p className="text-xs text-gray-400">
+        <p className="text-xs text-slate-600">
           Best results: square or horizontal logo, at least 200px wide.
         </p>
       </div>

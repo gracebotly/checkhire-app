@@ -189,7 +189,7 @@ export function CompanyProfileTab() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* ── Company Logo ─── */}
       <div>
         <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-slate-600">

@@ -8,19 +8,15 @@ import {
   Mail,
   CheckCircle2,
   Loader2,
-  Copy,
-  Check,
   AlertCircle,
 } from "lucide-react";
 
-/** Must match server-side: src/lib/validation/email.ts */
 const EMAIL_RE =
   /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?(\.[a-zA-Z]{2,})+$/;
 
 const VALID_ROLES = [
-  { value: "viewer", label: "Viewer", description: "Read-only access" },
-  { value: "client", label: "Client", description: "Can create and edit client portals" },
-  { value: "admin", label: "Admin", description: "Full access including team and billing" },
+  { value: "poster", label: "Poster", description: "Can create and manage job listings" },
+  { value: "admin", label: "Admin", description: "Full access including team management" },
 ];
 
 interface InviteModalProps {
@@ -30,22 +26,17 @@ interface InviteModalProps {
 
 export function InviteModal({ onClose, onInvited }: InviteModalProps) {
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState("viewer");
+  const [role, setRole] = useState("poster");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [emailFieldError, setEmailFieldError] = useState<string | null>(null);
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
 
-  // Typo suggestion from server
-  const [typoSuggestion, setTypoSuggestion] = useState<string | null>(null);
-
   const [inviteResult, setInviteResult] = useState<{
     email: string;
     role: string;
     company_name: string;
-    invite_link: string;
   } | null>(null);
-  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const supabase = createClient();
@@ -63,7 +54,6 @@ export function InviteModal({ onClose, onInvited }: InviteModalProps) {
   const handleSubmit = async () => {
     const trimmed = email.trim().toLowerCase();
 
-    // Client-side format check
     if (!trimmed || !EMAIL_RE.test(trimmed)) {
       setEmailFieldError("Please enter a valid email address (e.g. name@company.com).");
       return;
@@ -76,10 +66,9 @@ export function InviteModal({ onClose, onInvited }: InviteModalProps) {
 
     setSending(true);
     setError(null);
-    setTypoSuggestion(null);
 
     try {
-      const res = await fetch("/api/settings/team", {
+      const res = await fetch("/api/employer/team", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: trimmed, role }),
@@ -91,25 +80,15 @@ export function InviteModal({ onClose, onInvited }: InviteModalProps) {
           email: data.invite.email,
           role: data.invite.role,
           company_name: data.invite.company_name,
-          invite_link: data.invite.invite_link,
         });
       } else {
-        // Handle typo suggestion from server
-        if (data.code === "TYPO_DETECTED" && data.suggestion) {
-          setTypoSuggestion(data.suggestion);
-          setError(data.message);
-          setSending(false);
-          return;
-        }
-
         const errorMessages: Record<string, string> = {
-          ALREADY_INVITED: "This person already has a pending invite.",
           ALREADY_MEMBER: "This person is already a team member.",
           INVALID_EMAIL: data.message || "Please enter a valid email address.",
           INVALID_ROLE: "Invalid role selected.",
           ADMIN_REQUIRED: "Only admins can invite team members.",
           CANNOT_INVITE_SELF: "You cannot invite yourself.",
-          SEAT_LIMIT_REACHED: data.message || "Team seat limit reached. Upgrade your plan.",
+          USER_NOT_FOUND: data.message || "No CheckHire account found for this email.",
         };
         setError(errorMessages[data.code] || data.message || "Failed to send invite.");
       }
@@ -120,27 +99,11 @@ export function InviteModal({ onClose, onInvited }: InviteModalProps) {
     setSending(false);
   };
 
-  const handleAcceptSuggestion = () => {
-    if (typoSuggestion) {
-      setEmail(typoSuggestion);
-      setTypoSuggestion(null);
-      setError(null);
-      setEmailFieldError(null);
-    }
-  };
-
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !sending && email.trim()) {
       e.preventDefault();
       handleSubmit();
     }
-  };
-
-  const copyLink = () => {
-    if (!inviteResult) return;
-    navigator.clipboard.writeText(inviteResult.invite_link);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
@@ -159,7 +122,7 @@ export function InviteModal({ onClose, onInvited }: InviteModalProps) {
         {/* Header */}
         <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
           <h2 className="text-base font-semibold text-slate-900">
-            {inviteResult ? "Invite Sent" : "Invite Team Member"}
+            {inviteResult ? "Member Added" : "Invite Team Member"}
           </h2>
           <button
             onClick={onClose}
@@ -183,32 +146,13 @@ export function InviteModal({ onClose, onInvited }: InviteModalProps) {
                   <CheckCircle2 className="h-6 w-6 text-emerald-500" />
                 </div>
                 <p className="text-sm text-slate-900">
-                  Invite sent to{" "}
-                  <span className="font-semibold">{inviteResult.email}</span>
-                </p>
-                <p className="mt-1 text-xs text-slate-600">
-                  They&apos;ll receive an email with a link to join{" "}
-                  {inviteResult.company_name} as{" "}
+                  <span className="font-semibold">{inviteResult.email}</span> has been
+                  added to {inviteResult.company_name} as{" "}
                   {VALID_ROLES.find((r) => r.value === inviteResult.role)?.label || inviteResult.role}.
                 </p>
-              </div>
-
-              <div className="mt-5 rounded-xl border border-gray-200 bg-gray-50 p-3">
-                <p className="mb-2 text-xs font-medium text-slate-600">
-                  Or share the invite link directly:
+                <p className="mt-1 text-xs text-slate-600">
+                  They can now access the employer dashboard and post listings.
                 </p>
-                <div className="flex items-center gap-2">
-                  <code className="flex-1 truncate rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs text-slate-900">
-                    {inviteResult.invite_link}
-                  </code>
-                  <button
-                    onClick={copyLink}
-                    className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-600 transition-colors duration-200 hover:bg-gray-50"
-                  >
-                    {copied ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
-                    {copied ? "Copied" : "Copy"}
-                  </button>
-                </div>
               </div>
             </motion.div>
           ) : (
@@ -233,16 +177,15 @@ export function InviteModal({ onClose, onInvited }: InviteModalProps) {
                       setEmail(e.target.value);
                       if (error) setError(null);
                       if (emailFieldError) setEmailFieldError(null);
-                      if (typoSuggestion) setTypoSuggestion(null);
                     }}
                     onBlur={() => setEmailFieldError(validateEmailField(email))}
                     onKeyDown={handleKeyDown}
-                    placeholder="teammate@agency.com"
+                    placeholder="teammate@company.com"
                     autoFocus
-                    className={`w-full rounded-lg border bg-white py-2.5 pl-10 pr-3 text-sm text-slate-900 shadow-sm outline-none transition-colors duration-200 placeholder:text-slate-600 focus:ring-2 focus:ring-blue-100 ${
-                      emailFieldError || (error && !typoSuggestion)
+                    className={`w-full rounded-lg border bg-white py-2.5 pl-10 pr-3 text-sm text-slate-900 shadow-sm outline-none transition-colors duration-200 placeholder:text-slate-600 focus:ring-2 focus:ring-brand/20 ${
+                      emailFieldError || error
                         ? "border-red-300 focus:border-red-400"
-                        : "border-gray-200 focus:border-blue-400"
+                        : "border-gray-200 focus:border-brand"
                     }`}
                   />
                 </div>
@@ -250,26 +193,6 @@ export function InviteModal({ onClose, onInvited }: InviteModalProps) {
                   <p className="mt-1 text-xs text-red-600">{emailFieldError}</p>
                 )}
               </div>
-
-              {/* Typo suggestion */}
-              {typoSuggestion && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3"
-                >
-                  <p className="text-sm text-amber-800">
-                    Did you mean{" "}
-                    <button
-                      onClick={handleAcceptSuggestion}
-                      className="cursor-pointer font-semibold text-amber-900 underline decoration-amber-400 underline-offset-2 transition-colors duration-200 hover:text-amber-700"
-                    >
-                      {typoSuggestion}
-                    </button>
-                    ?
-                  </p>
-                </motion.div>
-              )}
 
               {/* Role selection */}
               <div>
@@ -282,14 +205,14 @@ export function InviteModal({ onClose, onInvited }: InviteModalProps) {
                       key={r.value}
                       className={`flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 transition-colors duration-200 ${
                         role === r.value
-                          ? "border-blue-300 bg-blue-50"
+                          ? "border-brand bg-brand-muted"
                           : "border-gray-200 bg-white hover:bg-gray-50"
                       }`}
                     >
                       <div
                         className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 transition-colors duration-200 ${
                           role === r.value
-                            ? "border-blue-600 bg-blue-600"
+                            ? "border-brand bg-brand"
                             : "border-gray-300"
                         }`}
                       >
@@ -314,8 +237,8 @@ export function InviteModal({ onClose, onInvited }: InviteModalProps) {
                 </div>
               </div>
 
-              {/* General error (not typo) */}
-              {error && !typoSuggestion && (
+              {/* General error */}
+              {error && (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
@@ -334,7 +257,7 @@ export function InviteModal({ onClose, onInvited }: InviteModalProps) {
           {inviteResult ? (
             <button
               onClick={onInvited}
-              className="cursor-pointer rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-blue-700"
+              className="cursor-pointer rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-brand-hover"
             >
               Done
             </button>
@@ -349,10 +272,10 @@ export function InviteModal({ onClose, onInvited }: InviteModalProps) {
               <button
                 onClick={handleSubmit}
                 disabled={sending || !email.trim()}
-                className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {sending && <Loader2 className="h-4 w-4 animate-spin" />}
-                {sending ? "Sending..." : "Send Invite"}
+                {sending ? "Adding..." : "Add Member"}
               </button>
             </>
           )}

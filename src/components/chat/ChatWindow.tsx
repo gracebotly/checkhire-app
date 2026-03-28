@@ -31,6 +31,7 @@ export function ChatWindow({
   const { messages, isLoading, hasMore, error, sendMessage, loadMore } = useRealtimeChat({
     applicationId,
     currentUserId,
+    userType: isEmployer ? "employer" : "candidate",
   });
 
   const { isOtherTyping, notifyTyping } = useTypingIndicator({
@@ -99,7 +100,7 @@ export function ChatWindow({
           </div>
         ) : (
           <div className="py-3">
-            {messages.map((msg) => {
+            {messages.filter((msg) => !(msg.metadata && (msg.metadata as Record<string, unknown>).silent)).map((msg) => {
               if (msg.sender_type === "system" || msg.message_type !== "text") {
                 return <SystemMessageCard key={msg.id} message={msg} />;
               }

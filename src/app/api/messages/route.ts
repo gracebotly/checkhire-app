@@ -313,6 +313,16 @@ export const POST = withApiHandler(async function POST(req: Request) {
             senderLabel: companyName || "an employer",
             applicationId: application_id,
           });
+
+          // Tag the thread so we don't send another notification within the hour
+          await supabaseAdmin.from("messages").insert({
+            application_id,
+            sender_id: application.user_id,
+            sender_type: "system",
+            message_text: "",
+            message_type: "system",
+            metadata: { notification_type: "chat_message", silent: true },
+          }).then(() => {}).catch(() => {});
         }
       }
     } catch (err) {

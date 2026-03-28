@@ -18,6 +18,11 @@ const supabaseAdmin = createServiceClient(
  * Marks all unread messages in a conversation as read for the current user.
  * Only marks messages from the OTHER party (not your own messages).
  * Used when a user opens a chat thread.
+ *
+ * SECURITY AUDIT NOTE (2026-03-28): This endpoint verifies caller is either
+ * the candidate on the application or an employer on the listing before marking
+ * messages as read. Ownership check uses supabaseAdmin to bypass RLS for the
+ * verification queries, then scopes the update to the verified application_id.
  */
 export const POST = withApiHandler(async function POST(req: Request) {
   const supabase = await createClient();

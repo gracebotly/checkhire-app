@@ -129,28 +129,47 @@ export const GET = withApiHandler(async function GET(req: Request) {
     return NextResponse.json({ ok: true, threads: [] });
   }
 
-  // For each thread, get the latest message and unread count
+  // Batch: get latest message per thread in ONE query
+  const { data: allMessages } = await supabaseAdmin
+    .from("messages")
+    .select("application_id, message_text, sender_type, sender_id, created_at")
+    .in("application_id", threadAppIds)
+    .is("deleted_at", null)
+    .order("created_at", { ascending: false });
+
+  // Build maps: latest message per application, unread counts per application
+  const latestMessageMap = new Map<string, { message_text: string; sender_type: string; created_at: string }>();
+  const unreadCountMap = new Map<string, number>();
+
+  for (const msg of allMessages || []) {
+    // Track latest message per application (first one we see is newest due to DESC order)
+    if (!latestMessageMap.has(msg.application_id)) {
+      latestMessageMap.set(msg.application_id, {
+        message_text: msg.message_text,
+        sender_type: msg.sender_type,
+        created_at: msg.created_at,
+      });
+    }
+  }
+
+  // Batch: get unread counts in ONE query
+  const { data: unreadMessages } = await supabaseAdmin
+    .from("messages")
+    .select("application_id")
+    .in("application_id", threadAppIds)
+    .is("read_at", null)
+    .is("deleted_at", null)
+    .neq("sender_id", user.id);
+
+  for (const msg of unreadMessages || []) {
+    unreadCountMap.set(msg.application_id, (unreadCountMap.get(msg.application_id) || 0) + 1);
+  }
+
+  // Build thread objects
   const threads = await Promise.all(
     applications.map(async (app) => {
-      // Latest message
-      const { data: latestMessages } = await supabaseAdmin
-        .from("messages")
-        .select("message_text, sender_type, created_at")
-        .eq("application_id", app.id)
-        .is("deleted_at", null)
-        .order("created_at", { ascending: false })
-        .limit(1);
-
-      const latest = latestMessages?.[0] || null;
-
-      // Unread count (messages NOT from me, NOT read)
-      const { count: unreadCount } = await supabaseAdmin
-        .from("messages")
-        .select("id", { count: "exact", head: true })
-        .eq("application_id", app.id)
-        .is("read_at", null)
-        .is("deleted_at", null)
-        .neq("sender_id", user.id);
+      const latest = latestMessageMap.get(app.id) || null;
+      const unreadCount = unreadCountMap.get(app.id) || 0;
 
       // Resolve listing + employer (handle Supabase join shapes)
       const listing = Array.isArray(app.job_listings)
@@ -196,7 +215,7 @@ export const GET = withApiHandler(async function GET(req: Request) {
         last_message_text: latest?.message_text || null,
         last_message_at: latest?.created_at || null,
         last_message_sender_type: latest?.sender_type || null,
-        unread_count: unreadCount || 0,
+        unread_count: unreadCount,
       };
     })
   );

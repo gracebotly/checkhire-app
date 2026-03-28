@@ -66,15 +66,44 @@ export default function EmployerChatPage({
             current_user_id: user.id,
           });
         } else {
-          // Thread may not exist yet (no messages). Fetch application directly.
-          setCtx({
-            pseudonym: "Candidate",
-            disclosure_level: 1,
-            status: "applied",
-            listing_title: "",
-            company_name: "",
-            current_user_id: user.id,
-          });
+          // No thread yet (no messages exchanged). Fetch application context directly.
+          const { data: appRecord } = await supabase
+            .from("applications")
+            .select(`
+              pseudonym, disclosure_level, status,
+              job_listings ( title, slug, employers ( company_name, tier_level ) )
+            `)
+            .eq("id", applicationId)
+            .maybeSingle();
+
+          if (appRecord) {
+            const appListing = Array.isArray(appRecord.job_listings)
+              ? appRecord.job_listings[0]
+              : appRecord.job_listings;
+            const appEmployer = appListing?.employers
+              ? Array.isArray(appListing.employers) ? appListing.employers[0] : appListing.employers
+              : null;
+
+            setCtx({
+              pseudonym: appRecord.pseudonym || "Candidate",
+              first_name: undefined,
+              full_name: undefined,
+              disclosure_level: (appRecord.disclosure_level || 1) as 1 | 2 | 3,
+              status: (appRecord.status || "applied") as ApplicationStatus,
+              listing_title: appListing?.title || "",
+              company_name: appEmployer?.company_name || "",
+              current_user_id: user.id,
+            });
+          } else {
+            setCtx({
+              pseudonym: "Candidate",
+              disclosure_level: 1,
+              status: "applied",
+              listing_title: "",
+              company_name: "",
+              current_user_id: user.id,
+            });
+          }
         }
       } catch {
         setError("Network error.");
@@ -151,6 +180,8 @@ export default function EmployerChatPage({
         currentUserId={ctx.current_user_id}
         otherPartyName={displayName}
         applicationStatus={ctx.status}
+        disclosureLevel={ctx.disclosure_level}
+        isEmployer={true}
       />
     </div>
   );

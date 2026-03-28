@@ -9,9 +9,8 @@ const supabaseAdmin = createServiceClient(
  * Checks whether an email notification was already sent for this
  * application thread within the last hour. Prevents notification spam.
  *
- * Uses a simple approach: check the messages table for a metadata flag.
- * We piggyback on the messages table rather than creating a separate
- * notifications table — keeps the schema lean for MVP.
+ * Uses a simple approach: check the messages table for a system message
+ * tagged with the matching notification_type in metadata.
  *
  * Returns true if a notification can be sent (no recent notification).
  * Returns false if a notification was sent within the last hour.
@@ -23,21 +22,17 @@ export async function canSendNotification(
   try {
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
 
-    // Check if we recently sent a notification for this thread
-    // We use a lightweight approach: query messages with metadata containing
-    // the notification flag. System messages created by notifications will
-    // have metadata.notification_sent = true.
-    const { data: recentNotifications } = await supabaseAdmin
+    // Check for a recent notification of the SAME type (tagged with metadata)
+    const { data: taggedNotifications } = await supabaseAdmin
       .from("messages")
       .select("id")
       .eq("application_id", applicationId)
       .eq("sender_type", "system")
       .gte("created_at", oneHourAgo)
+      .contains("metadata", { notification_type: notificationType })
       .limit(1);
 
-    // If there's any system message in the last hour, skip the notification
-    // This is intentionally broad — we don't want to spam for any reason
-    if (recentNotifications && recentNotifications.length > 0) {
+    if (taggedNotifications && taggedNotifications.length > 0) {
       return false;
     }
 

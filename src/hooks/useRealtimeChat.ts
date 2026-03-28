@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 type UseRealtimeChatOptions = {
   applicationId: string;
   currentUserId: string;
+  userType: "employer" | "candidate";
 };
 
 type UseRealtimeChatReturn = {
@@ -25,6 +26,7 @@ type UseRealtimeChatReturn = {
 export function useRealtimeChat({
   applicationId,
   currentUserId,
+  userType,
 }: UseRealtimeChatOptions): UseRealtimeChatReturn {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -110,7 +112,7 @@ export function useRealtimeChat({
         id: optimisticId,
         application_id: applicationId,
         sender_id: currentUserId,
-        sender_type: "candidate",
+        sender_type: userType,
         message_text: text,
         message_type: "text",
         metadata: null,

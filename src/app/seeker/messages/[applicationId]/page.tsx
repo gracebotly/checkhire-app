@@ -107,6 +107,7 @@ export default function SeekerChatPage({
         currentUserId={ctx.current_user_id}
         otherPartyName={ctx.company_name}
         applicationStatus={ctx.status}
+        isEmployer={false}
       />
     </div>
   );

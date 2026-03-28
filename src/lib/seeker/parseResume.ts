@@ -87,7 +87,7 @@ async function extractPdfText(pdfBuffer: Buffer): Promise<string> {
   const uint8 = new Uint8Array(pdfBuffer);
   const doc = await getDocumentProxy(uint8);
   const { text } = await extractText(doc);
-  return text;
+  return Array.isArray(text) ? text.join("\n") : String(text);
 }
 
 /**

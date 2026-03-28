@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import { sendInterviewNotification } from "@/lib/email/interviewNotification";
+import { activateMaskedPair } from "@/lib/email/maskedEmail";
 
 export const runtime = "nodejs";
 
@@ -97,6 +98,26 @@ export const POST = withApiHandler(async function POST(
     { action: "accepted", disclosure_level: 2 }
   );
 
+  // Activate masked email relay for this application
+  const { data: listingForPair } = await supabaseAdmin
+    .from("job_listings")
+    .select("employer_id")
+    .eq("id", application.job_listing_id)
+    .maybeSingle();
+
+  let maskedPair = null;
+  if (listingForPair) {
+    maskedPair = await activateMaskedPair(id, listingForPair.employer_id, user.id);
+    if (maskedPair) {
+      await createSystemMessage(
+        id,
+        `Masked email relay activated. The employer can now email you via ${maskedPair.applicant_masked_email} — your real email stays hidden.`,
+        "system",
+        { masked_email_activated: true }
+      );
+    }
+  }
+
   // Notify employer that candidate accepted (non-blocking)
   (async () => {
     try {
@@ -143,5 +164,11 @@ export const POST = withApiHandler(async function POST(
     ok: true,
     status: "interview_accepted",
     disclosure_level: 2,
+    masked_email: maskedPair
+      ? {
+          applicant_masked: maskedPair.applicant_masked_email,
+          employer_masked: maskedPair.employer_masked_email,
+        }
+      : null,
   });
 });

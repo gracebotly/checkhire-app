@@ -14,9 +14,10 @@ import {
   Video,
   XCircle,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { InterviewRequestButton } from "./InterviewRequestButton";
 import { VideoPlaybackCard } from "./VideoPlaybackCard";
+import { MaskedEmailDisplay } from "./MaskedEmailDisplay";
 import { InterviewScheduleForm } from "@/components/chat/InterviewScheduleForm";
 import { DisclosureProgressBar } from "./DisclosureProgressBar";
 import { ConfirmInterviewDoneButton } from "@/components/chat/ConfirmInterviewDoneButton";
@@ -26,6 +27,26 @@ import type { CandidateView } from "@/types/database";
 interface CandidateCardProps {
   candidate: CandidateView;
   onStatusChange: (applicationId: string, newStatus: string) => void;
+}
+
+function MaskedEmailDisplayLoader({ applicationId }: { applicationId: string }) {
+  const [maskedEmail, setMaskedEmail] = useState<string | null>(null);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    fetch(`/api/employer/applications/${applicationId}/masked-email`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.ok && data.applicant_masked_email) {
+          setMaskedEmail(data.applicant_masked_email);
+        }
+        setLoaded(true);
+      })
+      .catch(() => setLoaded(true));
+  }, [applicationId]);
+
+  if (!loaded || !maskedEmail) return null;
+  return <MaskedEmailDisplay applicantMaskedEmail={maskedEmail} />;
 }
 
 export function CandidateCard({ candidate, onStatusChange }: CandidateCardProps) {
@@ -221,6 +242,11 @@ export function CandidateCard({ candidate, onStatusChange }: CandidateCardProps)
           )}
         </div>
       </div>
+
+      {/* Masked email — shown at Stage 2+ */}
+      {candidate.disclosure_level >= 2 && candidate.application_id && (
+        <MaskedEmailDisplayLoader applicationId={candidate.application_id} />
+      )}
 
       {/* Video responses */}
       {candidate.video_responses && candidate.video_responses.length > 0 && (

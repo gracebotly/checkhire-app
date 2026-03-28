@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getEmployerForUser } from "@/lib/employer/getEmployerForUser";
 import { withApiHandler } from "@/lib/api/withApiHandler";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
+import { deactivateAllPairsForListing } from "@/lib/email/maskedEmail";
 
 export const runtime = "nodejs";
 
@@ -133,11 +134,15 @@ export const POST = withApiHandler(async function POST(
     );
   }
 
+  // Deactivate all masked email pairs for this listing (non-blocking)
+  const deactivatedCount = await deactivateAllPairsForListing(id).catch(() => 0);
+
   return NextResponse.json({
     ok: true,
     status: newStatus,
     close_reason: finalReason,
     close_reason_label: CLOSE_REASON_LABELS[closeReason] || closeReason,
+    masked_pairs_deactivated: deactivatedCount,
   });
 });
 

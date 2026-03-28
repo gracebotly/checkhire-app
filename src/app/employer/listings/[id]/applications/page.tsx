@@ -1,11 +1,22 @@
 "use client";
 
 import { CandidateCard } from "@/components/employer/CandidateCard";
+import { KanbanBoard } from "@/components/employer/KanbanBoard";
+import { PipelineViewToggle } from "@/components/employer/PipelineViewToggle";
+import { BulkActionBar } from "@/components/employer/BulkActionBar";
+import { RejectionTemplateModal } from "@/components/employer/RejectionTemplateModal";
 import { PageHeader } from "@/components/layout/page-header";
-import { motion } from "framer-motion";
-import { ArrowLeft, Loader2, Users } from "lucide-react";
+import { useLocalStorageBoolean } from "@/lib/use-local-storage";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  ArrowLeft,
+  CheckSquare,
+  Loader2,
+  SortAsc,
+  Users,
+} from "lucide-react";
 import Link from "next/link";
-import { use, useEffect, useState } from "react";
+import { use, useCallback, useEffect, useState } from "react";
 import type { CandidateView } from "@/types/database";
 
 export default function EmployerApplicationsPage({
@@ -17,7 +28,13 @@ export default function EmployerApplicationsPage({
   const [candidates, setCandidates] = useState<CandidateView[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("newest");
   const [error, setError] = useState<string | null>(null);
+  const [isKanban, setIsKanban] = useLocalStorageBoolean("checkhire_pipeline_view_kanban", true);
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [bulkLoading, setBulkLoading] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -25,10 +42,9 @@ export default function EmployerApplicationsPage({
     async function loadCandidates() {
       setError(null);
       try {
-        const url = `/api/employer/applications?listing_id=${listingId}${
-          statusFilter !== "all" ? `&status=${statusFilter}` : ""
-        }`;
-        const res = await fetch(url);
+        const params = new URLSearchParams({ listing_id: listingId, sort: sortBy });
+        if (statusFilter !== "all") params.set("status", statusFilter);
+        const res = await fetch(`/api/employer/applications?${params}`);
         const data = await res.json();
         if (cancelled) return;
 
@@ -45,13 +61,11 @@ export default function EmployerApplicationsPage({
     }
 
     loadCandidates();
-    return () => {
-      cancelled = true;
-    };
-  }, [listingId, statusFilter]);
+    return () => { cancelled = true; };
+  }, [listingId, statusFilter, sortBy]);
 
-  const handleStatusChange = async (applicationId: string, newStatus: string) => {
-    try {
+  const handleStatusChange = useCallback(
+    async (applicationId: string, newStatus: string) => {
       const res = await fetch(`/api/employer/applications/${applicationId}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -67,10 +81,86 @@ export default function EmployerApplicationsPage({
           )
         );
       }
-    } catch {
-      /* ignore */
-    }
-  };
+    },
+    []
+  );
+
+  const handleSelectToggle = useCallback((id: string, selected: boolean) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (selected) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  }, []);
+
+  const handleBulkShortlist = useCallback(async () => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    try {
+      const res = await fetch("/api/employer/applications/bulk-status", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          application_ids: Array.from(selectedIds),
+          status: "shortlisted",
+        }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setCandidates((prev) =>
+          prev.map((c) =>
+            selectedIds.has(c.application_id)
+              ? { ...c, status: "shortlisted" as const }
+              : c
+          )
+        );
+        setSelectedIds(new Set());
+        setSelectionMode(false);
+      }
+    } catch {}
+    setBulkLoading(false);
+  }, [selectedIds]);
+
+  const handleBulkReject = useCallback(
+    async (message: string) => {
+      if (selectedIds.size === 0) return;
+      setBulkLoading(true);
+      setShowRejectModal(false);
+      try {
+        const res = await fetch("/api/employer/applications/bulk-status", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            application_ids: Array.from(selectedIds),
+            status: "rejected",
+            rejection_message: message,
+          }),
+        });
+        const data = await res.json();
+        if (data.ok) {
+          setCandidates((prev) =>
+            prev.map((c) =>
+              selectedIds.has(c.application_id)
+                ? { ...c, status: "rejected" as const }
+                : c
+          )
+          );
+          setSelectedIds(new Set());
+          setSelectionMode(false);
+        }
+      } catch {}
+      setBulkLoading(false);
+    },
+    [selectedIds]
+  );
+
+  const handleViewChange = useCallback(
+    (view: "kanban" | "list") => {
+      setIsKanban(view === "kanban");
+    },
+    [setIsKanban]
+  );
 
   const FILTER_OPTIONS = [
     { value: "all", label: "All" },
@@ -84,13 +174,19 @@ export default function EmployerApplicationsPage({
     { value: "rejected", label: "Rejected" },
   ];
 
+  const SORT_OPTIONS = [
+    { value: "newest", label: "Newest" },
+    { value: "oldest", label: "Oldest" },
+    { value: "score_desc", label: "Highest Score" },
+  ];
+
   return (
     <div className="min-h-screen">
       <PageHeader
         title="Applications"
         subtitle={`${candidates.length} candidate${candidates.length !== 1 ? "s" : ""}`}
       />
-      <div className="mx-auto max-w-6xl px-6 py-6">
+      <div className="mx-auto max-w-7xl px-6 py-6">
         <Link
           href="/employer/listings"
           className="mb-4 inline-flex cursor-pointer items-center gap-1.5 text-sm font-medium text-slate-600 transition-colors duration-200 hover:text-slate-900"
@@ -99,22 +195,67 @@ export default function EmployerApplicationsPage({
           Back to listings
         </Link>
 
-        <div className="mt-2 flex items-center gap-2">
-          {FILTER_OPTIONS.map((opt) => (
+        {/* Toolbar */}
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <PipelineViewToggle
+              view={isKanban ? "kanban" : "list"}
+              onViewChange={handleViewChange}
+            />
             <button
-              key={opt.value}
-              onClick={() => { setLoading(true); setStatusFilter(opt.value); }}
-              className={`cursor-pointer rounded-lg px-3 py-1.5 text-xs font-medium transition-colors duration-200 ${
-                statusFilter === opt.value
-                  ? "bg-brand text-white"
-                  : "bg-gray-50 text-slate-600 hover:bg-gray-100"
+              type="button"
+              onClick={() => {
+                setSelectionMode(!selectionMode);
+                if (selectionMode) setSelectedIds(new Set());
+              }}
+              className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors duration-200 ${
+                selectionMode
+                  ? "border-brand bg-brand-muted text-brand"
+                  : "border-gray-200 bg-white text-slate-600 hover:bg-gray-50"
               }`}
             >
-              {opt.label}
+              <CheckSquare className="h-3.5 w-3.5" />
+              {selectionMode ? "Cancel Select" : "Select"}
             </button>
-          ))}
+          </div>
+
+          <div className="flex items-center gap-2">
+            {/* Sort dropdown — shown in both views */}
+            <div className="flex items-center gap-1.5">
+              <SortAsc className="h-3.5 w-3.5 text-slate-600" />
+              <select
+                value={sortBy}
+                onChange={(e) => { setLoading(true); setSortBy(e.target.value); }}
+                className="cursor-pointer rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-xs font-medium text-slate-600 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20"
+              >
+                {SORT_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
         </div>
 
+        {/* Status filter tabs — shown in list view only */}
+        {!isKanban && (
+          <div className="mt-3 flex items-center gap-2 overflow-x-auto">
+            {FILTER_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => { setLoading(true); setStatusFilter(opt.value); }}
+                className={`shrink-0 cursor-pointer rounded-lg px-3 py-1.5 text-xs font-medium transition-colors duration-200 ${
+                  statusFilter === opt.value
+                    ? "bg-brand text-white"
+                    : "bg-gray-50 text-slate-600 hover:bg-gray-100"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Content */}
         {loading ? (
           <div className="flex justify-center py-20">
             <Loader2 className="h-6 w-6 animate-spin text-slate-600" />
@@ -135,6 +276,16 @@ export default function EmployerApplicationsPage({
               Candidates who apply will appear here with pseudonymous profiles.
             </p>
           </div>
+        ) : isKanban ? (
+          <div className="mt-4">
+            <KanbanBoard
+              candidates={candidates}
+              onStatusChange={handleStatusChange}
+              selectedIds={selectedIds}
+              onSelectToggle={handleSelectToggle}
+              selectionMode={selectionMode}
+            />
+          </div>
         ) : (
           <div className="mt-4 space-y-3">
             {candidates.map((candidate, index) => (
@@ -143,16 +294,49 @@ export default function EmployerApplicationsPage({
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.25, ease: "easeOut", delay: index * 0.04 }}
+                className="flex items-start gap-3"
               >
-                <CandidateCard
-                  candidate={candidate}
-                  onStatusChange={handleStatusChange}
-                />
+                {selectionMode && (
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.has(candidate.application_id)}
+                    onChange={(e) => handleSelectToggle(candidate.application_id, e.target.checked)}
+                    className="mt-6 h-4 w-4 cursor-pointer rounded border-gray-200 text-brand focus:ring-brand/20"
+                  />
+                )}
+                <div className="min-w-0 flex-1">
+                  <CandidateCard
+                    candidate={candidate}
+                    onStatusChange={handleStatusChange}
+                  />
+                </div>
               </motion.div>
             ))}
           </div>
         )}
       </div>
+
+      {/* Bulk action bar */}
+      <AnimatePresence>
+        {selectionMode && selectedIds.size > 0 && (
+          <BulkActionBar
+            selectedCount={selectedIds.size}
+            onShortlistSelected={handleBulkShortlist}
+            onRejectSelected={() => setShowRejectModal(true)}
+            onClearSelection={() => setSelectedIds(new Set())}
+            loading={bulkLoading}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Rejection template modal */}
+      {showRejectModal && (
+        <RejectionTemplateModal
+          selectedCount={selectedIds.size}
+          onConfirm={handleBulkReject}
+          onClose={() => setShowRejectModal(false)}
+        />
+      )}
     </div>
   );
 }

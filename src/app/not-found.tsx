@@ -6,9 +6,9 @@ import { Compass } from "lucide-react";
 
 export default function NotFound() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[hsl(var(--main-bg))] px-6">
+    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-6">
       <div className="relative mx-auto max-w-lg text-center">
-        {/* Large decorative 404 behind content */}
+        {/* Large decorative 404 */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -21,30 +21,29 @@ export default function NotFound() {
           </span>
         </motion.div>
 
-        {/* Content */}
         <div className="relative z-10">
           <motion.div
-            initial={{ opacity: 0, y: 12 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.15 }}
-            className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50"
+            transition={{ duration: 0.25, delay: 0.1, ease: "easeOut" }}
+            className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-muted"
           >
-            <Compass className="h-8 w-8 text-blue-600" />
+            <Compass className="h-8 w-8 text-brand" />
           </motion.div>
 
           <motion.h1
-            initial={{ opacity: 0, y: 12 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.25 }}
-            className="text-2xl font-bold text-slate-900"
+            transition={{ duration: 0.25, delay: 0.15, ease: "easeOut" }}
+            className="font-display text-2xl font-bold text-slate-900"
           >
             Page not found
           </motion.h1>
 
           <motion.p
-            initial={{ opacity: 0, y: 12 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.35 }}
+            transition={{ duration: 0.25, delay: 0.2, ease: "easeOut" }}
             className="mt-3 text-sm text-slate-600"
           >
             The page you&apos;re looking for doesn&apos;t exist or has been
@@ -52,22 +51,22 @@ export default function NotFound() {
           </motion.p>
 
           <motion.div
-            initial={{ opacity: 0, y: 12 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.45 }}
+            transition={{ duration: 0.25, delay: 0.25, ease: "easeOut" }}
             className="mt-8 flex items-center justify-center gap-3"
           >
             <Link
-              href="/login"
-              className="cursor-pointer rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              href="/jobs"
+              className="cursor-pointer rounded-lg bg-brand px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-brand-hover"
             >
-              Sign in
+              Browse Jobs
             </Link>
             <Link
               href="/"
-              className="cursor-pointer rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-semibold text-slate-900 shadow-sm transition-colors duration-200 hover:bg-gray-50"
+              className="cursor-pointer rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-900 shadow-sm transition-colors duration-200 hover:bg-gray-50"
             >
-              Go home
+              Go Home
             </Link>
           </motion.div>
         </div>

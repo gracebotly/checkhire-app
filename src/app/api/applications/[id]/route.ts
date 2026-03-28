@@ -56,7 +56,8 @@ export const GET = withApiHandler(async function GET(
     );
   }
 
-  const listing = application.job_listings as { id: string } | null;
+  const rawListing = application.job_listings;
+  const listing = (Array.isArray(rawListing) ? rawListing[0] : rawListing) as { id: string } | null;
   let questions = null;
 
   if (listing) {

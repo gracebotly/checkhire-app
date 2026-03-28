@@ -118,7 +118,8 @@ export const GET = withApiHandler(async function GET(req: Request) {
   // Build disclosure-gated views
   const candidates = applications.map((app: Application) => {
     const seeker = seekerMap.get(app.user_id);
-    const fullName = nameMap.get(app.user_id) || null;
+    const rawName = nameMap.get(app.user_id);
+    const fullName: string | null = typeof rawName === "string" ? rawName : null;
 
     if (!seeker) {
       return {

@@ -315,14 +315,18 @@ export const POST = withApiHandler(async function POST(req: Request) {
           });
 
           // Tag the thread so we don't send another notification within the hour
-          await supabaseAdmin.from("messages").insert({
-            application_id,
-            sender_id: application.user_id,
-            sender_type: "system",
-            message_text: "",
-            message_type: "system",
-            metadata: { notification_type: "chat_message", silent: true },
-          }).then(() => {}).catch(() => {});
+          try {
+            await supabaseAdmin.from("messages").insert({
+              application_id,
+              sender_id: application.user_id,
+              sender_type: "system",
+              message_text: "",
+              message_type: "system",
+              metadata: { notification_type: "chat_message", silent: true },
+            });
+          } catch {
+            // Silent — tracking message failure should never block the notification
+          }
         }
       }
     } catch (err) {

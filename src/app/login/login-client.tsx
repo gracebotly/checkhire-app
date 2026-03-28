@@ -159,6 +159,7 @@ export default function AuthShell() {
 
   // Sign-up state
   const [suName, setSuName] = useState("");
+  const [suCompanyName, setSuCompanyName] = useState("");
   const [suEmail, setSuEmail] = useState("");
   const [suPassword, setSuPassword] = useState("");
   const [suError, setSuError] = useState<string | null>(null);
@@ -225,6 +226,9 @@ export default function AuthShell() {
     const params = new URLSearchParams({ intent });
     if (intent === "signup") {
       params.set("user_type", userType);
+      if (userType === "employer" && suCompanyName.trim()) {
+        params.set("company_name", suCompanyName.trim());
+      }
     }
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
@@ -299,6 +303,7 @@ export default function AuthShell() {
           email: suEmail,
           password: suPassword,
           user_type: userType,
+          ...(userType === "employer" ? { company_name: suCompanyName } : {}),
         }),
       });
       const body = await res.json();
@@ -716,6 +721,22 @@ export default function AuthShell() {
                   className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
                 />
               </div>
+
+              {/* Company name — employer only */}
+              {userType === "employer" && (
+                <div className="space-y-1">
+                  <label className="block text-xs font-medium text-gray-600">Company name</label>
+                  <input
+                    type="text"
+                    autoComplete="organization"
+                    required
+                    value={suCompanyName}
+                    onChange={(e) => setSuCompanyName(e.target.value)}
+                    placeholder="Acme Corp"
+                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                  />
+                </div>
+              )}
               <div className="space-y-1">
                 <label className="block text-xs font-medium text-gray-600">Email</label>
                 <input

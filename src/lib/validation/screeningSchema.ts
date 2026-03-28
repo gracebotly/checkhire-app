@@ -28,6 +28,11 @@ export const screeningQuestionSchema = z.object({
   options: z.array(z.string()).nullable(),
   required: z.boolean().default(true),
   sort_order: z.number().int().min(0),
+  is_knockout: z.boolean().default(false),
+  knockout_answer: z.string().nullable().default(null),
+  point_value: z.number().int().min(0).max(100).default(0),
+  min_length: z.number().int().min(10).max(5000).nullable().default(null),
+  question_category: z.string().nullable().default(null),
 });
 
 export type ScreeningQuestionInput = z.infer<typeof screeningQuestionSchema>;

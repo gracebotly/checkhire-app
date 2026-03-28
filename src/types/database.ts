@@ -78,6 +78,7 @@ export type JobListing = {
   close_reason: string | null;
   escrow_status: EscrowStatus;
   requires_video_application: boolean;
+  video_questions: VideoQuestion[];
   requires_screening_quiz: boolean;
   max_applications: number;
   current_application_count: number;
@@ -111,6 +112,11 @@ export type ScreeningQuestion = {
   options: string[] | null;
   required: boolean;
   sort_order: number;
+  is_knockout: boolean;
+  knockout_answer: string | null;
+  point_value: number;
+  min_length: number | null;
+  question_category: string | null;
   created_at: string;
 };
 
@@ -124,7 +130,8 @@ export type ApplicationStatus =
   | "interview_accepted"
   | "offered"
   | "rejected"
-  | "hired";
+  | "hired"
+  | "withdrawn";
 
 export type DisclosureLevel = 1 | 2 | 3;
 
@@ -171,8 +178,11 @@ export type Application = {
   disclosure_level: DisclosureLevel;
   status: ApplicationStatus;
   screening_responses: Record<string, unknown> | null;
+  video_responses: VideoResponse[];
+  screening_score: number | null;
   disclosed_at_stage2: string | null;
   disclosed_at_stage3: string | null;
+  withdrawn_at: string | null;
   created_at: string;
 };
 
@@ -217,6 +227,8 @@ export type CandidateView = {
   parsed_certifications: string[];
   parsed_summary: string | null;
   screening_responses: Record<string, unknown> | null;
+  video_responses: VideoResponse[];
+  screening_score: number | null;
 
   // Stage 2+ only
   first_name?: string;
@@ -333,4 +345,84 @@ export type ChatThread = {
   last_message_at: string | null;
   last_message_sender_type: MessageSenderType | null;
   unread_count: number;
+};
+
+
+// ─── Slice 5: Video, Masked Email, Screening Enhancements ───
+
+export type VideoQuestion = {
+  prompt: string;
+  time_limit_seconds: number;
+  max_retakes: number;
+};
+
+export type VideoResponse = {
+  question_index: number;
+  video_url: string;
+  recorded_at: string;
+};
+
+export type MaskedEmailPairStatus = "active" | "deactivated";
+
+export type MaskedEmailPair = {
+  id: string;
+  application_id: string;
+  employer_id: string;
+  applicant_user_id: string;
+  employer_masked_email: string;
+  applicant_masked_email: string;
+  status: MaskedEmailPairStatus;
+  activated_at: string;
+  deactivated_at: string | null;
+  created_at: string;
+};
+
+export type CommunicationDirection =
+  | "employer_to_applicant"
+  | "applicant_to_employer";
+
+export type CommunicationLog = {
+  id: string;
+  masked_email_pair_id: string | null;
+  communication_type: "email" | "call" | "sms";
+  direction: CommunicationDirection;
+  subject_snippet: string | null;
+  timestamp: string;
+  created_at: string;
+};
+
+export type RejectionTemplate = {
+  id: string;
+  employer_id: string | null;
+  name: string;
+  message_text: string;
+  is_default: boolean;
+  created_at: string;
+};
+
+export type QuestionTemplateCategory =
+  | "remote_readiness"
+  | "sales"
+  | "technical"
+  | "customer_service"
+  | "general";
+
+export type QuestionTemplateEntry = {
+  question_text: string;
+  question_type: "multiple_choice" | "short_answer" | "yes_no" | "numerical";
+  options: string[] | null;
+  is_knockout: boolean;
+  knockout_answer: string | null;
+  point_value: number;
+  min_length?: number;
+};
+
+export type QuestionTemplate = {
+  id: string;
+  employer_id: string | null;
+  category: QuestionTemplateCategory;
+  name: string;
+  questions: QuestionTemplateEntry[];
+  is_platform_default: boolean;
+  created_at: string;
 };

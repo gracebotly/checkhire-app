@@ -282,6 +282,14 @@ export default function EmployerListingsPage() {
                         </button>
                       )}
 
+                      {/* Applications */}
+                      <Link
+                        href={`/employer/listings/${listing.id}/applications`}
+                        className="cursor-pointer text-xs font-medium text-slate-600 transition-colors duration-200 hover:text-slate-900"
+                      >
+                        Applications ({listing.current_application_count})
+                      </Link>
+
                       {/* View */}
                       <Link
                         href={`/jobs/${listing.slug}`}

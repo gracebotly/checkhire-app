@@ -219,12 +219,20 @@ export default function EmployerDashboardPage() {
                       <DaysRemaining expiresAt={listing.expires_at} />
                     </div>
                   </div>
-                  <Link
-                    href={`/employer/listings`}
-                    className="cursor-pointer text-xs font-medium text-brand transition-colors duration-200 hover:text-brand-hover"
-                  >
-                    Manage
-                  </Link>
+                  <div className="flex items-center gap-3">
+                    <Link
+                      href={`/employer/listings/${listing.id}/applications`}
+                      className="cursor-pointer text-xs font-medium text-slate-600 transition-colors duration-200 hover:text-slate-900"
+                    >
+                      {listing.current_application_count} apps
+                    </Link>
+                    <Link
+                      href="/employer/listings"
+                      className="cursor-pointer text-xs font-medium text-brand transition-colors duration-200 hover:text-brand-hover"
+                    >
+                      Manage
+                    </Link>
+                  </div>
                 </motion.div>
               ))}
             </div>

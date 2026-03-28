@@ -54,10 +54,10 @@ export function EmployerSidebar({
         className={cn(
           "mx-1 my-1 flex flex-col items-center gap-1 rounded-lg px-1.5 py-2 outline-none",
           "focus-visible:ring-2 focus-visible:ring-white/40",
-          active ? "bg-blue-500 text-white" : "text-gray-400 hover:bg-white/5"
+          active ? "bg-blue-500 text-white" : "text-slate-600 hover:bg-white/5"
         )}
       >
-        <Icon size={22} className={cn(active ? "text-white" : "text-gray-300")} />
+        <Icon size={22} className={cn(active ? "text-white" : "text-slate-600")} />
         {!collapsed && <span className="text-[11px] font-medium leading-4 text-center">{label}</span>}
       </Link>
     )
@@ -100,7 +100,7 @@ export function EmployerSidebar({
             )}
             <button
               onClick={() => setCollapsed(!collapsed)}
-              className="ml-1 flex h-7 w-7 items-center justify-center rounded-md border border-white/15 bg-white/5 text-white hover:bg-white/10"
+              className="ml-1 flex h-7 w-7 cursor-pointer items-center justify-center rounded-md border border-white/15 bg-white/5 text-white transition-colors duration-200 hover:bg-white/10"
               aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
               title={collapsed ? "Expand" : "Collapse"}
             >
@@ -122,13 +122,13 @@ export function EmployerSidebar({
         <div className="border-t border-white/10 p-2">
           <Popover.Root>
             <Popover.Trigger
-              className="w-full rounded-md text-center outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+              className="w-full cursor-pointer rounded-md text-center outline-none focus-visible:ring-2 focus-visible:ring-white/40"
               aria-label="Open account menu"
             >
               <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-full bg-gray-600">
-                <User size={14} className="text-gray-300" />
+                <User size={14} className="text-slate-200" />
               </div>
-              {!collapsed && <div className="mt-1 truncate text-[11px] font-medium leading-tight text-gray-400">{companyName || "Account"}</div>}
+              {!collapsed && <div className="mt-1 truncate text-[11px] font-medium leading-tight text-slate-200">{companyName || "Account"}</div>}
             </Popover.Trigger>
             <Popover.Portal>
               <Popover.Content side="right" align="end" sideOffset={12} className="z-50 outline-none">

@@ -164,20 +164,19 @@ export function ApplyButton({
         </p>
       </div>
 
-      {showModal && (
-        <ApplyModal
-          listingId={listingId}
-          listingTitle={listingTitle}
-          requiresScreeningQuiz={requiresScreeningQuiz}
-          screeningQuestions={screeningQuestions}
-          onClose={() => setShowModal(false)}
-          onSuccess={(pseudonym) => {
-            setShowModal(false);
-            setAlreadyApplied(true);
-            setAppliedPseudonym(pseudonym);
-          }}
-        />
-      )}
+      <ApplyModal
+        listingId={listingId}
+        listingTitle={listingTitle}
+        requiresScreeningQuiz={requiresScreeningQuiz}
+        screeningQuestions={screeningQuestions}
+        open={showModal}
+        onOpenChange={setShowModal}
+        onSuccess={(pseudonym) => {
+          setShowModal(false);
+          setAlreadyApplied(true);
+          setAppliedPseudonym(pseudonym);
+        }}
+      />
     </>
   );
 }

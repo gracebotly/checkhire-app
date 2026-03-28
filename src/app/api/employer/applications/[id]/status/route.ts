@@ -2,6 +2,7 @@ import { withApiHandler } from "@/lib/api/withApiHandler";
 import { getEmployerForUser } from "@/lib/employer/getEmployerForUser";
 import { logCandidateAccess } from "@/lib/api/auditLog";
 import { checkCandidateViewRateLimit } from "@/lib/api/rateLimitCandidateViews";
+import { createSystemMessage } from "@/lib/chat/systemMessage";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 
@@ -12,13 +13,27 @@ const supabaseAdmin = createServiceClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+/**
+ * Employer-allowed status transitions.
+ * Note: interview_accepted is NOT here — only the CANDIDATE can set that.
+ */
 const VALID_TRANSITIONS: Record<string, string[]> = {
   applied: ["reviewed", "shortlisted", "rejected"],
   reviewed: ["shortlisted", "interview_requested", "rejected"],
   shortlisted: ["interview_requested", "rejected"],
-  interview_requested: ["interview_accepted", "rejected"],
+  interview_requested: ["rejected"], // employer can only reject; candidate accepts/declines
   interview_accepted: ["offered", "rejected"],
   offered: ["hired", "rejected"],
+};
+
+const STATUS_SYSTEM_MESSAGES: Record<string, string> = {
+  reviewed: "Application has been reviewed by the employer.",
+  shortlisted: "You've been shortlisted! The employer is interested in your profile.",
+  interview_requested:
+    "The employer would like to schedule an interview with you. Please accept or decline.",
+  rejected: "The employer has decided not to move forward with your application.",
+  offered: "Congratulations! The employer has extended an offer.",
+  hired: "You've been hired! Welcome aboard.",
 };
 
 /**
@@ -27,7 +42,13 @@ const VALID_TRANSITIONS: Record<string, string[]> = {
  * Body: { status: string }
  *
  * Updates application status. Validates the transition is allowed.
+ * Creates a system message in the chat thread.
  * Rate limited and audit logged.
+ *
+ * IMPORTANT: This route does NOT advance disclosure_level.
+ * Disclosure only advances when the CANDIDATE takes action:
+ * - Accept interview → disclosure_level 2 (via /api/applications/[id]/accept-interview)
+ * - Confirm interview done → disclosure_level 3 (via /api/applications/[id]/confirm-interview-done)
  */
 export const PATCH = withApiHandler(async function PATCH(
   req: Request,
@@ -59,7 +80,7 @@ export const PATCH = withApiHandler(async function PATCH(
   // Fetch application and verify ownership
   const { data: application } = await supabaseAdmin
     .from("applications")
-    .select("id, status, job_listing_id, disclosure_level")
+    .select("id, status, job_listing_id, disclosure_level, pseudonym")
     .eq("id", id)
     .maybeSingle();
 
@@ -72,7 +93,7 @@ export const PATCH = withApiHandler(async function PATCH(
 
   const { data: listing } = await supabaseAdmin
     .from("job_listings")
-    .select("id, employer_id")
+    .select("id, employer_id, title")
     .eq("id", application.job_listing_id)
     .eq("employer_id", ctx.employerId)
     .maybeSingle();
@@ -101,7 +122,7 @@ export const PATCH = withApiHandler(async function PATCH(
     );
   }
 
-  // Update status
+  // Update status (disclosure_level is NOT changed here)
   const { error: updateError } = await supabaseAdmin
     .from("applications")
     .update({ status: newStatus })
@@ -114,11 +135,24 @@ export const PATCH = withApiHandler(async function PATCH(
     );
   }
 
-  // Log access using centralized utility
+  // Create system message in chat
+  const systemText = STATUS_SYSTEM_MESSAGES[newStatus];
+  if (systemText) {
+    const messageType = newStatus === "interview_requested" ? "interview_request" : "status_change";
+    await createSystemMessage(id, systemText, messageType, {
+      from_status: application.status,
+      to_status: newStatus,
+      employer_company: ctx.employer.company_name,
+      listing_title: listing.title,
+    });
+  }
+
+  // Log access
+  const actionType = newStatus === "interview_requested" ? "interview_request" : "stage_advance";
   await logCandidateAccess(
     ctx.employerId,
     ctx.userId,
-    "stage_advance",
+    actionType,
     id,
     application.disclosure_level,
     req

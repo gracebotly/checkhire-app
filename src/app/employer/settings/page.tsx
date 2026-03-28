@@ -4,7 +4,7 @@ import { useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { PageHeader } from "@/components/layout/page-header";
 import { Building2, Users, AlertTriangle } from "lucide-react";
-import { WorkspaceTab } from "@/components/settings/WorkspaceTab";
+import { CompanyProfileTab } from "@/components/settings/CompanyProfileTab";
 import { TeamTab } from "@/components/settings/TeamTab";
 import { DangerTab } from "@/components/settings/DangerTab";
 
@@ -65,7 +65,7 @@ export default function SettingsPage() {
         </div>
 
         <div className="mt-6">
-          {activeTab === "company" && <WorkspaceTab />}
+          {activeTab === "company" && <CompanyProfileTab />}
           {activeTab === "team" && <TeamTab />}
           {activeTab === "danger" && <DangerTab />}
         </div>

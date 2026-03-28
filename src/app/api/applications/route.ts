@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createApplicationSchema } from "@/lib/validation/applicationSchema";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
+import { calculateScreeningScore, checkKnockouts } from "@/lib/screening/scoreCalculator";
+import { createSystemMessage } from "@/lib/chat/systemMessage";
 
 export const runtime = "nodejs";
 
@@ -162,6 +164,25 @@ export const POST = withApiHandler(async function POST(req: Request) {
     );
   }
 
+  // Calculate screening score and check knockouts if quiz was required
+  let screeningScore: number | null = null;
+  let knockedOut = false;
+
+  if (listing.requires_screening_quiz && screening_responses) {
+    const { data: fullQuestions } = await supabaseAdmin
+      .from("screening_questions")
+      .select("id, question_text, question_type, options, is_knockout, knockout_answer, point_value, min_length")
+      .eq("job_listing_id", job_listing_id)
+      .order("sort_order", { ascending: true });
+
+    if (fullQuestions && fullQuestions.length > 0) {
+      const typedQuestions = fullQuestions as import("@/types/database").ScreeningQuestion[];
+      screeningScore = calculateScreeningScore(typedQuestions, screening_responses);
+      const knockoutResult = checkKnockouts(typedQuestions, screening_responses);
+      knockedOut = knockoutResult.knocked_out;
+    }
+  }
+
   const { data: application, error: insertError } = await supabaseAdmin
     .from("applications")
     .insert({
@@ -169,10 +190,11 @@ export const POST = withApiHandler(async function POST(req: Request) {
       user_id: user.id,
       pseudonym,
       disclosure_level: 1,
-      status: "applied",
+      status: knockedOut ? "rejected" : "applied",
       screening_responses: screening_responses || null,
+      screening_score: screeningScore,
     })
-    .select("id, pseudonym, status, created_at")
+    .select("id, pseudonym, status, created_at, screening_score")
     .single();
 
   if (insertError) {
@@ -187,13 +209,25 @@ export const POST = withApiHandler(async function POST(req: Request) {
     );
   }
 
+  // If knocked out, create a system message explaining the auto-rejection
+  if (knockedOut && application) {
+    await createSystemMessage(
+      application.id,
+      "Your application was automatically filtered based on qualification requirements for this role.",
+      "status_change",
+      { reason: "knockout_question", auto_rejected: true }
+    ).catch(() => {});
+  }
+
   return NextResponse.json({
     ok: true,
     application: {
       id: application.id,
       pseudonym: application.pseudonym,
       status: application.status,
+      screening_score: application.screening_score,
       created_at: application.created_at,
     },
+    ...(knockedOut ? { notice: "Your application did not meet one or more qualification requirements for this role." } : {}),
   });
 });

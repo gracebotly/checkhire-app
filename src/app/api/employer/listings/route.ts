@@ -196,6 +196,7 @@ export const POST = withApiHandler(async function POST(req: Request) {
       fill_by_date: input.fill_by_date || null,
       max_applications: input.max_applications,
       requires_video_application: input.requires_video_application,
+      video_questions: Array.isArray(body.video_questions) ? body.video_questions : [],
       requires_screening_quiz: validatedQuestions.length > 0,
       mlm_flag_score: mlmScore,
       slug,

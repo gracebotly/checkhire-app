@@ -28,14 +28,25 @@ export function ScreeningQuiz({
 
           <div className="mt-2">
             {q.question_type === "short_answer" && (
-              <textarea
-                value={(responses[q.id] as string) || ""}
-                onChange={(e) => updateResponse(q.id, e.target.value)}
-                placeholder="Type your answer..."
-                rows={3}
-                maxLength={1000}
-                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-600 focus:border-brand focus:outline-none focus:ring-2 focus:ring-ring/40"
-              />
+              <div>
+                <textarea
+                  value={(responses[q.id] as string) || ""}
+                  onChange={(e) => updateResponse(q.id, e.target.value)}
+                  placeholder="Type your answer..."
+                  rows={3}
+                  maxLength={5000}
+                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-600 focus:border-brand focus:outline-none focus:ring-2 focus:ring-ring/40"
+                />
+                {q.min_length && q.min_length > 0 && (
+                  <div className="mt-1 flex justify-between">
+                    <span className={`text-xs ${((responses[q.id] as string) || "").length < q.min_length ? "text-amber-600" : "text-emerald-600"}`}>
+                      {((responses[q.id] as string) || "").length < q.min_length
+                        ? `Minimum ${q.min_length} characters (currently ${((responses[q.id] as string) || "").length})`
+                        : `${((responses[q.id] as string) || "").length} characters`}
+                    </span>
+                  </div>
+                )}
+              </div>
             )}
 
             {q.question_type === "yes_no" && (

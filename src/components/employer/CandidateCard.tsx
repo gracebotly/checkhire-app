@@ -85,6 +85,11 @@ export function CandidateCard({ candidate, onStatusChange }: CandidateCardProps)
           </div>
 
           <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-slate-600">
+            {candidate.screening_score != null && candidate.screening_score > 0 && (
+              <span className="flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-semibold tabular-nums text-emerald-700 border border-emerald-200">
+                Score: {candidate.screening_score}
+              </span>
+            )}
             {candidate.years_experience != null && (
               <span className="flex items-center gap-1">
                 <Briefcase className="h-3 w-3" />

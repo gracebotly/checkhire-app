@@ -11,10 +11,12 @@ import {
   MessageSquare,
   Shield,
   User,
+  Video,
   XCircle,
 } from "lucide-react";
 import { useState } from "react";
 import { InterviewRequestButton } from "./InterviewRequestButton";
+import { VideoPlaybackCard } from "./VideoPlaybackCard";
 import { InterviewScheduleForm } from "@/components/chat/InterviewScheduleForm";
 import { DisclosureProgressBar } from "./DisclosureProgressBar";
 import { ConfirmInterviewDoneButton } from "@/components/chat/ConfirmInterviewDoneButton";
@@ -88,6 +90,12 @@ export function CandidateCard({ candidate, onStatusChange }: CandidateCardProps)
             {candidate.screening_score != null && candidate.screening_score > 0 && (
               <span className="flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-semibold tabular-nums text-emerald-700 border border-emerald-200">
                 Score: {candidate.screening_score}
+              </span>
+            )}
+            {candidate.video_responses && candidate.video_responses.length > 0 && (
+              <span className="flex items-center gap-1 rounded-md bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 border border-blue-200">
+                <Video className="h-3 w-3" />
+                {candidate.video_responses.length} video{candidate.video_responses.length !== 1 ? "s" : ""}
               </span>
             )}
             {candidate.years_experience != null && (
@@ -213,6 +221,11 @@ export function CandidateCard({ candidate, onStatusChange }: CandidateCardProps)
           )}
         </div>
       </div>
+
+      {/* Video responses */}
+      {candidate.video_responses && candidate.video_responses.length > 0 && (
+        <VideoPlaybackCard applicationId={candidate.application_id} />
+      )}
 
       {/* Work history expandable */}
       {candidate.parsed_work_history.length > 0 && (

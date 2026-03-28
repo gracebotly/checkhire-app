@@ -3,16 +3,19 @@
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { CheckCircle, Loader2, Shield, X } from "lucide-react";
+import { CheckCircle, Loader2, Shield, Video, X } from "lucide-react";
 import { useState } from "react";
 import { ScreeningQuiz } from "./ScreeningQuiz";
-import type { ScreeningQuestion } from "@/types/database";
+import { VideoApplicationFlow } from "@/components/seeker/VideoApplicationFlow";
+import type { ScreeningQuestion, VideoQuestion } from "@/types/database";
 
 interface ApplyModalProps {
   listingId: string;
   listingTitle: string;
   requiresScreeningQuiz: boolean;
   screeningQuestions: ScreeningQuestion[];
+  requiresVideo?: boolean;
+  videoQuestions?: VideoQuestion[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: (pseudonym: string) => void;
@@ -23,6 +26,8 @@ export function ApplyModal({
   listingTitle,
   requiresScreeningQuiz,
   screeningQuestions,
+  requiresVideo = false,
+  videoQuestions = [],
   open,
   onOpenChange,
   onSuccess,
@@ -31,12 +36,20 @@ export function ApplyModal({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<{ pseudonym: string } | null>(null);
   const [responses, setResponses] = useState<Record<string, unknown>>({});
+  const [videoBlobs, setVideoBlobs] = useState<{ questionIndex: number; blob: Blob }[]>([]);
+  const [videosReady, setVideosReady] = useState(!requiresVideo || videoQuestions.length === 0);
+
+  const handleVideoComplete = (blobs: { questionIndex: number; blob: Blob }[]) => {
+    setVideoBlobs(blobs);
+    setVideosReady(true);
+  };
 
   const handleSubmit = async () => {
     setSubmitting(true);
     setError(null);
 
     try {
+      // Step 1: Create application
       const res = await fetch("/api/applications", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -52,6 +65,50 @@ export function ApplyModal({
         setError(data.message || "Failed to submit application.");
         setSubmitting(false);
         return;
+      }
+
+      // Step 2: Upload video responses if any
+      if (videoBlobs.length > 0 && data.application?.id) {
+        const appId = data.application.id;
+        const videoResponses: { question_index: number; video_url: string; recorded_at: string }[] = [];
+
+        for (const vb of videoBlobs) {
+          try {
+            // Get signed upload URL
+            const uploadRes = await fetch(`/api/applications/${appId}/video-upload`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ question_index: vb.questionIndex }),
+            });
+            const uploadData = await uploadRes.json();
+
+            if (uploadData.ok && uploadData.upload_url) {
+              // Upload the blob
+              await fetch(uploadData.upload_url, {
+                method: "PUT",
+                headers: { "Content-Type": "video/webm" },
+                body: vb.blob,
+              });
+
+              videoResponses.push({
+                question_index: vb.questionIndex,
+                video_url: uploadData.storage_path,
+                recorded_at: new Date().toISOString(),
+              });
+            }
+          } catch (err) {
+            console.error(`[apply] Video upload failed for Q${vb.questionIndex}:`, err);
+          }
+        }
+
+        // Step 3: Update application with video_responses
+        if (videoResponses.length > 0) {
+          await fetch(`/api/applications/${appId}/video-upload`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ video_responses: videoResponses }),
+          }).catch(() => {});
+        }
       }
 
       setSuccess({ pseudonym: data.application.pseudonym });
@@ -137,6 +194,25 @@ export function ApplyModal({
                     </div>
                   )}
 
+                  {requiresVideo && videoQuestions.length > 0 && !videosReady && (
+                    <div className="mb-5">
+                      <VideoApplicationFlow
+                        questions={videoQuestions}
+                        onComplete={handleVideoComplete}
+                        disabled={submitting}
+                      />
+                    </div>
+                  )}
+
+                  {requiresVideo && videosReady && videoBlobs.length > 0 && (
+                    <div className="mb-5 flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
+                      <Video className="h-4 w-4 text-emerald-600" />
+                      <p className="text-xs text-emerald-700">
+                        {videoBlobs.length} video response{videoBlobs.length !== 1 ? "s" : ""} recorded and ready to submit.
+                      </p>
+                    </div>
+                  )}
+
                   {error && (
                     <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
                       {error}
@@ -146,7 +222,7 @@ export function ApplyModal({
                   <Button
                     type="button"
                     onClick={handleSubmit}
-                    disabled={submitting}
+                    disabled={submitting || (requiresVideo && !videosReady)}
                     className="w-full cursor-pointer bg-brand text-sm font-semibold text-white transition-colors duration-200 hover:bg-brand-hover"
                   >
                     {submitting ? (

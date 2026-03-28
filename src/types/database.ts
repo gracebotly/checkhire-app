@@ -240,3 +240,97 @@ export type AccessAuditLogEntry = {
   ip_address: string | null;
   user_agent: string | null;
 };
+
+// ─── Slice 4: Chat, Interview Scheduling, Rate Limit Events ───
+
+export type MessageSenderType = "employer" | "candidate" | "system";
+
+export type MessageType =
+  | "text"
+  | "system"
+  | "interview_request"
+  | "interview_response"
+  | "status_change"
+  | "interview_scheduled"
+  | "slot_selected";
+
+export type Message = {
+  id: string;
+  application_id: string;
+  sender_id: string;
+  sender_type: MessageSenderType;
+  message_text: string;
+  message_type: MessageType;
+  metadata: Record<string, unknown> | null;
+  read_at: string | null;
+  edited_at: string | null;
+  deleted_at: string | null;
+  created_at: string;
+};
+
+export type InterviewSlot = {
+  datetime: string; // ISO 8601
+  duration_minutes: number;
+};
+
+export type InterviewScheduleStatus =
+  | "pending"
+  | "accepted"
+  | "declined"
+  | "cancelled"
+  | "completed";
+
+export type InterviewSchedule = {
+  id: string;
+  application_id: string;
+  proposed_by: string;
+  proposed_slots: InterviewSlot[];
+  selected_slot: InterviewSlot | null;
+  video_call_link: string | null;
+  notes: string | null;
+  timezone_employer: string | null;
+  timezone_candidate: string | null;
+  status: InterviewScheduleStatus;
+  accepted_at: string | null;
+  completed_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type RateLimitEvent = {
+  id: string;
+  employer_id: string | null;
+  endpoint: string;
+  hits_in_window: number;
+  window_start: string;
+  window_end: string;
+  flagged: boolean;
+  reviewed: boolean;
+  reviewed_by: string | null;
+  resolution: "cleared" | "warned" | "suspended" | null;
+  created_at: string;
+};
+
+/**
+ * A chat thread summary for the inbox view.
+ * Combines application metadata with latest message info.
+ */
+export type ChatThread = {
+  application_id: string;
+  pseudonym: string;
+  disclosure_level: DisclosureLevel;
+  status: ApplicationStatus;
+  first_name?: string;
+  full_name?: string;
+  // Listing context
+  listing_title: string;
+  listing_slug: string;
+  company_name: string;
+  tier_level: TierLevel;
+  logo_url: string | null;
+  // Message info
+  last_message_text: string | null;
+  last_message_at: string | null;
+  last_message_sender_type: MessageSenderType | null;
+  unread_count: number;
+};

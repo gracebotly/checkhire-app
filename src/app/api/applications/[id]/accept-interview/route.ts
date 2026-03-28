@@ -3,6 +3,7 @@ import { createSystemMessage } from "@/lib/chat/systemMessage";
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
+import { sendInterviewNotification } from "@/lib/email/interviewNotification";
 
 export const runtime = "nodejs";
 
@@ -95,6 +96,48 @@ export const POST = withApiHandler(async function POST(
     "interview_response",
     { action: "accepted", disclosure_level: 2 }
   );
+
+  // Notify employer that candidate accepted (non-blocking)
+  (async () => {
+    try {
+      // Get listing + employer info
+      const { data: listing } = await supabaseAdmin
+        .from("job_listings")
+        .select("title, employer_id, employers(company_name, claimed_by)")
+        .eq("id", application.job_listing_id)
+        .maybeSingle();
+
+      const listingData = listing as { title: string; employer_id: string; employers: { company_name: string; claimed_by: string | null } | { company_name: string; claimed_by: string | null }[] } | null;
+      const employer = listingData?.employers;
+      const employerInfo = Array.isArray(employer) ? employer[0] : employer;
+
+      if (employerInfo?.claimed_by) {
+        const { data: employerAuth } = await supabaseAdmin.auth.admin.getUserById(employerInfo.claimed_by);
+        if (employerAuth?.user?.email) {
+          // Get candidate first name for the notification
+          const { data: userProfile } = await supabaseAdmin
+            .from("user_profiles")
+            .select("full_name")
+            .eq("id", user.id)
+            .maybeSingle();
+
+          const firstName = userProfile?.full_name?.split(" ")[0] || application.pseudonym;
+
+          await sendInterviewNotification({
+            to: employerAuth.user.email,
+            recipientName: null,
+            listingTitle: listingData?.title || "a job listing",
+            companyName: employerInfo.company_name || "your company",
+            candidateLabel: firstName,
+            eventType: "interview_accepted",
+            applicationId: id,
+          });
+        }
+      }
+    } catch (err) {
+      console.error("[accept-interview] Notification error:", err);
+    }
+  })();
 
   return NextResponse.json({
     ok: true,

@@ -5,6 +5,7 @@ import { Loader2, MessageSquare } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { ChatBubble } from "./ChatBubble";
 import { ChatInput } from "./ChatInput";
+import { SmartReplySuggestions } from "./SmartReplySuggestions";
 import { SystemMessageCard } from "./SystemMessageCard";
 import { TypingIndicator } from "./TypingIndicator";
 import { useRealtimeChat } from "@/hooks/useRealtimeChat";
@@ -15,6 +16,8 @@ interface ChatWindowProps {
   currentUserId: string;
   otherPartyName: string;
   applicationStatus: ApplicationStatus;
+  disclosureLevel?: 1 | 2 | 3;
+  isEmployer?: boolean;
 }
 
 export function ChatWindow({
@@ -22,6 +25,8 @@ export function ChatWindow({
   currentUserId,
   otherPartyName,
   applicationStatus,
+  disclosureLevel = 1,
+  isEmployer = false,
 }: ChatWindowProps) {
   const { messages, isLoading, hasMore, error, sendMessage, loadMore } = useRealtimeChat({
     applicationId,
@@ -110,6 +115,18 @@ export function ChatWindow({
 
         <div ref={bottomRef} />
       </div>
+
+      {/* Smart reply suggestions */}
+      {!isClosed && (
+        <SmartReplySuggestions
+          otherPartyName={otherPartyName}
+          applicationStatus={applicationStatus}
+          disclosureLevel={disclosureLevel}
+          isEmployer={isEmployer}
+          messageCount={messages.length}
+          onSelect={(text) => void sendMessage(text)}
+        />
+      )}
 
       <ChatInput
         onSend={sendMessage}

@@ -5,6 +5,7 @@ import { checkCandidateViewRateLimit } from "@/lib/api/rateLimitCandidateViews";
 import { createSystemMessage } from "@/lib/chat/systemMessage";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
+import { sendInterviewNotification } from "@/lib/email/interviewNotification";
 
 export const runtime = "nodejs";
 
@@ -145,6 +146,31 @@ export const PATCH = withApiHandler(async function PATCH(
       employer_company: ctx.employer.company_name,
       listing_title: listing.title,
     });
+  }
+
+  // Send email notification for interview requests (non-blocking)
+  if (newStatus === "interview_requested") {
+    (async () => {
+      try {
+        const { data: candidateAuth } = await supabaseAdmin.auth.admin.getUserById(
+          // We need the candidate's user_id from the application
+          (await supabaseAdmin.from("applications").select("user_id").eq("id", id).single()).data?.user_id || ""
+        );
+        if (candidateAuth?.user?.email) {
+          await sendInterviewNotification({
+            to: candidateAuth.user.email,
+            recipientName: null,
+            listingTitle: listing.title,
+            companyName: ctx.employer.company_name,
+            candidateLabel: application.pseudonym,
+            eventType: "interview_requested",
+            applicationId: id,
+          });
+        }
+      } catch (err) {
+        console.error("[status] Interview notification error:", err);
+      }
+    })();
   }
 
   // Log access

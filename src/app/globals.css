@@ -90,3 +90,20 @@
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
+
+/* ─── Chat Animations ─── */
+@keyframes unread-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
+.animate-unread-pulse {
+  animation: unread-pulse 2s ease-in-out 3; /* pulses 3 times then stops */
+}
+
+@keyframes message-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-message-in {
+  animation: message-in 0.2s ease-out;
+}

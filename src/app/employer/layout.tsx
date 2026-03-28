@@ -34,10 +34,11 @@ export default async function EmployerLayout({
     .eq("user_id", user.id)
     .maybeSingle();
 
-  const employer = employerUser?.employers as {
-    company_name: string;
-    logo_url: string | null;
-  } | null;
+  const rawEmployer = employerUser?.employers as
+    | { company_name: string; logo_url: string | null }[]
+    | { company_name: string; logo_url: string | null }
+    | null;
+  const employer = Array.isArray(rawEmployer) ? rawEmployer[0] ?? null : rawEmployer;
 
   return (
     <div className="flex min-h-screen">

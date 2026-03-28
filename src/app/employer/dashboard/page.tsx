@@ -11,12 +11,16 @@ export default async function EmployerDashboardPage() {
   // Fetch employer info for welcome message
   const { data: employerUser } = await supabase
     .from("employer_users")
-    .select("employers(company_name)")
+    .select("employer_id, employers(company_name)")
     .eq("user_id", user!.id)
     .maybeSingle();
 
+  const employers = employerUser?.employers as
+    | { company_name: string }[]
+    | { company_name: string }
+    | null;
   const companyName =
-    (employerUser?.employers as { company_name: string } | null)?.company_name ??
+    (Array.isArray(employers) ? employers[0]?.company_name : employers?.company_name) ??
     "your company";
 
   const stats = [

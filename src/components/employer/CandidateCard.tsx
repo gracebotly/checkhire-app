@@ -11,10 +11,13 @@ import {
   MessageSquare,
   Shield,
   User,
+  Video,
   XCircle,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { InterviewRequestButton } from "./InterviewRequestButton";
+import { VideoPlaybackCard } from "./VideoPlaybackCard";
+import { MaskedEmailDisplay } from "./MaskedEmailDisplay";
 import { InterviewScheduleForm } from "@/components/chat/InterviewScheduleForm";
 import { DisclosureProgressBar } from "./DisclosureProgressBar";
 import { ConfirmInterviewDoneButton } from "@/components/chat/ConfirmInterviewDoneButton";
@@ -24,6 +27,26 @@ import type { CandidateView } from "@/types/database";
 interface CandidateCardProps {
   candidate: CandidateView;
   onStatusChange: (applicationId: string, newStatus: string) => void;
+}
+
+function MaskedEmailDisplayLoader({ applicationId }: { applicationId: string }) {
+  const [maskedEmail, setMaskedEmail] = useState<string | null>(null);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    fetch(`/api/employer/applications/${applicationId}/masked-email`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.ok && data.applicant_masked_email) {
+          setMaskedEmail(data.applicant_masked_email);
+        }
+        setLoaded(true);
+      })
+      .catch(() => setLoaded(true));
+  }, [applicationId]);
+
+  if (!loaded || !maskedEmail) return null;
+  return <MaskedEmailDisplay applicantMaskedEmail={maskedEmail} />;
 }
 
 export function CandidateCard({ candidate, onStatusChange }: CandidateCardProps) {
@@ -85,6 +108,17 @@ export function CandidateCard({ candidate, onStatusChange }: CandidateCardProps)
           </div>
 
           <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-slate-600">
+            {candidate.screening_score != null && candidate.screening_score > 0 && (
+              <span className="flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-semibold tabular-nums text-emerald-700 border border-emerald-200">
+                Score: {candidate.screening_score}
+              </span>
+            )}
+            {candidate.video_responses && candidate.video_responses.length > 0 && (
+              <span className="flex items-center gap-1 rounded-md bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 border border-blue-200">
+                <Video className="h-3 w-3" />
+                {candidate.video_responses.length} video{candidate.video_responses.length !== 1 ? "s" : ""}
+              </span>
+            )}
             {candidate.years_experience != null && (
               <span className="flex items-center gap-1">
                 <Briefcase className="h-3 w-3" />
@@ -208,6 +242,16 @@ export function CandidateCard({ candidate, onStatusChange }: CandidateCardProps)
           )}
         </div>
       </div>
+
+      {/* Masked email — shown at Stage 2+ */}
+      {candidate.disclosure_level >= 2 && candidate.application_id && (
+        <MaskedEmailDisplayLoader applicationId={candidate.application_id} />
+      )}
+
+      {/* Video responses */}
+      {candidate.video_responses && candidate.video_responses.length > 0 && (
+        <VideoPlaybackCard applicationId={candidate.application_id} />
+      )}
 
       {/* Work history expandable */}
       {candidate.parsed_work_history.length > 0 && (

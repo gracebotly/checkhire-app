@@ -7,7 +7,8 @@ import { Loader2, ArrowLeft, ArrowRight, Send, AlertTriangle } from "lucide-reac
 import { ListingFormProgress } from "@/components/employer/ListingFormProgress";
 import { JOB_CATEGORIES } from "@/lib/validation/listingSchema";
 import { detectBlockedKeyword } from "@/lib/validation/screeningSchema";
-import type { CommissionStructure } from "@/types/database";
+import { QuestionTemplateSelector } from "@/components/employer/QuestionTemplateSelector";
+import type { CommissionStructure, QuestionTemplateEntry, VideoQuestion } from "@/types/database";
 
 // ─── Form State Types ───
 type ScreeningQ = {
@@ -15,6 +16,10 @@ type ScreeningQ = {
   question_type: "multiple_choice" | "short_answer" | "yes_no" | "numerical";
   options: string[];
   required: boolean;
+  is_knockout: boolean;
+  knockout_answer: string;
+  point_value: number;
+  min_length: number | string;
 };
 
 type FormData = {
@@ -46,6 +51,8 @@ type FormData = {
   fill_by_date: string;
   max_applications: string;
   requires_video_application: boolean;
+  // Step 3 addition — Video Questions
+  video_questions: VideoQuestion[];
   // Step 4 — Screening
   screening_questions: ScreeningQ[];
 };
@@ -76,6 +83,7 @@ const INITIAL_FORM: FormData = {
   fill_by_date: "",
   max_applications: "100",
   requires_video_application: false,
+  video_questions: [],
   screening_questions: [],
 };
 
@@ -210,12 +218,17 @@ export function ListingForm() {
       fill_by_date: form.fill_by_date || undefined,
       max_applications: Number(form.max_applications) || 100,
       requires_video_application: form.requires_video_application,
+      video_questions: form.requires_video_application ? form.video_questions.filter((vq) => vq.prompt.trim()) : [],
       screening_questions: form.screening_questions.map((q, i) => ({
         question_text: q.question_text,
         question_type: q.question_type,
         options: q.question_type === "multiple_choice" ? q.options.filter(Boolean) : null,
         required: q.required,
         sort_order: i,
+        is_knockout: q.is_knockout,
+        knockout_answer: q.is_knockout ? q.knockout_answer : null,
+        point_value: Number(q.point_value) || 0,
+        min_length: q.question_type === "short_answer" && q.min_length ? Number(q.min_length) : null,
       })),
     };
 
@@ -244,8 +257,49 @@ export function ListingForm() {
   const addQuestion = () => {
     update("screening_questions", [
       ...form.screening_questions,
-      { question_text: "", question_type: "short_answer" as const, options: ["", ""], required: true },
+      {
+        question_text: "",
+        question_type: "short_answer" as const,
+        options: ["", ""],
+        required: true,
+        is_knockout: false,
+        knockout_answer: "",
+        point_value: 0,
+        min_length: "",
+      },
     ]);
+  };
+
+  const loadTemplate = (questions: QuestionTemplateEntry[]) => {
+    const mapped: ScreeningQ[] = questions.map((q) => ({
+      question_text: q.question_text,
+      question_type: q.question_type,
+      options: q.options || ["", ""],
+      required: true,
+      is_knockout: q.is_knockout || false,
+      knockout_answer: q.knockout_answer || "",
+      point_value: q.point_value || 0,
+      min_length: q.min_length || "",
+    }));
+    update("screening_questions", mapped);
+  };
+
+  const addVideoQuestion = () => {
+    if (form.video_questions.length >= 5) return;
+    update("video_questions", [
+      ...form.video_questions,
+      { prompt: "", time_limit_seconds: 60, max_retakes: 1 },
+    ]);
+  };
+
+  const removeVideoQuestion = (index: number) => {
+    update("video_questions", form.video_questions.filter((_, i) => i !== index));
+  };
+
+  const updateVideoQuestion = (index: number, field: string, value: unknown) => {
+    const updated = [...form.video_questions];
+    updated[index] = { ...updated[index], [field]: value };
+    update("video_questions", updated);
   };
 
   const removeQuestion = (index: number) => {
@@ -444,9 +498,50 @@ export function ListingForm() {
                 <p className="mt-1 text-xs text-slate-600">Maximum number of applications before the listing stops accepting. Range: 10–200.</p>
               </div>
               <div className="flex items-center gap-2">
-                <input type="checkbox" id="video_app" checked={form.requires_video_application} onChange={(e) => update("requires_video_application", e.target.checked)} className="h-4 w-4 cursor-pointer rounded border-gray-200 text-brand focus:ring-brand/20" />
-                <label htmlFor="video_app" className="cursor-pointer text-sm text-slate-900">Require video application (30–90 sec introduction from candidates)</label>
+                <input type="checkbox" id="video_app" checked={form.requires_video_application} onChange={(e) => { update("requires_video_application", e.target.checked); if (!e.target.checked) update("video_questions", []); }} className="h-4 w-4 cursor-pointer rounded border-gray-200 text-brand focus:ring-brand/20" />
+                <label htmlFor="video_app" className="cursor-pointer text-sm text-slate-900">Require video application from candidates</label>
               </div>
+              {form.requires_video_application && (
+                <div className="space-y-3 rounded-xl border border-gray-100 bg-gray-50 p-4">
+                  <p className="text-xs font-medium uppercase tracking-wider text-slate-600">Video Questions (up to 5)</p>
+                  <p className="text-xs text-slate-600">Candidates will record a separate video response for each question.</p>
+                  {form.video_questions.map((vq, vi) => (
+                    <div key={vi} className="space-y-2 rounded-lg border border-gray-200 bg-white p-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium text-slate-600">Video Question {vi + 1}</span>
+                        <button type="button" onClick={() => removeVideoQuestion(vi)} className="cursor-pointer text-xs font-medium text-red-600 transition-colors duration-200 hover:text-red-700">Remove</button>
+                      </div>
+                      <input type="text" value={vq.prompt} onChange={(e) => updateVideoQuestion(vi, "prompt", e.target.value)} placeholder="e.g. Tell us about your relevant experience" maxLength={500} className={inputClass("")} />
+                      <div className="flex gap-3">
+                        <div className="flex-1">
+                          <label className={labelClass}>Time Limit</label>
+                          <select value={vq.time_limit_seconds} onChange={(e) => updateVideoQuestion(vi, "time_limit_seconds", Number(e.target.value))} className={inputClass("")}>
+                            <option value={30}>30 seconds</option>
+                            <option value={60}>60 seconds</option>
+                            <option value={90}>90 seconds</option>
+                            <option value={120}>120 seconds</option>
+                          </select>
+                        </div>
+                        <div className="flex-1">
+                          <label className={labelClass}>Max Retakes</label>
+                          <select value={vq.max_retakes} onChange={(e) => updateVideoQuestion(vi, "max_retakes", Number(e.target.value))} className={inputClass("")}>
+                            <option value={0}>No retakes</option>
+                            <option value={1}>1 retake</option>
+                            <option value={2}>2 retakes</option>
+                            <option value={3}>3 retakes</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {form.video_questions.length < 5 && (
+                    <button type="button" onClick={addVideoQuestion} className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-slate-900 shadow-sm transition-colors duration-200 hover:bg-gray-50">+ Add Video Question</button>
+                  )}
+                  {form.video_questions.length === 0 && (
+                    <p className="text-xs text-slate-600">No video questions added yet. Add at least one question, or candidates will record a single open-ended introduction.</p>
+                  )}
+                </div>
+              )}
               {form.remote_type === "full_remote" && (
                 <div>
                   <label className={labelClass}>Equipment Policy (optional)</label>
@@ -460,6 +555,7 @@ export function ListingForm() {
           {step === 3 && (
             <div className="space-y-5">
               <p className="text-sm text-slate-600">Add screening questions to filter candidates. These are shown during the application process. Questions requesting SSN, bank info, or other sensitive data are blocked.</p>
+              <QuestionTemplateSelector onSelect={loadTemplate} />
               {form.screening_questions.map((q, i) => (
                 <div key={i} className="rounded-xl border border-gray-200 bg-gray-50 p-4 space-y-3">
                   <div className="flex items-center justify-between">
@@ -493,9 +589,50 @@ export function ListingForm() {
                       {errors[`question_${i}_options`] && <p className="text-xs text-red-500">{errors[`question_${i}_options`]}</p>}
                     </div>
                   )}
-                  <div className="flex items-center gap-2">
-                    <input type="checkbox" checked={q.required} onChange={(e) => updateQuestion(i, "required", e.target.checked)} className="h-4 w-4 cursor-pointer rounded border-gray-200 text-brand focus:ring-brand/20" />
-                    <span className="text-xs text-slate-600">Required</span>
+                  <div className="flex flex-wrap items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      <input type="checkbox" checked={q.required} onChange={(e) => updateQuestion(i, "required", e.target.checked)} className="h-4 w-4 cursor-pointer rounded border-gray-200 text-brand focus:ring-brand/20" />
+                      <span className="text-xs text-slate-600">Required</span>
+                    </div>
+                    {(q.question_type === "yes_no" || q.question_type === "multiple_choice") && (
+                      <div className="flex items-center gap-2">
+                        <input type="checkbox" checked={q.is_knockout} onChange={(e) => updateQuestion(i, "is_knockout", e.target.checked)} className="h-4 w-4 cursor-pointer rounded border-gray-200 text-brand focus:ring-brand/20" />
+                        <span className="text-xs text-slate-600">Knockout</span>
+                      </div>
+                    )}
+                  </div>
+                  {q.is_knockout && (q.question_type === "yes_no" || q.question_type === "multiple_choice") && (
+                    <div>
+                      <label className={labelClass}>Auto-reject if answer is:</label>
+                      {q.question_type === "yes_no" ? (
+                        <select value={q.knockout_answer} onChange={(e) => updateQuestion(i, "knockout_answer", e.target.value)} className={inputClass("")}>
+                          <option value="">Select</option>
+                          <option value="Yes">Yes</option>
+                          <option value="No">No</option>
+                        </select>
+                      ) : (
+                        <select value={q.knockout_answer} onChange={(e) => updateQuestion(i, "knockout_answer", e.target.value)} className={inputClass("")}>
+                          <option value="">Select an option</option>
+                          {q.options.filter(Boolean).map((opt) => (
+                            <option key={opt} value={opt}>{opt}</option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
+                  )}
+                  <div className="flex gap-3">
+                    {(q.question_type === "yes_no" || q.question_type === "numerical" || q.question_type === "multiple_choice") && (
+                      <div className="w-32">
+                        <label className={labelClass}>Points</label>
+                        <input type="number" value={q.point_value} onChange={(e) => updateQuestion(i, "point_value", Number(e.target.value) || 0)} min="0" max="100" placeholder="0" className={inputClass("")} />
+                      </div>
+                    )}
+                    {q.question_type === "short_answer" && (
+                      <div className="w-40">
+                        <label className={labelClass}>Min Characters</label>
+                        <input type="number" value={q.min_length} onChange={(e) => updateQuestion(i, "min_length", e.target.value)} min="10" max="5000" placeholder="None" className={inputClass("")} />
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -526,7 +663,13 @@ export function ListingForm() {
                 )}
                 <div className="flex justify-between border-b border-gray-100 pb-2"><span className="text-slate-600">Application Cap</span><span className="font-medium tabular-nums text-slate-900">{form.max_applications}</span></div>
                 <div className="flex justify-between border-b border-gray-100 pb-2"><span className="text-slate-600">Video Required</span><span className="font-medium text-slate-900">{form.requires_video_application ? "Yes" : "No"}</span></div>
-                <div className="flex justify-between border-b border-gray-100 pb-2"><span className="text-slate-600">Screening Questions</span><span className="font-medium text-slate-900">{form.screening_questions.length}</span></div>
+                <div className="flex justify-between border-b border-gray-100 pb-2"><span className="text-slate-600">Screening Questions</span><span className="font-medium text-slate-900">{form.screening_questions.length}{form.screening_questions.some((q) => q.is_knockout) ? ` (${form.screening_questions.filter((q) => q.is_knockout).length} knockout)` : ""}</span></div>
+                {form.screening_questions.some((q) => q.point_value > 0) && (
+                  <div className="flex justify-between border-b border-gray-100 pb-2"><span className="text-slate-600">Max Screening Score</span><span className="font-medium tabular-nums text-slate-900">{form.screening_questions.reduce((sum, q) => sum + (Number(q.point_value) || 0), 0)} pts</span></div>
+                )}
+                {form.requires_video_application && (
+                  <div className="flex justify-between border-b border-gray-100 pb-2"><span className="text-slate-600">Video Questions</span><span className="font-medium text-slate-900">{form.video_questions.length || "Open intro"}</span></div>
+                )}
                 <div className="flex justify-between"><span className="text-slate-600">Auto-Expires</span><span className="font-medium text-slate-900">45 days after posting</span></div>
               </div>
 

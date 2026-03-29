@@ -4,10 +4,21 @@ import { TierBadge } from "@/components/jobs/TierBadge";
 import { DisclosureTimeline } from "@/components/seeker/DisclosureTimeline";
 import { InterviewResponseCard } from "@/components/seeker/InterviewResponseCard";
 import { TrustShield } from "@/components/seeker/TrustShield";
+import { ApplicationStatusTimeline } from "@/components/seeker/ApplicationStatusTimeline";
+import { WithdrawConfirmDialog } from "@/components/seeker/WithdrawConfirmDialog";
 import { ConfirmInterviewDoneButton } from "@/components/chat/ConfirmInterviewDoneButton";
 import { PageHeader } from "@/components/layout/page-header";
 import type { DisclosureLevel, TierLevel } from "@/types/database";
-import { ArrowLeft, Eye, Lock, MessageSquare, Shield } from "lucide-react";
+import {
+  ArrowLeft,
+  Calendar,
+  Eye,
+  Lock,
+  LogOut,
+  MessageSquare,
+  Shield,
+  Users,
+} from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -20,6 +31,7 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   offered: { label: "Offer Received", color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
   rejected: { label: "Not Selected", color: "bg-gray-50 text-slate-600 border-gray-200" },
   hired: { label: "Hired", color: "bg-emerald-50 text-emerald-800 border-emerald-200" },
+  withdrawn: { label: "Withdrawn", color: "bg-gray-50 text-slate-600 border-gray-200" },
 };
 
 const DISCLOSURE_FIELDS = {
@@ -37,6 +49,8 @@ const DISCLOSURE_FIELDS = {
   },
 };
 
+const TERMINAL_STATUSES = ["rejected", "hired", "withdrawn"];
+
 interface Props {
   application: {
     id: string;
@@ -48,7 +62,14 @@ interface Props {
     disclosed_at_stage2: string | null;
     disclosed_at_stage3: string | null;
   };
-  listing: { title: string; slug: string; remote_type: string } | null;
+  listing: {
+    title: string;
+    slug: string;
+    remote_type: string;
+    expires_at?: string;
+    current_application_count?: number;
+    max_applications?: number;
+  } | null;
   employer: { company_name: string; tier_level: TierLevel } | null;
   questions: { id: string; question_text: string; question_type: string }[];
   userId: string;
@@ -61,10 +82,17 @@ export function SeekerApplicationDetailClient({
   questions,
   userId,
 }: Props) {
+  void userId;
   const [app, setApp] = useState(initialApp);
+  const [showWithdraw, setShowWithdraw] = useState(false);
 
   const statusInfo = STATUS_LABELS[app.status] || STATUS_LABELS.applied;
   const disclosureInfo = DISCLOSURE_FIELDS[app.disclosure_level] || DISCLOSURE_FIELDS[1];
+  const canWithdraw = !TERMINAL_STATUSES.includes(app.status);
+
+  const daysRemaining = listing?.expires_at
+    ? Math.max(0, Math.ceil((new Date(listing.expires_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+    : null;
 
   const handleInterviewResponse = (accepted: boolean) => {
     if (accepted) {
@@ -76,6 +104,11 @@ export function SeekerApplicationDetailClient({
 
   const handleInterviewConfirmed = () => {
     setApp((prev) => ({ ...prev, disclosure_level: 3 as DisclosureLevel }));
+  };
+
+  const handleWithdrawn = () => {
+    setApp((prev) => ({ ...prev, status: "withdrawn" }));
+    setShowWithdraw(false);
   };
 
   return (
@@ -90,7 +123,6 @@ export function SeekerApplicationDetailClient({
           Back to applications
         </Link>
 
-        {/* Interview response card (only when interview_requested) */}
         {app.status === "interview_requested" && employer && (
           <div className="mb-4">
             <InterviewResponseCard
@@ -131,9 +163,31 @@ export function SeekerApplicationDetailClient({
               <p className="mt-2 text-xs text-slate-600">
                 Applied {new Date(app.created_at).toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" })}
               </p>
+
+              {/* Deadline + app count indicators */}
+              <div className="mt-2 flex flex-wrap items-center gap-3">
+                {daysRemaining !== null && daysRemaining > 0 && (
+                  <span className={`flex items-center gap-1 text-xs ${daysRemaining <= 7 ? "text-amber-600" : "text-slate-600"}`}>
+                    <Calendar className="h-3 w-3" />
+                    {daysRemaining} day{daysRemaining !== 1 ? "s" : ""} remaining
+                  </span>
+                )}
+                {daysRemaining === 0 && (
+                  <span className="flex items-center gap-1 text-xs text-red-600">
+                    <Calendar className="h-3 w-3" />
+                    Listing expires today
+                  </span>
+                )}
+                {listing?.current_application_count != null && listing?.max_applications != null && (
+                  <span className="flex items-center gap-1 text-xs text-slate-600">
+                    <Users className="h-3 w-3" />
+                    {listing.current_application_count} of {listing.max_applications} applications
+                  </span>
+                )}
+              </div>
             </div>
 
-            {/* Chat + Confirm buttons */}
+            {/* Action buttons */}
             <div className="flex shrink-0 flex-col gap-2">
               <Link
                 href={`/seeker/messages/${app.id}`}
@@ -149,14 +203,32 @@ export function SeekerApplicationDetailClient({
                   onConfirmed={handleInterviewConfirmed}
                 />
               )}
+              {canWithdraw && (
+                <button
+                  type="button"
+                  onClick={() => setShowWithdraw(true)}
+                  className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-600 transition-colors duration-200 hover:bg-red-50"
+                >
+                  <LogOut className="h-3 w-3" />
+                  Withdraw
+                </button>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Trust Shield + Disclosure Timeline */}
+        {/* Status Timeline + Trust Shield + Disclosure Timeline */}
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <TrustShield disclosureLevel={app.disclosure_level} />
-          <DisclosureTimeline currentLevel={app.disclosure_level} />
+          <ApplicationStatusTimeline
+            status={app.status}
+            createdAt={app.created_at}
+            disclosedAtStage2={app.disclosed_at_stage2}
+            disclosedAtStage3={app.disclosed_at_stage3}
+          />
+          <div className="space-y-4">
+            <TrustShield disclosureLevel={app.disclosure_level} />
+            <DisclosureTimeline currentLevel={app.disclosure_level} />
+          </div>
         </div>
 
         {/* What employer can see */}
@@ -208,6 +280,14 @@ export function SeekerApplicationDetailClient({
           </div>
         )}
       </div>
+
+      {showWithdraw && (
+        <WithdrawConfirmDialog
+          applicationId={app.id}
+          onWithdrawn={handleWithdrawn}
+          onClose={() => setShowWithdraw(false)}
+        />
+      )}
     </div>
   );
 }

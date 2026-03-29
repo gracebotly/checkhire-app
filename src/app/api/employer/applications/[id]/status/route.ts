@@ -6,6 +6,7 @@ import { createSystemMessage } from "@/lib/chat/systemMessage";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import { sendInterviewNotification } from "@/lib/email/interviewNotification";
+import { deactivateMaskedPair } from "@/lib/email/maskedEmail";
 
 export const runtime = "nodejs";
 
@@ -134,6 +135,13 @@ export const PATCH = withApiHandler(async function PATCH(
       { ok: false, code: "UPDATE_FAILED", message: "Failed to update status." },
       { status: 500 }
     );
+  }
+
+  // Deactivate masked email pair on rejection (non-blocking)
+  if (newStatus === "rejected") {
+    deactivateMaskedPair(id).catch((err) => {
+      console.error("[status] Masked pair deactivation error:", err);
+    });
   }
 
   // Create system message in chat

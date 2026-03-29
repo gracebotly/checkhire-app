@@ -69,11 +69,21 @@ export const GET = withApiHandler(async function GET(req: Request) {
   }
 
   // Fetch applications for this listing
+  const sortParam = searchParams.get("sort") || "newest";
+
   let query = supabaseAdmin
     .from("applications")
     .select("*")
-    .eq("job_listing_id", listingId)
-    .order("created_at", { ascending: false });
+    .eq("job_listing_id", listingId);
+
+  if (sortParam === "score_desc") {
+    query = query.order("screening_score", { ascending: false, nullsFirst: false })
+                 .order("created_at", { ascending: false });
+  } else if (sortParam === "oldest") {
+    query = query.order("created_at", { ascending: true });
+  } else {
+    query = query.order("created_at", { ascending: false });
+  }
 
   if (statusFilter && statusFilter !== "all") {
     query = query.eq("status", statusFilter);

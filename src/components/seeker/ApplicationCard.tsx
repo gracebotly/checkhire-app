@@ -30,6 +30,10 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
     color: "bg-gray-50 text-slate-600 border-gray-200",
   },
   hired: { label: "Hired", color: "bg-emerald-50 text-emerald-800 border-emerald-200" },
+  withdrawn: {
+    label: "Withdrawn",
+    color: "bg-orange-50 text-orange-700 border-orange-200",
+  },
 };
 
 interface ApplicationCardProps {

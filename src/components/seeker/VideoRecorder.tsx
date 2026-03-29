@@ -34,6 +34,12 @@ export function VideoRecorder({
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const recordedUrlRef = useRef<string | null>(null);
+
+  // Keep ref in sync with state so cleanup always has the latest URL
+  useEffect(() => {
+    recordedUrlRef.current = recordedUrl;
+  }, [recordedUrl]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -43,9 +49,8 @@ export function VideoRecorder({
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((t) => t.stop());
       }
-      if (recordedUrl) URL.revokeObjectURL(recordedUrl);
+      if (recordedUrlRef.current) URL.revokeObjectURL(recordedUrlRef.current);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const startCamera = useCallback(async () => {

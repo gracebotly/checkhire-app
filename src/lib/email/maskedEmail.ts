@@ -17,7 +17,7 @@ function generateMaskedAddress(
   prefix: "applicant" | "employer",
   applicationId: string
 ): string {
-  const salt = process.env.SENDGRID_API_KEY || "checkhire-salt";
+  const salt = process.env.MASKED_EMAIL_SALT || "checkhire-default-salt-k9x2m7";
   const hash = crypto
     .createHash("sha256")
     .update(`${prefix}:${applicationId}:${salt}`)

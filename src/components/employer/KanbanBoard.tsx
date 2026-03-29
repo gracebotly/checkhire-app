@@ -14,6 +14,7 @@ const COLUMNS: { status: ApplicationStatus; label: string; color: string }[] = [
   { status: "offered", label: "Offered", color: "border-t-emerald-500" },
   { status: "hired", label: "Hired", color: "border-t-emerald-600" },
   { status: "rejected", label: "Rejected", color: "border-t-gray-400" },
+  { status: "withdrawn", label: "Withdrawn", color: "border-t-orange-400" },
 ];
 
 const VALID_TRANSITIONS: Record<string, string[]> = {

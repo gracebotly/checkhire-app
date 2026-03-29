@@ -172,7 +172,31 @@ export default function EmployerApplicationsPage({
     { value: "offered", label: "Offered" },
     { value: "hired", label: "Hired" },
     { value: "rejected", label: "Rejected" },
+    { value: "withdrawn", label: "Withdrawn" },
   ];
+
+  const newCount = candidates.filter((c) => c.status === "applied").length;
+
+  const handleMarkAllReviewed = useCallback(async () => {
+    const newApps = candidates.filter((c) => c.status === "applied");
+    if (newApps.length === 0) return;
+    const ids = newApps.map((c) => c.application_id);
+    try {
+      const res = await fetch("/api/employer/applications/bulk-status", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ application_ids: ids, status: "reviewed" }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setCandidates((prev) =>
+          prev.map((c) =>
+            c.status === "applied" ? { ...c, status: "reviewed" } : c
+          )
+        );
+      }
+    } catch { /* ignore */ }
+  }, [candidates]);
 
   const SORT_OPTIONS = [
     { value: "newest", label: "Newest" },
@@ -217,6 +241,15 @@ export default function EmployerApplicationsPage({
               <CheckSquare className="h-3.5 w-3.5" />
               {selectionMode ? "Cancel Select" : "Select"}
             </button>
+            {newCount > 0 && statusFilter === "all" && (
+              <button
+                onClick={handleMarkAllReviewed}
+                className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-xs font-medium text-cyan-700 transition-colors duration-200 hover:bg-cyan-100"
+              >
+                <CheckSquare className="h-3.5 w-3.5" />
+                Mark {newCount} new application{newCount !== 1 ? "s" : ""} as reviewed
+              </button>
+            )}
           </div>
 
           <div className="flex items-center gap-2">

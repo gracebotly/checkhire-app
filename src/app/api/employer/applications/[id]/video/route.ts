@@ -105,5 +105,9 @@ export const GET = withApiHandler(async function GET(
     req
   );
 
-  return NextResponse.json({ ok: true, videos });
+  const response = NextResponse.json({ ok: true, videos });
+  response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate");
+  response.headers.set("Pragma", "no-cache");
+  response.headers.set("Expires", "0");
+  return response;
 });

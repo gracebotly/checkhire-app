@@ -39,12 +39,6 @@ CREATE POLICY "Candidates can read own masked pairs"
   ON public.masked_email_pairs FOR SELECT
   USING (applicant_user_id = auth.uid());
 
--- Only service role inserts/updates (from API routes)
-CREATE POLICY "Service role manages masked pairs"
-  ON public.masked_email_pairs FOR ALL
-  USING (false)
-  WITH CHECK (false);
-
 CREATE INDEX idx_masked_email_employer ON public.masked_email_pairs(employer_masked_email) WHERE status = 'active';
 CREATE INDEX idx_masked_email_applicant ON public.masked_email_pairs(applicant_masked_email) WHERE status = 'active';
 CREATE INDEX idx_masked_email_application ON public.masked_email_pairs(application_id);

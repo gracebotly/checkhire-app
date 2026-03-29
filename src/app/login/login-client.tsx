@@ -1,6 +1,7 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
+import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -208,11 +209,26 @@ export default function AuthShell() {
       setSiLoading(false);
       return;
     }
-    // Route based on user_type metadata
-    const ut = data.user?.user_metadata?.user_type;
+
+    // Route based on user_type — check metadata first, then user_profiles
+    let ut = data.user?.user_metadata?.user_type;
+
+    if (!ut) {
+      // Metadata missing — check user_profiles table
+      const { data: profile } = await supabase
+        .from("user_profiles")
+        .select("user_type")
+        .eq("id", data.user?.id ?? "")
+        .maybeSingle();
+      ut = profile?.user_type ?? null;
+    }
+
     if (ut === "employer") {
       router.push("/employer/dashboard");
+    } else if (ut === "job_seeker") {
+      router.push("/seeker/applications");
     } else {
+      // Unknown user type — send to jobs browse as safe default
       router.push("/jobs");
     }
     router.refresh();
@@ -420,13 +436,13 @@ export default function AuthShell() {
         {/* ── Form panel ── */}
         <div className="flex flex-1 flex-col justify-center bg-white px-8 py-10">
 
-          <a
+          <Link
             href="/"
-            className="mb-4 inline-flex items-center gap-1 self-start cursor-pointer text-xs text-slate-400 transition-colors duration-200 hover:text-slate-600"
+            className="mb-4 inline-flex cursor-pointer items-center gap-1 self-start text-xs text-slate-400 transition-colors duration-200 hover:text-slate-600"
           >
             <ChevronLeft className="h-3 w-3" />
             Back to home
-          </a>
+          </Link>
 
           {/* Tabs */}
           <div className="mb-6 flex border-b border-gray-100">

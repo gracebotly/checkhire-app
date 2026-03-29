@@ -17,28 +17,71 @@ export function Navbar() {
 
   useEffect(() => {
     async function checkAuth() {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      try {
+        const supabase = createClient();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
 
-      if (!user) {
+        if (!user) {
+          setAuthState("anon");
+          return;
+        }
+
+        setUserEmail(user.email || null);
+
+        // Try to get user_type from user_profiles
+        const { data: profile } = await supabase
+          .from("user_profiles")
+          .select("user_type")
+          .eq("id", user.id)
+          .maybeSingle();
+
+        if (profile?.user_type === "employer") {
+          setAuthState("employer");
+        } else if (profile?.user_type === "job_seeker") {
+          setAuthState("seeker");
+        } else {
+          // Profile row missing or user_type not set — fallback to user metadata
+          const metaType = user.user_metadata?.user_type;
+          if (metaType === "employer") {
+            setAuthState("employer");
+          } else if (metaType === "job_seeker") {
+            setAuthState("seeker");
+          } else {
+            // User is authenticated but we can't determine type.
+            // Default to seeker (most common) rather than showing anon UI.
+            setAuthState("seeker");
+          }
+
+          // Auto-repair: create missing user_profiles row in the background
+          if (!profile) {
+            const userType = metaType === "employer" ? "employer" : "job_seeker";
+            supabase
+              .from("user_profiles")
+              .upsert(
+                {
+                  id: user.id,
+                  user_type: userType,
+                  full_name:
+                    user.user_metadata?.name || user.user_metadata?.full_name || null,
+                },
+                { onConflict: "id" }
+              )
+              .then(({ error }) => {
+                if (error) {
+                  console.warn(
+                    "[Navbar] Failed to auto-repair user_profiles:",
+                    error.message
+                  );
+                }
+              });
+          }
+        }
+      } catch (err) {
+        // If anything fails, default to anon — don't crash the navbar
+        console.warn("[Navbar] Auth check failed:", err);
         setAuthState("anon");
-        return;
-      }
-
-      setUserEmail(user.email || null);
-
-      const { data: profile } = await supabase
-        .from("user_profiles")
-        .select("user_type")
-        .eq("id", user.id)
-        .maybeSingle();
-
-      if (profile?.user_type === "employer") {
-        setAuthState("employer");
-      } else {
-        setAuthState("seeker");
       }
     }
     checkAuth();
@@ -104,7 +147,7 @@ export function Navbar() {
           )}
           {authState === "anon" && (
             <Link
-              href="/login"
+              href="/for-employers"
               className="cursor-pointer text-sm font-medium text-slate-600 transition-colors duration-200 hover:text-slate-900"
             >
               For Employers
@@ -215,7 +258,7 @@ export function Navbar() {
 
               {authState === "anon" && (
                 <Link
-                  href="/login"
+                  href="/for-employers"
                   onClick={closeMobile}
                   className="cursor-pointer rounded-lg px-3 py-2 text-sm font-medium text-slate-900 transition-colors duration-200 hover:bg-gray-50"
                 >

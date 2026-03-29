@@ -4,7 +4,7 @@ import { Shield } from "lucide-react";
 const LINKS = {
   Product: [
     { label: "Browse Jobs", href: "/jobs" },
-    { label: "For Employers", href: "/signup" },
+    { label: "For Employers", href: "/for-employers" },
     { label: "Pricing", href: "/pricing" },
   ],
   Company: [

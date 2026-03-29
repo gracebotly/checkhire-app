@@ -12,6 +12,7 @@ const PUBLIC_PATHS = [
   // Public job board (no auth required to browse)
   "/jobs",
   // Public informational pages
+  "/for-employers",
   "/pricing",
   "/about",
   "/contact",

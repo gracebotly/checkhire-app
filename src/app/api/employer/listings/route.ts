@@ -7,6 +7,7 @@ import { createListingSchema } from "@/lib/validation/listingSchema";
 import { screeningQuestionSchema, detectBlockedKeyword } from "@/lib/validation/screeningSchema";
 import { scoreMlmIndicators, MLM_REVIEW_THRESHOLD } from "@/lib/employer/mlmDetection";
 import { generateListingSlug } from "@/lib/employer/generateSlug";
+import { scanListingDescription } from "@/lib/screening/piiScanListingDescription";
 
 export const runtime = "nodejs";
 
@@ -103,6 +104,20 @@ export const POST = withApiHandler(async function POST(req: Request) {
   }
 
   const input = listingResult.data;
+
+  // Scan listing description for PII requests (HARD BLOCK)
+  const descriptionScan = scanListingDescription(input.description);
+  if (descriptionScan.flagged) {
+    return NextResponse.json(
+      {
+        ok: false,
+        code: "DESCRIPTION_PII_BLOCKED",
+        message: descriptionScan.warnings[0],
+        all_warnings: descriptionScan.warnings,
+      },
+      { status: 400 }
+    );
+  }
 
   // Validate screening questions if provided
   const rawQuestions = Array.isArray(body.screening_questions) ? body.screening_questions : [];

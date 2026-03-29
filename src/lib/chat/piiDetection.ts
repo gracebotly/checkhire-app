@@ -50,6 +50,30 @@ const PII_PATTERNS: { pattern: RegExp; warning: string }[] = [
     pattern: /(?:send|share|give) (?:me |us )?your (?:resume|cv) (?:directly|via email|outside)/i,
     warning: "Resumes are shared through the platform at the appropriate hiring stage.",
   },
+  {
+    pattern: /(?:what(?:'?s| is)|tell me) your (?:home |mailing |street )?address/i,
+    warning: "Home addresses are not shared on CheckHire.",
+  },
+  {
+    pattern: /where (?:do you|exactly do you) live/i,
+    warning: "Specific location details beyond city/state are not shared.",
+  },
+  {
+    pattern: /(?:email|send) (?:me |us )?your (?:resume|cv|portfolio) (?:to|at) /i,
+    warning: "Do not ask candidates to email documents directly. Use the platform.",
+  },
+  {
+    pattern: /(?:connect|add|find|follow) (?:me|us) (?:on|at|via) (?:linkedin|facebook|instagram|twitter|whatsapp|telegram|discord)/i,
+    warning: "Connecting on external platforms bypasses CheckHire's privacy protections.",
+  },
+  {
+    pattern: /my (?:personal |private )?(?:email|phone|number|cell) is /i,
+    warning: "Sharing personal contact information is discouraged. Use in-app messaging.",
+  },
+  {
+    pattern: /(?:text|whatsapp|telegram) (?:me|us) (?:at|on) /i,
+    warning: "Off-platform messaging is discouraged. Use CheckHire's in-app chat.",
+  },
 ];
 
 export type PiiDetectionResult = {

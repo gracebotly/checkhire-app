@@ -35,7 +35,7 @@ export function JobSort() {
             onClick={() => handleSort(opt.value)}
             className={`cursor-pointer rounded-lg px-3 py-1.5 text-xs font-medium transition-colors duration-200 ${
               current === opt.value
-                ? "bg-brand text-white"
+                ? "bg-slate-900 text-white"
                 : "text-slate-600 hover:bg-gray-50 hover:text-slate-900"
             }`}
           >

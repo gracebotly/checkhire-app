@@ -69,7 +69,7 @@ export function SeekerSidebar({ userEmail, displayName }: SeekerSidebarProps) {
           "mx-1 my-1 flex cursor-pointer flex-col items-center gap-1 rounded-lg px-1.5 py-2 outline-none",
           "focus-visible:ring-2 focus-visible:ring-white/40",
           "transition-colors duration-200",
-          active ? "bg-brand text-white" : "text-slate-600 hover:bg-white/5"
+          active ? "bg-blue-500 text-white" : "text-slate-600 hover:bg-white/5"
         )}
       >
         <Icon size={20} className={cn(active ? "text-white" : "text-slate-600")} />

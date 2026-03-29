@@ -11,6 +11,16 @@ const PUBLIC_PATHS = [
   "/api/auth/signup",
   // Public job board (no auth required to browse)
   "/jobs",
+  // Public informational pages
+  "/for-employers",
+  "/pricing",
+  "/about",
+  "/contact",
+  "/terms",
+  "/privacy",
+  "/blog",
+  // Public employer profiles
+  "/employers",
 ];
 
 export async function updateSession(request: NextRequest) {

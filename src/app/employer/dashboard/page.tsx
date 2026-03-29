@@ -14,6 +14,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { DaysRemaining } from "@/components/jobs/DaysRemaining";
 import { TransparencyScoreCard } from "@/components/employer/TransparencyScoreCard";
+import { OnboardingChecklist } from "@/components/employer/OnboardingChecklist";
 
 type DashboardStats = {
   active_listings: number;
@@ -33,10 +34,19 @@ type RecentListing = {
   expires_at: string;
 };
 
+type OnboardingState = {
+  company_name: string | null;
+  website_domain: string | null;
+  description: string | null;
+  domain_email_verified: boolean;
+  has_listings: boolean;
+};
+
 export default function EmployerDashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [recentListings, setRecentListings] = useState<RecentListing[]>([]);
   const [loading, setLoading] = useState(true);
+  const [onboarding, setOnboarding] = useState<OnboardingState | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -47,6 +57,7 @@ export default function EmployerDashboardPage() {
         if (active && json.ok) {
           setStats(json.stats);
           setRecentListings(json.recent_listings || []);
+          setOnboarding(json.onboarding || null);
         }
       } catch {
         /* ignore */
@@ -158,6 +169,19 @@ export default function EmployerDashboardPage() {
             );
           })}
         </div>
+
+        {/* Onboarding Checklist — shows only for new employers */}
+        {onboarding && (
+          <div className="mt-6">
+            <OnboardingChecklist
+              companyName={onboarding.company_name}
+              websiteDomain={onboarding.website_domain}
+              description={onboarding.description}
+              domainEmailVerified={onboarding.domain_email_verified}
+              hasListings={onboarding.has_listings}
+            />
+          </div>
+        )}
 
         {/* Transparency Score */}
         <div className="mt-6">

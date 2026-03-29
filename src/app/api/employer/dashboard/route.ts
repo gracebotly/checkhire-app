@@ -92,5 +92,13 @@ export const GET = withApiHandler(async function GET() {
     },
     transparency_score: scoreBreakdown,
     recent_listings: recentListings || [],
+    // Onboarding state — used by the dashboard checklist
+    onboarding: {
+      company_name: ctx.employer.company_name,
+      website_domain: ctx.employer.website_domain,
+      description: ctx.employer.description,
+      domain_email_verified: !!ctx.employer.domain_email_verified_at,
+      has_listings: (totalCount ?? 0) > 0,
+    },
   });
 });

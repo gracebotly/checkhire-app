@@ -13,7 +13,7 @@ export const TabsTrigger = ({
 }: React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger>) => (
   <TabsPrimitive.Trigger
     className={cn(
-      "select-none rounded-md px-3 py-1 text-sm data-[state=active]:bg-brand data-[state=active]:text-white",
+      "select-none rounded-md px-3 py-1 text-sm text-slate-600 data-[state=active]:bg-slate-900 data-[state=active]:text-white",
       className
     )}
     {...props}

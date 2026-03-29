@@ -15,7 +15,7 @@ export function PipelineViewToggle({ view, onViewChange }: PipelineViewTogglePro
         onClick={() => onViewChange("kanban")}
         className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors duration-200 ${
           view === "kanban"
-            ? "bg-brand text-white"
+            ? "bg-slate-900 text-white"
             : "text-slate-600 hover:bg-gray-50"
         }`}
       >
@@ -27,7 +27,7 @@ export function PipelineViewToggle({ view, onViewChange }: PipelineViewTogglePro
         onClick={() => onViewChange("list")}
         className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors duration-200 ${
           view === "list"
-            ? "bg-brand text-white"
+            ? "bg-slate-900 text-white"
             : "text-slate-600 hover:bg-gray-50"
         }`}
       >

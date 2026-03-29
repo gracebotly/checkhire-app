@@ -87,7 +87,7 @@ export function VideoPlaybackCard({ applicationId }: VideoPlaybackCardProps) {
                 onClick={() => handleSpeedChange(speed)}
                 className={`cursor-pointer rounded-md px-2 py-0.5 text-xs font-medium transition-colors duration-200 ${
                   playbackSpeed === speed
-                    ? "bg-brand text-white"
+                    ? "bg-slate-900 text-white"
                     : "bg-gray-50 text-slate-600 hover:bg-gray-100"
                 }`}
               >

@@ -83,7 +83,7 @@ export function JobPagination({
               className={cn(
                 "h-8 w-8 cursor-pointer rounded-lg text-xs font-medium transition-colors duration-200",
                 page === currentPage
-                  ? "bg-brand text-white"
+                  ? "bg-slate-900 text-white"
                   : "text-slate-600 hover:bg-gray-50 hover:text-slate-900"
               )}
             >

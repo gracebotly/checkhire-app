@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
+import { BarChart3 } from "lucide-react";
 import { TierBadge } from "@/components/jobs/TierBadge";
 import { CompensationDisplay } from "@/components/jobs/CompensationDisplay";
 import { CommissionWarning } from "@/components/jobs/CommissionWarning";
@@ -101,6 +102,15 @@ export function JobCard({ listing, index = 0 }: JobCardProps) {
             <span className="text-xs text-slate-600">
               {formatPostedDate(listing.created_at)}
             </span>
+            {employer.transparency_score > 0 && (
+              <span className="flex items-center gap-1 text-xs text-slate-600">
+                <BarChart3 className="h-3 w-3" />
+                <span className="font-semibold tabular-nums text-slate-900">
+                  {employer.transparency_score}
+                </span>
+                /5
+              </span>
+            )}
           </div>
           <ApplicationCount
             current={listing.current_application_count}

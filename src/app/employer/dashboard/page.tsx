@@ -13,6 +13,7 @@ import {
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { DaysRemaining } from "@/components/jobs/DaysRemaining";
+import { TransparencyScoreCard } from "@/components/employer/TransparencyScoreCard";
 
 type DashboardStats = {
   active_listings: number;
@@ -156,6 +157,11 @@ export default function EmployerDashboardPage() {
               </motion.div>
             );
           })}
+        </div>
+
+        {/* Transparency Score */}
+        <div className="mt-6">
+          <TransparencyScoreCard />
         </div>
 
         {/* Recent Listings */}

@@ -1,47 +1,85 @@
-import { createServiceClient } from "@/lib/supabase/service";
+import Link from "next/link";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
-import { Hero } from "@/components/marketing/Hero";
-import { TrustPillars } from "@/components/marketing/TrustPillars";
-import { HowItWorks } from "@/components/marketing/HowItWorks";
-import { JobPreviewGrid } from "@/components/marketing/JobPreviewGrid";
-import { EmployerCTA } from "@/components/marketing/EmployerCTA";
+import { Shield, ArrowRight, Lock, Clock, DollarSign } from "lucide-react";
 
-export default async function HomePage() {
-  // Fetch 6 recent active listings for the preview grid
-  const supabase = createServiceClient();
-  const { data: listings } = await supabase
-    .from("job_listings")
-    .select(
-      `
-      *,
-      employers!inner (
-        company_name,
-        tier_level,
-        logo_url,
-        transparency_score,
-        industry,
-        company_size,
-        website_domain,
-        description,
-        country,
-        slug
-      )
-    `
-    )
-    .eq("status", "active")
-    .order("created_at", { ascending: false })
-    .limit(6);
-
+export default function HomePage() {
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
       <main>
-        <Hero />
-        <TrustPillars />
-        <HowItWorks />
-        <JobPreviewGrid listings={listings || []} />
-        <EmployerCTA />
+        {/* Hero */}
+        <section className="px-6 py-20 md:py-28">
+          <div className="mx-auto max-w-4xl text-center">
+            <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-muted">
+              <Shield className="h-7 w-7 text-brand" />
+            </div>
+            <h1 className="font-display text-3xl font-bold text-slate-900 md:text-5xl">
+              Safe escrow for gig work
+            </h1>
+            <p className="mx-auto mt-4 max-w-2xl text-base text-slate-600 md:text-lg">
+              You found each other. We make sure nobody gets screwed. Create a
+              deal, fund escrow, and release payment when work is complete.
+            </p>
+            <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+              <Link
+                href="/login?mode=signup"
+                className="flex cursor-pointer items-center gap-2 rounded-lg bg-brand px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-brand-hover"
+              >
+                Create a Deal
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+              <Link
+                href="/about"
+                className="cursor-pointer rounded-lg border border-gray-200 bg-white px-6 py-3 text-sm font-semibold text-slate-900 shadow-sm transition-colors duration-200 hover:bg-gray-50"
+              >
+                How It Works
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        {/* Value props */}
+        <section className="border-t border-gray-100 bg-gray-50 px-6 py-16">
+          <div className="mx-auto grid max-w-4xl gap-8 md:grid-cols-3">
+            <div className="text-center">
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-muted">
+                <Lock className="h-5 w-5 text-brand" />
+              </div>
+              <h3 className="text-base font-semibold text-slate-900">
+                Funds locked before work starts
+              </h3>
+              <p className="mt-2 text-sm text-slate-600">
+                Client pays into escrow. Freelancer sees &ldquo;Payment Secured&rdquo;
+                with the exact amount held for them.
+              </p>
+            </div>
+            <div className="text-center">
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-muted">
+                <Clock className="h-5 w-5 text-brand" />
+              </div>
+              <h3 className="text-base font-semibold text-slate-900">
+                72-hour auto-release
+              </h3>
+              <p className="mt-2 text-sm text-slate-600">
+                Client has 72 hours to review delivered work. No response? Funds
+                release automatically. No more ghost clients.
+              </p>
+            </div>
+            <div className="text-center">
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-muted">
+                <DollarSign className="h-5 w-5 text-brand" />
+              </div>
+              <h3 className="text-base font-semibold text-slate-900">
+                Freelancer keeps 100%
+              </h3>
+              <p className="mt-2 text-sm text-slate-600">
+                Zero freelancer fees. The client pays a 5% platform fee.
+                Freelancer receives exactly the posted amount.
+              </p>
+            </div>
+          </div>
+        </section>
       </main>
       <Footer />
     </div>

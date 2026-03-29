@@ -3,7 +3,6 @@ import { Resend } from "resend";
 interface WelcomeEmailParams {
   to: string;
   userName?: string | null;
-  userType: "employer" | "job_seeker";
 }
 
 /**
@@ -18,34 +17,21 @@ export async function sendWelcomeEmail(params: WelcomeEmailParams) {
   }
 
   const resend = new Resend(apiKey);
-  const { to, userName, userType } = params;
+  const { to, userName } = params;
   const greeting = userName ? `Hi ${userName},` : "Hi there,";
-
-  const isEmployer = userType === "employer";
-  const subject = isEmployer
-    ? "Welcome to CheckHire — Start posting verified jobs"
-    : "Welcome to CheckHire — Find trusted jobs";
-
-  const body = isEmployer
-    ? `${greeting}
-
-Your employer account is ready. You can now create your company profile and start posting verified job listings.
-
-CheckHire — The trust-first job board.`
-    : `${greeting}
-
-Your account is ready. Browse verified job listings and apply with confidence — your identity stays protected until you choose to share it.
-
-CheckHire — The trust-first job board.`;
 
   try {
     await resend.emails.send({
       from: "CheckHire <no-reply@checkhire.com>",
       to: [to],
-      subject,
-      text: body,
+      subject: "Welcome to CheckHire — Safe escrow for gig work",
+      text: `${greeting}
+
+Your account is ready. You can now create deals, fund escrow, and get paid safely for gig work.
+
+CheckHire — You found each other. We make sure nobody gets screwed.`,
     });
-    console.log(`[sendWelcomeEmail] Sent to ${to} (${userType})`);
+    console.log(`[sendWelcomeEmail] Sent to ${to}`);
   } catch (err) {
     console.error("[sendWelcomeEmail] Failed:", err);
   }

@@ -18,16 +18,18 @@
   --brand-foreground: 0 0% 100%;
   --brand-muted: 172 40% 94%;
 
-  /* ─── Tier Badge Colors ─── */
-  --tier-1: 43 96% 46%;
-  --tier-1-bg: 43 96% 95%;
-  --tier-1-foreground: 43 96% 24%;
-  --tier-2: 210 80% 48%;
-  --tier-2-bg: 210 80% 95%;
-  --tier-2-foreground: 210 80% 25%;
-  --tier-3: 220 14% 46%;
-  --tier-3-bg: 220 14% 95%;
-  --tier-3-foreground: 220 14% 25%;
+  /* ─── Trust Badges ─── */
+  --trust-new: 220 14% 46%;
+  --trust-trusted: 172 66% 32%;
+  --trust-established: 172 66% 22%;
+  --trust-verified: 210 80% 48%;
+
+  /* ─── Escrow Status Colors ─── */
+  --escrow-unfunded: 220 14% 46%;
+  --escrow-funded: 160 84% 39%;
+  --escrow-released: 172 66% 32%;
+  --escrow-frozen: 38 92% 50%;
+  --escrow-refunded: 0 72% 51%;
 
   /* ─── Feedback ─── */
   --success: 160 84% 39%;
@@ -36,12 +38,8 @@
   --warning-foreground: 0 0% 100%;
   --danger: 0 72% 51%;
   --danger-foreground: 0 0% 100%;
-  --commission-warning: 25 95% 53%;
-  --commission-warning-bg: 25 95% 95%;
 
   /* ─── Surfaces ─── */
-  --sidebar-bg: 220 20% 14%;
-  --sidebar-muted: 220 14% 63%;
   --main-bg: 220 20% 98%;
 
   /* ─── Typography ─── */
@@ -70,40 +68,20 @@
 
 /* ─── Animations ─── */
 @keyframes gradient-x {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
 }
 .animate-gradient {
   background-size: 200% 200%;
   animation: gradient-x 3s ease infinite;
 }
 
-@keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 20px rgba(15, 118, 110, 0.2); }
-  50% { box-shadow: 0 0 30px rgba(15, 118, 110, 0.4); }
-}
-.animate-pulse-glow {
-  animation: pulse-glow 2s ease-in-out infinite;
-}
-
-/* ─── Salary Figures — Tabular Numbers ─── */
+/* ─── Salary/Amount Figures — Tabular Numbers ─── */
 .tabular-nums {
   font-variant-numeric: tabular-nums;
-}
-
-/* ─── Chat Animations ─── */
-@keyframes unread-pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.15); }
-}
-.animate-unread-pulse {
-  animation: unread-pulse 2s ease-in-out 3; /* pulses 3 times then stops */
-}
-
-@keyframes message-in {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.animate-message-in {
-  animation: message-in 0.2s ease-out;
 }

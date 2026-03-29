@@ -8,7 +8,6 @@ export default function NotFound() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-6">
       <div className="relative mx-auto max-w-lg text-center">
-        {/* Large decorative 404 */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -47,7 +46,7 @@ export default function NotFound() {
             className="mt-3 text-sm text-slate-600"
           >
             The page you&apos;re looking for doesn&apos;t exist or has been
-            moved. Check the URL or head back to familiar ground.
+            moved. Check the URL or head back home.
           </motion.p>
 
           <motion.div
@@ -57,14 +56,8 @@ export default function NotFound() {
             className="mt-8 flex items-center justify-center gap-3"
           >
             <Link
-              href="/jobs"
-              className="cursor-pointer rounded-lg bg-brand px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-brand-hover"
-            >
-              Browse Jobs
-            </Link>
-            <Link
               href="/"
-              className="cursor-pointer rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-900 shadow-sm transition-colors duration-200 hover:bg-gray-50"
+              className="cursor-pointer rounded-lg bg-brand px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-brand-hover"
             >
               Go Home
             </Link>

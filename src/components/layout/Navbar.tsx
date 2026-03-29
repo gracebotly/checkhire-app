@@ -3,16 +3,16 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Shield, Menu, X, LogOut, Briefcase, FileText } from "lucide-react";
+import { Shield, Menu, X, LogOut } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 
-type AuthState = "loading" | "anon" | "seeker" | "employer";
+type AuthState = "loading" | "anon" | "authenticated";
 
 export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [authState, setAuthState] = useState<AuthState>("loading");
-  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [displayName, setDisplayName] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -28,59 +28,15 @@ export function Navbar() {
           return;
         }
 
-        setUserEmail(user.email || null);
-
-        // Try to get user_type from user_profiles
         const { data: profile } = await supabase
           .from("user_profiles")
-          .select("user_type")
+          .select("display_name")
           .eq("id", user.id)
           .maybeSingle();
 
-        if (profile?.user_type === "employer") {
-          setAuthState("employer");
-        } else if (profile?.user_type === "job_seeker") {
-          setAuthState("seeker");
-        } else {
-          // Profile row missing or user_type not set — fallback to user metadata
-          const metaType = user.user_metadata?.user_type;
-          if (metaType === "employer") {
-            setAuthState("employer");
-          } else if (metaType === "job_seeker") {
-            setAuthState("seeker");
-          } else {
-            // User is authenticated but we can't determine type.
-            // Default to seeker (most common) rather than showing anon UI.
-            setAuthState("seeker");
-          }
-
-          // Auto-repair: create missing user_profiles row in the background
-          if (!profile) {
-            const userType = metaType === "employer" ? "employer" : "job_seeker";
-            supabase
-              .from("user_profiles")
-              .upsert(
-                {
-                  id: user.id,
-                  user_type: userType,
-                  full_name:
-                    user.user_metadata?.name || user.user_metadata?.full_name || null,
-                },
-                { onConflict: "id" }
-              )
-              .then(({ error }) => {
-                if (error) {
-                  console.warn(
-                    "[Navbar] Failed to auto-repair user_profiles:",
-                    error.message
-                  );
-                }
-              });
-          }
-        }
-      } catch (err) {
-        // If anything fails, default to anon — don't crash the navbar
-        console.warn("[Navbar] Auth check failed:", err);
+        setDisplayName(profile?.display_name || user.email || null);
+        setAuthState("authenticated");
+      } catch {
         setAuthState("anon");
       }
     }
@@ -91,7 +47,7 @@ export function Navbar() {
     const supabase = createClient();
     await supabase.auth.signOut();
     setAuthState("anon");
-    setUserEmail(null);
+    setDisplayName(null);
     setMobileOpen(false);
     router.push("/");
     router.refresh();
@@ -115,44 +71,20 @@ export function Navbar() {
 
         {/* Desktop nav */}
         <nav className="hidden items-center gap-8 md:flex">
+          {authState === "authenticated" && (
+            <Link
+              href="/dashboard"
+              className="cursor-pointer text-sm font-medium text-slate-600 transition-colors duration-200 hover:text-slate-900"
+            >
+              My Deals
+            </Link>
+          )}
           <Link
-            href="/jobs"
+            href="/about"
             className="cursor-pointer text-sm font-medium text-slate-600 transition-colors duration-200 hover:text-slate-900"
           >
-            Browse Jobs
+            About
           </Link>
-          {authState === "seeker" && (
-            <>
-              <Link
-                href="/seeker/applications"
-                className="cursor-pointer text-sm font-medium text-slate-600 transition-colors duration-200 hover:text-slate-900"
-              >
-                My Applications
-              </Link>
-              <Link
-                href="/seeker/profile"
-                className="cursor-pointer text-sm font-medium text-slate-600 transition-colors duration-200 hover:text-slate-900"
-              >
-                My Profile
-              </Link>
-            </>
-          )}
-          {authState === "employer" && (
-            <Link
-              href="/employer/dashboard"
-              className="cursor-pointer text-sm font-medium text-slate-600 transition-colors duration-200 hover:text-slate-900"
-            >
-              Employer Dashboard
-            </Link>
-          )}
-          {authState === "anon" && (
-            <Link
-              href="/for-employers"
-              className="cursor-pointer text-sm font-medium text-slate-600 transition-colors duration-200 hover:text-slate-900"
-            >
-              For Employers
-            </Link>
-          )}
         </nav>
 
         {/* Desktop CTAs */}
@@ -169,17 +101,23 @@ export function Navbar() {
                 Sign In
               </Link>
               <Link
-                href="/signup"
+                href="/login?mode=signup"
                 className="cursor-pointer rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-brand-hover"
               >
-                Post a Job
+                Get Started
               </Link>
             </>
           )}
-          {(authState === "seeker" || authState === "employer") && (
-            <div className="flex items-center gap-2">
-              {userEmail && (
-                <span className="text-xs text-slate-600">{userEmail}</span>
+          {authState === "authenticated" && (
+            <div className="flex items-center gap-3">
+              <Link
+                href="/deal/new"
+                className="cursor-pointer rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-brand-hover"
+              >
+                Create Deal
+              </Link>
+              {displayName && (
+                <span className="text-xs text-slate-600">{displayName}</span>
               )}
               <button
                 onClick={handleLogout}
@@ -216,55 +154,31 @@ export function Navbar() {
             className="border-t border-gray-200 bg-white px-6 py-4 md:hidden"
           >
             <nav className="flex flex-col gap-3">
-              <Link
-                href="/jobs"
-                onClick={closeMobile}
-                className="cursor-pointer rounded-lg px-3 py-2 text-sm font-medium text-slate-900 transition-colors duration-200 hover:bg-gray-50"
-              >
-                Browse Jobs
-              </Link>
-
-              {authState === "seeker" && (
+              {authState === "authenticated" && (
                 <>
                   <Link
-                    href="/seeker/applications"
+                    href="/dashboard"
                     onClick={closeMobile}
-                    className="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-900 transition-colors duration-200 hover:bg-gray-50"
+                    className="cursor-pointer rounded-lg px-3 py-2 text-sm font-medium text-slate-900 transition-colors duration-200 hover:bg-gray-50"
                   >
-                    <Briefcase className="h-4 w-4" />
-                    My Applications
+                    My Deals
                   </Link>
                   <Link
-                    href="/seeker/profile"
+                    href="/deal/new"
                     onClick={closeMobile}
-                    className="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-900 transition-colors duration-200 hover:bg-gray-50"
+                    className="cursor-pointer rounded-lg bg-brand px-3 py-2.5 text-center text-sm font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-brand-hover"
                   >
-                    <FileText className="h-4 w-4" />
-                    My Profile
+                    Create Deal
                   </Link>
                 </>
               )}
-
-              {authState === "employer" && (
-                <Link
-                  href="/employer/dashboard"
-                  onClick={closeMobile}
-                  className="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-900 transition-colors duration-200 hover:bg-gray-50"
-                >
-                  <Briefcase className="h-4 w-4" />
-                  Employer Dashboard
-                </Link>
-              )}
-
-              {authState === "anon" && (
-                <Link
-                  href="/for-employers"
-                  onClick={closeMobile}
-                  className="cursor-pointer rounded-lg px-3 py-2 text-sm font-medium text-slate-900 transition-colors duration-200 hover:bg-gray-50"
-                >
-                  For Employers
-                </Link>
-              )}
+              <Link
+                href="/about"
+                onClick={closeMobile}
+                className="cursor-pointer rounded-lg px-3 py-2 text-sm font-medium text-slate-900 transition-colors duration-200 hover:bg-gray-50"
+              >
+                About
+              </Link>
 
               <div className="my-1 h-px bg-gray-100" />
 
@@ -278,16 +192,16 @@ export function Navbar() {
                     Sign In
                   </Link>
                   <Link
-                    href="/signup"
+                    href="/login?mode=signup"
                     onClick={closeMobile}
                     className="cursor-pointer rounded-lg bg-brand px-3 py-2.5 text-center text-sm font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-brand-hover"
                   >
-                    Post a Job
+                    Get Started
                   </Link>
                 </>
               )}
 
-              {(authState === "seeker" || authState === "employer") && (
+              {authState === "authenticated" && (
                 <button
                   onClick={handleLogout}
                   className="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors duration-200 hover:bg-red-50 hover:text-red-600"

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
-import { Shield, ArrowRight, Lock, Clock, DollarSign } from "lucide-react";
+import { Shield, ArrowRight, Lock, Clock, DollarSign, FileText, Zap } from "lucide-react";
 
 export default function HomePage() {
   return (
@@ -26,7 +26,7 @@ export default function HomePage() {
                 href="/login?mode=signup"
                 className="flex cursor-pointer items-center gap-2 rounded-lg bg-brand px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-brand-hover"
               >
-                Create a Deal
+                Post a Gig — It&apos;s Free
                 <ArrowRight className="h-4 w-4" />
               </Link>
               <Link
@@ -35,6 +35,53 @@ export default function HomePage() {
               >
                 How It Works
               </Link>
+            </div>
+          </div>
+        </section>
+
+        {/* How It Works */}
+        <section className="px-6 py-16">
+          <div className="mx-auto max-w-4xl">
+            <h2 className="mb-10 text-center font-display text-2xl font-bold text-slate-900">
+              How It Works
+            </h2>
+            <div className="grid gap-8 md:grid-cols-3">
+              <div className="text-center">
+                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-muted">
+                  <FileText className="h-5 w-5 text-brand" />
+                </div>
+                <h3 className="text-base font-semibold text-slate-900">
+                  Post a gig
+                </h3>
+                <p className="mt-2 text-sm text-slate-600">
+                  Describe the work, set the price, and share the link with your
+                  freelancer.
+                </p>
+              </div>
+              <div className="text-center">
+                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-muted">
+                  <Lock className="h-5 w-5 text-brand" />
+                </div>
+                <h3 className="text-base font-semibold text-slate-900">
+                  Fund escrow
+                </h3>
+                <p className="mt-2 text-sm text-slate-600">
+                  Payment is held securely. Freelancer sees &ldquo;Payment
+                  Secured&rdquo; before starting work.
+                </p>
+              </div>
+              <div className="text-center">
+                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-muted">
+                  <Zap className="h-5 w-5 text-brand" />
+                </div>
+                <h3 className="text-base font-semibold text-slate-900">
+                  Get paid
+                </h3>
+                <p className="mt-2 text-sm text-slate-600">
+                  Work gets delivered, payment gets released. Freelancer keeps
+                  100%.
+                </p>
+              </div>
             </div>
           </div>
         </section>
@@ -78,6 +125,25 @@ export default function HomePage() {
                 Freelancer receives exactly the posted amount.
               </p>
             </div>
+          </div>
+        </section>
+        {/* Final CTA */}
+        <section className="px-6 py-16">
+          <div className="mx-auto max-w-4xl text-center">
+            <h2 className="font-display text-2xl font-bold text-slate-900">
+              Ready to get started?
+            </h2>
+            <p className="mx-auto mt-3 max-w-lg text-sm text-slate-600">
+              Create your first gig in under 2 minutes. No fees for
+              freelancers, ever.
+            </p>
+            <Link
+              href="/deal/new"
+              className="mt-6 inline-flex cursor-pointer items-center gap-2 rounded-lg bg-brand px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-brand-hover"
+            >
+              Post a Gig — It&apos;s Free
+              <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
         </section>
       </main>

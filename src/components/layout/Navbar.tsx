@@ -76,7 +76,7 @@ export function Navbar() {
               href="/dashboard"
               className="cursor-pointer text-sm font-medium text-slate-600 transition-colors duration-200 hover:text-slate-900"
             >
-              My Deals
+              My Gigs
             </Link>
           )}
           <Link
@@ -114,7 +114,7 @@ export function Navbar() {
                 href="/deal/new"
                 className="cursor-pointer rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-brand-hover"
               >
-                Create Deal
+                Post a Gig
               </Link>
               {displayName && (
                 <span className="text-xs text-slate-600">{displayName}</span>
@@ -161,14 +161,14 @@ export function Navbar() {
                     onClick={closeMobile}
                     className="cursor-pointer rounded-lg px-3 py-2 text-sm font-medium text-slate-900 transition-colors duration-200 hover:bg-gray-50"
                   >
-                    My Deals
+                    My Gigs
                   </Link>
                   <Link
                     href="/deal/new"
                     onClick={closeMobile}
                     className="cursor-pointer rounded-lg bg-brand px-3 py-2.5 text-center text-sm font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-brand-hover"
                   >
-                    Create Deal
+                    Post a Gig
                   </Link>
                 </>
               )}

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getEmployerForUser } from "@/lib/employer/getEmployerForUser";
 import { withApiHandler } from "@/lib/api/withApiHandler";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
+import { calculateTransparencyScore } from "@/lib/employer/transparencyScore";
 
 export const runtime = "nodejs";
 
@@ -57,12 +58,30 @@ export const GET = withApiHandler(async function GET() {
     .order("created_at", { ascending: false })
     .limit(5);
 
+  // Count total applications across all employer's listings
+  const { data: listingIds } = await supabaseAdmin
+    .from("job_listings")
+    .select("id")
+    .eq("employer_id", ctx.employerId);
+
+  let totalApplications = 0;
+  if (listingIds && listingIds.length > 0) {
+    const { count } = await supabaseAdmin
+      .from("applications")
+      .select("id", { count: "exact", head: true })
+      .in("job_listing_id", listingIds.map((l) => l.id));
+    totalApplications = count ?? 0;
+  }
+
+  // Calculate transparency score breakdown
+  const scoreBreakdown = await calculateTransparencyScore(ctx.employerId);
+
   return NextResponse.json({
     ok: true,
     stats: {
       active_listings: activeCount ?? 0,
       total_listings: totalCount ?? 0,
-      total_applications: 0, // Applications table doesn't exist yet — Slice 3
+      total_applications: totalApplications,
       next_expiration: nextExpiring
         ? {
             title: nextExpiring.title,
@@ -71,6 +90,7 @@ export const GET = withApiHandler(async function GET() {
           }
         : null,
     },
+    transparency_score: scoreBreakdown,
     recent_listings: recentListings || [],
   });
 });

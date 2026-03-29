@@ -4,6 +4,8 @@ import { withApiHandler } from "@/lib/api/withApiHandler";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { deactivateAllPairsForListing } from "@/lib/email/maskedEmail";
 import { createSystemMessage } from "@/lib/chat/systemMessage";
+import { scheduleAllCheckins } from "@/lib/email/postHireCheckin";
+import { recalculateScore } from "@/lib/employer/recalculateScore";
 
 export const runtime = "nodejs";
 
@@ -153,7 +155,7 @@ export const POST = withApiHandler(async function POST(
     if (newStatus === "filled" && hiredCandidateId) {
       await supabaseAdmin
         .from("applications")
-        .update({ status: "hired" })
+        .update({ status: "hired", hired_at: new Date().toISOString() })
         .eq("id", hiredCandidateId)
         .eq("job_listing_id", id);
 
@@ -163,6 +165,19 @@ export const POST = withApiHandler(async function POST(
         "status_change",
         { action: "hired", close_reason: finalReason }
       ).catch(() => {});
+
+      // Schedule post-hire check-ins (non-blocking)
+      const { data: hiredApp } = await supabaseAdmin
+        .from("applications")
+        .select("user_id")
+        .eq("id", hiredCandidateId)
+        .single();
+
+      if (hiredApp?.user_id) {
+        scheduleAllCheckins(hiredCandidateId, ctx.employerId, hiredApp.user_id).catch(
+          (err) => console.error("[close] Check-in scheduling error:", err)
+        );
+      }
     }
 
     // Notify all other open candidates
@@ -182,6 +197,9 @@ export const POST = withApiHandler(async function POST(
       ).catch(() => {});
     }
   }
+
+  // Recalculate transparency score (non-blocking)
+  recalculateScore(ctx.employerId).catch(() => {});
 
   return NextResponse.json({
     ok: true,

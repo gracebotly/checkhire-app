@@ -3,6 +3,15 @@
 
 export type TierLevel = 1 | 2 | 3;
 
+export type UserProfile = {
+  id: string;
+  full_name: string | null;
+  user_type: "employer" | "job_seeker";
+  is_platform_admin: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
 export type JobType = "gig" | "temp" | "full_time" | "part_time" | "contract";
 
 export type PayType = "hourly" | "salary" | "project" | "commission";
@@ -15,7 +24,8 @@ export type ListingStatus =
   | "closed"
   | "expired"
   | "paused"
-  | "review_pending";
+  | "review_pending"
+  | "pending_payment";
 
 export type EscrowStatus =
   | "not_applicable"
@@ -23,6 +33,10 @@ export type EscrowStatus =
   | "funded"
   | "released"
   | "refunded";
+
+export type PaymentStatus = "free" | "pending_payment" | "paid";
+
+export type AccountStatus = "active" | "restricted" | "suspended" | "banned";
 
 export type CommissionStructure = {
   commission_percentage?: number;
@@ -47,6 +61,11 @@ export type Employer = {
   company_size: string | null;
   country: string;
   slug: string | null;
+  is_founding_employer: boolean;
+  stripe_customer_id: string | null;
+  subscription_stripe_id: string | null;
+  account_status: AccountStatus;
+  last_score_calculated_at: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -83,6 +102,7 @@ export type JobListing = {
   max_applications: number;
   current_application_count: number;
   mlm_flag_score: number;
+  payment_status: PaymentStatus;
   slug: string;
   created_at: string;
   expires_at: string;
@@ -101,6 +121,8 @@ export type JobListingWithEmployer = JobListing & {
     | "website_domain"
     | "description"
     | "country"
+    | "is_founding_employer"
+    | "account_status"
   > & { slug: string | null };
 };
 
@@ -183,6 +205,7 @@ export type Application = {
   disclosed_at_stage2: string | null;
   disclosed_at_stage3: string | null;
   withdrawn_at: string | null;
+  hired_at: string | null;
   created_at: string;
 };
 
@@ -425,4 +448,93 @@ export type QuestionTemplate = {
   questions: QuestionTemplateEntry[];
   is_platform_default: boolean;
   created_at: string;
+};
+
+// ─── Slice 6: Trust Layer, Flagging, Reviews, Check-Ins ───
+
+export type ReviewType = "application_experience" | "post_hire_30day" | "post_hire_60day";
+
+export type EmployerReview = {
+  id: string;
+  employer_id: string;
+  job_listing_id: string | null;
+  user_id: string;
+  heard_back: boolean;
+  job_was_real: boolean;
+  got_paid: boolean | null;
+  rating: number;
+  comments: string | null;
+  review_type: ReviewType;
+  created_at: string;
+};
+
+export type FlagReporterType = "employer" | "applicant" | "system";
+
+export type FlagTargetType = "employer" | "listing";
+
+export type FlagReason =
+  | "impersonation"
+  | "ghost_job"
+  | "data_harvesting"
+  | "sensitive_info_request"
+  | "mlm_suspected"
+  | "predatory_listing"
+  | "unresponsive"
+  | "bait_and_switch"
+  | "other";
+
+export type FlagStatus = "pending" | "investigating" | "resolved" | "dismissed";
+
+export type Flag = {
+  id: string;
+  reporter_id: string | null;
+  reporter_type: FlagReporterType;
+  target_type: FlagTargetType;
+  target_id: string;
+  reason: FlagReason;
+  description: string | null;
+  status: FlagStatus;
+  severity_weight: number;
+  resolution_notes: string | null;
+  created_at: string;
+  resolved_at: string | null;
+  resolved_by: string | null;
+};
+
+export type CheckinType = "30day" | "60day";
+
+export type CheckinStatus = "pending" | "sent" | "responded" | "expired";
+
+export type PostHireCheckin = {
+  id: string;
+  application_id: string;
+  employer_id: string;
+  user_id: string;
+  checkin_type: CheckinType;
+  sent_at: string | null;
+  responded_at: string | null;
+  response_data: {
+    heard_back?: boolean;
+    job_was_real?: boolean;
+    got_paid?: boolean;
+    rating?: number;
+    comments?: string;
+  } | null;
+  status: CheckinStatus;
+  created_at: string;
+};
+
+/**
+ * Transparency score breakdown — returned by the score calculation engine.
+ * Each component is scored 0.0–5.0, weighted, then combined into a total.
+ */
+export type TransparencyScoreBreakdown = {
+  total: number;
+  hire_rate: number;
+  responsiveness: number;
+  closeout_compliance: number;
+  checkin_results: number;
+  review_rate: number;
+  flag_penalty: number;
+  last_calculated_at: string | null;
 };

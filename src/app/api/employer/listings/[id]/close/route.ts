@@ -3,6 +3,7 @@ import { getEmployerForUser } from "@/lib/employer/getEmployerForUser";
 import { withApiHandler } from "@/lib/api/withApiHandler";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { deactivateAllPairsForListing } from "@/lib/email/maskedEmail";
+import { createSystemMessage } from "@/lib/chat/systemMessage";
 
 export const runtime = "nodejs";
 
@@ -137,12 +138,59 @@ export const POST = withApiHandler(async function POST(
   // Deactivate all masked email pairs for this listing (non-blocking)
   const deactivatedCount = await deactivateAllPairsForListing(id).catch(() => 0);
 
+  // Batch notify all open candidates that the listing is closed
+  const hiredCandidateId = body?.hired_candidate_id || null;
+  const reasonLabel = CLOSE_REASON_LABELS[closeReason] || closeReason;
+
+  const { data: openApps } = await supabaseAdmin
+    .from("applications")
+    .select("id, status")
+    .eq("job_listing_id", id)
+    .not("status", "in", "(rejected,hired,withdrawn)");
+
+  if (openApps && openApps.length > 0) {
+    // If filled, mark the hired candidate
+    if (newStatus === "filled" && hiredCandidateId) {
+      await supabaseAdmin
+        .from("applications")
+        .update({ status: "hired" })
+        .eq("id", hiredCandidateId)
+        .eq("job_listing_id", id);
+
+      await createSystemMessage(
+        hiredCandidateId,
+        "Congratulations! You've been hired for this position.",
+        "status_change",
+        { action: "hired", close_reason: finalReason }
+      ).catch(() => {});
+    }
+
+    // Notify all other open candidates
+    for (const app of openApps) {
+      if (app.id === hiredCandidateId) continue;
+
+      await supabaseAdmin
+        .from("applications")
+        .update({ status: "rejected" })
+        .eq("id", app.id);
+
+      await createSystemMessage(
+        app.id,
+        `This position has been closed. Reason: ${reasonLabel}. Thank you for your interest.`,
+        "status_change",
+        { action: "listing_closed", close_reason: finalReason }
+      ).catch(() => {});
+    }
+  }
+
   return NextResponse.json({
     ok: true,
     status: newStatus,
     close_reason: finalReason,
-    close_reason_label: CLOSE_REASON_LABELS[closeReason] || closeReason,
+    close_reason_label: reasonLabel,
     masked_pairs_deactivated: deactivatedCount,
+    candidates_notified: openApps?.length || 0,
+    hired_candidate_id: hiredCandidateId,
   });
 });
 

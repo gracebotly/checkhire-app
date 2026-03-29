@@ -24,6 +24,7 @@ export default async function SeekerApplicationDetailPage({
         id, title, slug, job_type, pay_type, salary_min, salary_max,
         remote_type, location_city, location_state, status,
         created_at, expires_at, requires_screening_quiz,
+        current_application_count, max_applications,
         employers ( company_name, tier_level, logo_url, slug, industry )
       )
     `)
@@ -68,6 +69,9 @@ export default async function SeekerApplicationDetailPage({
         title: listing.title,
         slug: listing.slug,
         remote_type: listing.remote_type,
+        expires_at: listing.expires_at,
+        current_application_count: listing.current_application_count,
+        max_applications: listing.max_applications,
       } : null}
       employer={employer ? {
         company_name: employer.company_name,

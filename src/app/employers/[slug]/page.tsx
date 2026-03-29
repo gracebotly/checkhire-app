@@ -6,6 +6,7 @@ import { ArrowLeft, Globe, Building2, Users, Calendar, ExternalLink } from "luci
 import { createServiceClient } from "@/lib/supabase/service";
 import { TierBadge } from "@/components/jobs/TierBadge";
 import { JobCard } from "@/components/jobs/JobCard";
+import { ReportEmployerButton } from "@/components/employer/ReportEmployerButton";
 import { generateEmployerMetadata } from "@/lib/seo";
 import type { TierLevel, JobListingWithEmployer } from "@/types/database";
 
@@ -179,6 +180,11 @@ export default async function EmployerProfilePage({
               : "Employer score will appear after first hire"}
           </span>
         </div>
+      </div>
+
+      {/* Report employer */}
+      <div className="mt-2 flex justify-end px-1">
+        <ReportEmployerButton employerId={employer.id} />
       </div>
 
       {/* ─── Open Positions ─── */}

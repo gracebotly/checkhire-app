@@ -1,11 +1,17 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { withApiHandler } from "@/lib/api/withApiHandler";
+import { createClient as createServiceClient } from "@supabase/supabase-js";
 
 export const runtime = "nodejs";
 
 const EMAIL_RE =
   /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?(\.[a-zA-Z]{2,})+$/;
+
+const supabaseAdmin = createServiceClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 function siteUrl(req: Request) {
   const env = process.env.NEXT_PUBLIC_SITE_URL;
@@ -89,6 +95,46 @@ export const POST = withApiHandler(async function POST(req: Request) {
       { ok: false, message: error.message },
       { status: 400 }
     );
+  }
+
+  // ─── Duplicate company name alert ───
+  // If an employer signs up with a name matching an existing company, flag it.
+  // This does NOT block signup — it alerts the existing admin.
+  if (validUserType === "employer" && companyName) {
+    try {
+      const normalizedName = companyName.toLowerCase().replace(/[^a-z0-9]/g, "");
+      const { data: existingEmployers } = await supabaseAdmin
+        .from("employers")
+        .select("id, company_name, claimed_by")
+        .limit(50);
+
+      if (existingEmployers) {
+        const match = existingEmployers.find(
+          (e) => e.company_name.toLowerCase().replace(/[^a-z0-9]/g, "") === normalizedName
+        );
+
+        if (match) {
+          // Create a flag against the NEW signup (we don't have their employer ID yet,
+          // so we flag against the existing employer as target with a system note)
+          await supabaseAdmin.from("flags").insert({
+            reporter_id: null, // system-generated
+            reporter_type: "system",
+            target_type: "employer",
+            target_id: match.id,
+            reason: "impersonation",
+            description: `A new account signed up with company name "${companyName}" which matches existing company "${match.company_name}". New signup email: ${email}. This may be a legitimate second user or an impersonation attempt.`,
+            severity_weight: 2,
+          });
+
+          console.log(
+            `[signup] Duplicate company alert: "${companyName}" matches existing employer ${match.id}`
+          );
+        }
+      }
+    } catch (err) {
+      // Non-fatal — never block signup for a flagging failure
+      console.error("[signup] Duplicate company check error:", err);
+    }
   }
 
   return NextResponse.json({ ok: true, hasSession: Boolean(data?.session) });

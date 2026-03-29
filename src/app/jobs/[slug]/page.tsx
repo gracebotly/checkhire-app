@@ -22,6 +22,7 @@ import { TrustSignalBar } from "@/components/jobs/TrustSignalBar";
 import { ScreeningRequirements } from "@/components/jobs/ScreeningRequirements";
 import { JobDetailStickyBar } from "@/components/jobs/JobDetailStickyBar";
 import { ApplyButton } from "@/components/jobs/ApplyButton";
+import { ReportListingButton } from "@/components/jobs/ReportListingButton";
 import { formatPostedDate } from "@/lib/formatting";
 import { generateListingMetadata, generateJobPostingJsonLd } from "@/lib/seo";
 import type { TierLevel, CommissionStructure, ScreeningQuestion } from "@/types/database";
@@ -374,6 +375,11 @@ export default async function JobDetailPage({
                   View company profile
                 </Link>
               )}
+            </div>
+
+            {/* Report listing */}
+            <div className="flex justify-center">
+              <ReportListingButton listingId={listing.id} />
             </div>
           </div>
         </div>

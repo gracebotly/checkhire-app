@@ -1,8 +1,6 @@
-import { type EmailOtpType } from "@supabase/supabase-js";
+import { type EmailOtpType, createClient as createServiceClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
-import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
-import { createEmployerOnSignup } from "@/lib/employer/createEmployerOnSignup";
 
 export const runtime = "nodejs";
 
@@ -18,13 +16,10 @@ export async function GET(request: Request) {
   const type = searchParams.get("type") as EmailOtpType | null;
 
   if (!tokenHash || !type) {
-    return NextResponse.redirect(
-      new URL("/auth/auth-code-error", request.url)
-    );
+    return NextResponse.redirect(new URL("/auth/auth-code-error", request.url));
   }
 
   const supabase = await createClient();
-
   const { error } = await supabase.auth.verifyOtp({
     type,
     token_hash: tokenHash,
@@ -37,51 +32,40 @@ export async function GET(request: Request) {
     );
   }
 
-  // User is now authenticated — check if they need a profile
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (user) {
-    const { data: profile } = await supabaseAdmin
-      .from("user_profiles")
-      .select("user_type")
-      .eq("id", user.id)
-      .maybeSingle();
-
-    if (!profile && type === "email") {
-      // New signup confirmation — create profile
-      const userType = user.user_metadata?.user_type ?? "job_seeker";
-      const validType = userType === "employer" ? "employer" : "job_seeker";
-
-      await supabaseAdmin.from("user_profiles").insert({
-        id: user.id,
-        user_type: validType,
-        full_name: user.user_metadata?.name || null,
-      });
-
-      // If employer, also create employer + employer_users records
-      if (validType === "employer") {
-        const companyName =
-          user.user_metadata?.company_name || "My Company";
-
-        await createEmployerOnSignup(user.id, companyName);
-        return NextResponse.redirect(new URL("/employer/dashboard", request.url));
-      }
-
-      // Create empty seeker_profiles row for job seekers
-      await supabaseAdmin.from("seeker_profiles").insert({
-        id: user.id,
-      });
-
-      return NextResponse.redirect(new URL("/seeker/profile", request.url));
-    }
-
-    // Existing user — route based on type
-    if (profile?.user_type === "employer") {
-      return NextResponse.redirect(new URL("/employer/dashboard", request.url));
-    }
+  if (!user) {
+    return NextResponse.redirect(new URL("/auth/auth-code-error", request.url));
   }
 
-  return NextResponse.redirect(new URL("/seeker/applications", request.url));
+  const { data: profile } = await supabaseAdmin
+    .from("user_profiles")
+    .select("id")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (!profile) {
+    const displayName =
+      user.user_metadata?.name ||
+      user.user_metadata?.full_name ||
+      user.email?.split("@")[0] ||
+      "User";
+
+    const profileSlug =
+      displayName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") +
+      "-" +
+      user.id.substring(0, 8);
+
+    await supabaseAdmin.from("user_profiles").insert({
+      id: user.id,
+      full_name: user.user_metadata?.name || user.user_metadata?.full_name || null,
+      display_name: displayName,
+      email: user.email || null,
+      profile_slug: profileSlug,
+    });
+  }
+
+  return NextResponse.redirect(new URL("/dashboard", request.url));
 }

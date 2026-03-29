@@ -22,7 +22,7 @@ export default function RootError({
         </h1>
         <p className="mt-3 text-sm text-slate-600">
           We hit an unexpected error. Your data is safe — try again or head
-          back to browse jobs.
+          back home.
         </p>
         <div className="mt-6 flex items-center justify-center gap-3">
           <button
@@ -32,10 +32,10 @@ export default function RootError({
             Try again
           </button>
           <Link
-            href="/jobs"
+            href="/"
             className="cursor-pointer rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-900 shadow-sm transition-colors duration-200 hover:bg-gray-50"
           >
-            Browse Jobs
+            Go Home
           </Link>
         </div>
       </div>

@@ -3,13 +3,21 @@ import { Shield } from "lucide-react";
 
 const LINKS = {
   Product: [
-    { label: "Browse Jobs", href: "/jobs" },
-    { label: "For Employers", href: "/for-employers" },
-    { label: "Pricing", href: "/pricing" },
-  ],
-  Company: [
-    { label: "About", href: "/about" },
+    { label: "How It Works", href: "/about" },
+    { label: "Create a Deal", href: "/deal/new" },
     { label: "Blog", href: "/blog" },
+  ],
+  Community: [
+    {
+      label: "Reddit",
+      href: "https://reddit.com/r/SecureFreelance",
+      external: true,
+    },
+    {
+      label: "Facebook Group",
+      href: "https://facebook.com/groups/checkhire",
+      external: true,
+    },
     { label: "Contact", href: "/contact" },
   ],
   Legal: [
@@ -32,8 +40,8 @@ export function Footer() {
               </span>
             </div>
             <p className="mt-3 text-sm text-slate-600">
-              The trust-first job board. Every employer verified. Every salary
-              shown.
+              Safe escrow for gig work. You found each other — we make sure
+              nobody gets screwed.
             </p>
           </div>
 
@@ -46,12 +54,23 @@ export function Footer() {
               <ul className="mt-3 space-y-2">
                 {links.map((link) => (
                   <li key={link.label}>
-                    <Link
-                      href={link.href}
-                      className="cursor-pointer text-sm text-slate-600 transition-colors duration-200 hover:text-slate-900"
-                    >
-                      {link.label}
-                    </Link>
+                    {"external" in link && link.external ? (
+                      <a
+                        href={link.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="cursor-pointer text-sm text-slate-600 transition-colors duration-200 hover:text-slate-900"
+                      >
+                        {link.label}
+                      </a>
+                    ) : (
+                      <Link
+                        href={link.href}
+                        className="cursor-pointer text-sm text-slate-600 transition-colors duration-200 hover:text-slate-900"
+                      >
+                        {link.label}
+                      </Link>
+                    )}
                   </li>
                 ))}
               </ul>

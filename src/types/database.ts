@@ -1,540 +1,299 @@
-// ─── CheckHire Database Types ───
-// These types match the Supabase schema defined in supabase/migrations/001_core_schema.sql
+// ─── CheckHire Escrow Platform — Database Types ───
+// These types match the Supabase schema defined in
+// supabase/migrations/20260402000000_escrow_pivot_clean_slate.sql
 
-export type TierLevel = 1 | 2 | 3;
+// ─── User Profiles ───
+
+export type TrustBadge = 'new' | 'trusted' | 'established' | 'verified';
 
 export type UserProfile = {
   id: string;
   full_name: string | null;
-  user_type: "employer" | "job_seeker";
+  display_name: string | null;
+  avatar_url: string | null;
+  bio: string | null;
+  email: string | null;
+  completed_deals_count: number;
+  average_rating: number | null;
+  trust_badge: TrustBadge;
+  profile_slug: string | null;
+  stripe_connected_account_id: string | null;
+  stripe_onboarding_complete: boolean;
   is_platform_admin: boolean;
   created_at: string;
   updated_at: string;
 };
 
-export type JobType = "gig" | "temp" | "full_time" | "part_time" | "contract";
+// ─── Deals ───
 
-export type PayType = "hourly" | "salary" | "project" | "commission";
+export type DealType = 'private' | 'public';
 
-export type RemoteType = "full_remote" | "hybrid" | "onsite";
+export type DealCategory =
+  | 'design'
+  | 'development'
+  | 'writing'
+  | 'marketing'
+  | 'virtual_assistant'
+  | 'other';
 
-export type ListingStatus =
-  | "active"
-  | "filled"
-  | "closed"
-  | "expired"
-  | "paused"
-  | "review_pending"
-  | "pending_payment";
+export type DealStatus =
+  | 'draft'
+  | 'pending_acceptance'
+  | 'funded'
+  | 'in_progress'
+  | 'submitted'
+  | 'revision_requested'
+  | 'completed'
+  | 'disputed'
+  | 'cancelled'
+  | 'refunded';
 
 export type EscrowStatus =
-  | "not_applicable"
-  | "pending_funding"
-  | "funded"
-  | "released"
-  | "refunded";
+  | 'unfunded'
+  | 'funded'
+  | 'partially_released'
+  | 'fully_released'
+  | 'refunded'
+  | 'frozen';
 
-export type PaymentStatus = "free" | "pending_payment" | "paid";
-
-export type AccountStatus = "active" | "restricted" | "suspended" | "banned";
-
-export type CommissionStructure = {
-  commission_percentage?: number;
-  commission_basis?: string;
-  is_100_percent_commission?: boolean;
-  average_earnings?: number;
-  time_to_first_payment?: string;
-  leads_provided?: boolean;
-};
-
-export type Employer = {
+export type Deal = {
   id: string;
-  company_name: string;
-  website_domain: string | null;
-  verified_domain: boolean;
-  claimed_by: string | null;
-  tier_level: TierLevel;
-  transparency_score: number;
-  logo_url: string | null;
-  description: string | null;
-  industry: string | null;
-  company_size: string | null;
-  country: string;
-  slug: string | null;
-  is_founding_employer: boolean;
-  stripe_customer_id: string | null;
-  subscription_stripe_id: string | null;
-  account_status: AccountStatus;
-  last_score_calculated_at: string | null;
-  created_at: string;
-  updated_at: string;
-};
-
-export type JobListing = {
-  id: string;
-  employer_id: string;
-  posted_by: string | null;
   title: string;
   description: string;
-  job_type: JobType;
-  category: string | null;
-  salary_min: number | null;
-  salary_max: number | null;
-  pay_type: PayType;
-  commission_structure: CommissionStructure | null;
-  ote_min: number | null;
-  ote_max: number | null;
-  is_100_percent_commission: boolean;
-  remote_type: RemoteType;
-  location_city: string | null;
-  location_state: string | null;
-  location_country: string;
-  timezone_requirements: string | null;
-  equipment_policy: string | null;
-  respond_by_date: string | null;
-  fill_by_date: string | null;
-  status: ListingStatus;
-  close_reason: string | null;
+  deliverables: string | null;
+  total_amount: number; // stored in cents
+  currency: string;
+  deadline: string | null;
+  deal_type: DealType;
+  deal_link_slug: string;
+  category: DealCategory | null;
+  client_user_id: string;
+  freelancer_user_id: string | null;
+  status: DealStatus;
   escrow_status: EscrowStatus;
-  requires_video_application: boolean;
-  video_questions: VideoQuestion[];
-  requires_screening_quiz: boolean;
-  max_applications: number;
-  current_application_count: number;
-  mlm_flag_score: number;
-  payment_status: PaymentStatus;
-  slug: string;
+  has_milestones: boolean;
+  stripe_payment_intent_id: string | null;
+  auto_release_at: string | null;
+  revision_count: number;
+  template_id: string | null;
   created_at: string;
-  expires_at: string;
-  updated_at: string;
-};
-
-export type JobListingWithEmployer = JobListing & {
-  employers: Pick<
-    Employer,
-    | "company_name"
-    | "tier_level"
-    | "logo_url"
-    | "transparency_score"
-    | "industry"
-    | "company_size"
-    | "website_domain"
-    | "description"
-    | "country"
-    | "is_founding_employer"
-    | "account_status"
-  > & { slug: string | null };
-};
-
-export type ScreeningQuestion = {
-  id: string;
-  job_listing_id: string;
-  question_text: string;
-  question_type: "multiple_choice" | "short_answer" | "yes_no" | "numerical";
-  options: string[] | null;
-  required: boolean;
-  sort_order: number;
-  is_knockout: boolean;
-  knockout_answer: string | null;
-  point_value: number;
-  min_length: number | null;
-  question_category: string | null;
-  created_at: string;
-};
-
-// ─── Slice 3: Seeker & Application Types ───
-
-export type ApplicationStatus =
-  | "applied"
-  | "reviewed"
-  | "shortlisted"
-  | "interview_requested"
-  | "interview_accepted"
-  | "offered"
-  | "rejected"
-  | "hired"
-  | "withdrawn";
-
-export type DisclosureLevel = 1 | 2 | 3;
-
-export type ParseStatus = "pending" | "parsed" | "failed";
-
-export type ParsedWorkHistoryEntry = {
-  title: string;
-  company: string;
-  start_date: string | null;
-  end_date: string | null;
-  description: string | null;
-};
-
-export type ParsedEducationEntry = {
-  degree: string;
-  school: string;
-  field: string | null;
-  graduation_year: number | null;
-};
-
-export type SeekerProfile = {
-  id: string;
-  skills: string[];
-  years_experience: number | null;
-  location_city: string | null;
-  location_state: string | null;
-  education_level: string | null;
-  education_field: string | null;
-  resume_file_url: string | null;
-  parsed_work_history: ParsedWorkHistoryEntry[];
-  parsed_education: ParsedEducationEntry[];
-  parsed_certifications: string[];
-  parsed_summary: string | null;
-  parse_status: ParseStatus;
-  created_at: string;
-  updated_at: string;
-};
-
-export type Application = {
-  id: string;
-  job_listing_id: string;
-  user_id: string;
-  pseudonym: string;
-  disclosure_level: DisclosureLevel;
-  status: ApplicationStatus;
-  screening_responses: Record<string, unknown> | null;
-  video_responses: VideoResponse[];
-  screening_score: number | null;
-  disclosed_at_stage2: string | null;
-  disclosed_at_stage3: string | null;
-  withdrawn_at: string | null;
-  hired_at: string | null;
-  created_at: string;
-};
-
-export type ApplicationWithListing = Application & {
-  job_listings: Pick<
-    JobListing,
-    | "title"
-    | "slug"
-    | "job_type"
-    | "pay_type"
-    | "salary_min"
-    | "salary_max"
-    | "remote_type"
-    | "status"
-    | "created_at"
-    | "expires_at"
-  > & {
-    employers: Pick<Employer, "company_name" | "tier_level" | "logo_url" | "slug">;
-  };
-};
-
-/**
- * What an employer sees when viewing a candidate at a given disclosure level.
- * Fields are progressively revealed based on disclosure_level.
- */
-export type CandidateView = {
-  application_id: string;
-  pseudonym: string;
-  disclosure_level: DisclosureLevel;
-  status: ApplicationStatus;
-  created_at: string;
-
-  // Always visible (Stage 1+)
-  skills: string[];
-  years_experience: number | null;
-  location_city: string | null;
-  location_state: string | null;
-  education_level: string | null;
-  education_field: string | null;
-  parsed_work_history: ParsedWorkHistoryEntry[];
-  parsed_education: ParsedEducationEntry[];
-  parsed_certifications: string[];
-  parsed_summary: string | null;
-  screening_responses: Record<string, unknown> | null;
-  video_responses: VideoResponse[];
-  screening_score: number | null;
-
-  // Stage 2+ only
-  first_name?: string;
-
-  // Stage 3+ only
-  full_name?: string;
-  resume_url?: string; // Signed, expiring URL
-};
-
-export type AccessAuditLogEntry = {
-  employer_id: string;
-  employer_user_id: string;
-  action_type:
-    | "candidate_view"
-    | "interview_request"
-    | "message_sent"
-    | "stage_advance"
-    | "resume_access";
-  application_id: string;
-  disclosure_level_at_time: DisclosureLevel;
-  ip_address: string | null;
-  user_agent: string | null;
-};
-
-// ─── Slice 4: Chat, Interview Scheduling, Rate Limit Events ───
-
-export type MessageSenderType = "employer" | "candidate" | "system";
-
-export type MessageType =
-  | "text"
-  | "system"
-  | "interview_request"
-  | "interview_response"
-  | "status_change"
-  | "interview_scheduled"
-  | "slot_selected";
-
-export type Message = {
-  id: string;
-  application_id: string;
-  sender_id: string;
-  sender_type: MessageSenderType;
-  message_text: string;
-  message_type: MessageType;
-  metadata: Record<string, unknown> | null;
-  read_at: string | null;
-  edited_at: string | null;
-  deleted_at: string | null;
-  created_at: string;
-};
-
-export type InterviewSlot = {
-  datetime: string; // ISO 8601
-  duration_minutes: number;
-};
-
-export type InterviewScheduleStatus =
-  | "pending"
-  | "accepted"
-  | "declined"
-  | "cancelled"
-  | "completed";
-
-export type InterviewSchedule = {
-  id: string;
-  application_id: string;
-  proposed_by: string;
-  proposed_slots: InterviewSlot[];
-  selected_slot: InterviewSlot | null;
-  video_call_link: string | null;
-  notes: string | null;
-  timezone_employer: string | null;
-  timezone_candidate: string | null;
-  status: InterviewScheduleStatus;
-  accepted_at: string | null;
+  funded_at: string | null;
+  submitted_at: string | null;
   completed_at: string | null;
+  cancelled_at: string | null;
+  updated_at: string;
+};
+
+export type DealWithParticipants = Deal & {
+  client: Pick<UserProfile, 'display_name' | 'avatar_url' | 'trust_badge' | 'completed_deals_count' | 'average_rating' | 'profile_slug'>;
+  freelancer: Pick<UserProfile, 'display_name' | 'avatar_url' | 'trust_badge' | 'completed_deals_count' | 'average_rating' | 'profile_slug'> | null;
+};
+
+// ─── Milestones ───
+
+export type MilestoneStatus =
+  | 'pending_funding'
+  | 'funded'
+  | 'in_progress'
+  | 'submitted'
+  | 'revision_requested'
+  | 'approved'
+  | 'released'
+  | 'disputed';
+
+export type Milestone = {
+  id: string;
+  deal_id: string;
+  title: string;
+  description: string | null;
+  amount: number; // cents
+  position: number;
+  status: MilestoneStatus;
+  stripe_payment_intent_id: string | null;
+  auto_release_at: string | null;
+  revision_count: number;
+  funded_at: string | null;
+  submitted_at: string | null;
+  released_at: string | null;
   created_at: string;
   updated_at: string;
 };
 
-export type RateLimitEvent = {
+// ─── Milestone Change Proposals ───
+
+export type ProposalType = 'add' | 'modify' | 'remove';
+export type ProposalStatus = 'pending' | 'approved' | 'rejected';
+
+export type MilestoneChangeProposal = {
   id: string;
-  employer_id: string | null;
-  endpoint: string;
-  hits_in_window: number;
-  window_start: string;
-  window_end: string;
-  flagged: boolean;
-  reviewed: boolean;
-  reviewed_by: string | null;
-  resolution: "cleared" | "warned" | "suspended" | null;
+  milestone_id: string | null;
+  deal_id: string;
+  proposed_by: string;
+  proposal_type: ProposalType;
+  proposed_title: string | null;
+  proposed_amount: number | null;
+  proposed_description: string | null;
+  status: ProposalStatus;
+  responded_at: string | null;
   created_at: string;
 };
 
-/**
- * A chat thread summary for the inbox view.
- * Combines application metadata with latest message info.
- */
-export type ChatThread = {
-  application_id: string;
-  pseudonym: string;
-  disclosure_level: DisclosureLevel;
-  status: ApplicationStatus;
-  first_name?: string;
-  full_name?: string;
-  // Listing context
-  listing_title: string;
-  listing_slug: string;
-  company_name: string;
-  tier_level: TierLevel;
-  logo_url: string | null;
-  // Message info
-  last_message_text: string | null;
-  last_message_at: string | null;
-  last_message_sender_type: MessageSenderType | null;
-  unread_count: number;
-};
+// ─── Deal Activity Log ───
 
+export type ActivityEntryType = 'text' | 'file' | 'system' | 'milestone_note';
 
-// ─── Slice 5: Video, Masked Email, Screening Enhancements ───
-
-export type VideoQuestion = {
-  prompt: string;
-  time_limit_seconds: number;
-  max_retakes: number;
-};
-
-export type VideoResponse = {
-  question_index: number;
-  video_url: string;
-  recorded_at: string;
-};
-
-export type MaskedEmailPairStatus = "active" | "deactivated";
-
-export type MaskedEmailPair = {
+export type DealActivityLogEntry = {
   id: string;
-  application_id: string;
-  employer_id: string;
-  applicant_user_id: string;
-  employer_masked_email: string;
-  applicant_masked_email: string;
-  status: MaskedEmailPairStatus;
-  activated_at: string;
-  deactivated_at: string | null;
+  deal_id: string;
+  user_id: string | null;
+  entry_type: ActivityEntryType;
+  content: string | null;
+  file_url: string | null;
+  file_name: string | null;
+  file_size_bytes: number | null;
+  milestone_id: string | null;
   created_at: string;
 };
 
-export type CommunicationDirection =
-  | "employer_to_applicant"
-  | "applicant_to_employer";
-
-export type CommunicationLog = {
-  id: string;
-  masked_email_pair_id: string | null;
-  communication_type: "email" | "call" | "sms";
-  direction: CommunicationDirection;
-  subject_snippet: string | null;
-  timestamp: string;
-  created_at: string;
+export type ActivityLogEntryWithUser = DealActivityLogEntry & {
+  user: Pick<UserProfile, 'display_name' | 'avatar_url'> | null;
 };
 
-export type RejectionTemplate = {
+// ─── Deal Interest (Public Deals) ───
+
+export type InterestStatus = 'pending' | 'accepted' | 'rejected' | 'withdrawn';
+
+export type DealInterest = {
   id: string;
-  employer_id: string | null;
-  name: string;
-  message_text: string;
-  is_default: boolean;
-  created_at: string;
-};
-
-export type QuestionTemplateCategory =
-  | "remote_readiness"
-  | "sales"
-  | "technical"
-  | "customer_service"
-  | "general";
-
-export type QuestionTemplateEntry = {
-  question_text: string;
-  question_type: "multiple_choice" | "short_answer" | "yes_no" | "numerical";
-  options: string[] | null;
-  is_knockout: boolean;
-  knockout_answer: string | null;
-  point_value: number;
-  min_length?: number;
-};
-
-export type QuestionTemplate = {
-  id: string;
-  employer_id: string | null;
-  category: QuestionTemplateCategory;
-  name: string;
-  questions: QuestionTemplateEntry[];
-  is_platform_default: boolean;
-  created_at: string;
-};
-
-// ─── Slice 6: Trust Layer, Flagging, Reviews, Check-Ins ───
-
-export type ReviewType = "application_experience" | "post_hire_30day" | "post_hire_60day";
-
-export type EmployerReview = {
-  id: string;
-  employer_id: string;
-  job_listing_id: string | null;
+  deal_id: string;
   user_id: string;
-  heard_back: boolean;
-  job_was_real: boolean;
-  got_paid: boolean | null;
-  rating: number;
-  comments: string | null;
-  review_type: ReviewType;
+  pitch_text: string;
+  status: InterestStatus;
+  created_at: string;
+  responded_at: string | null;
+};
+
+export type DealInterestWithUser = DealInterest & {
+  user: Pick<UserProfile, 'display_name' | 'avatar_url' | 'trust_badge' | 'completed_deals_count' | 'average_rating' | 'profile_slug'>;
+};
+
+// ─── Deal Templates ───
+
+export type MilestoneTemplate = {
+  title: string;
+  description: string;
+  amount_percentage: number; // percentage of total, 0-100
+};
+
+export type DealTemplate = {
+  id: string;
+  user_id: string;
+  template_name: string;
+  title: string;
+  description: string | null;
+  deliverables: string | null;
+  default_amount: number | null; // cents
+  default_deadline_days: number | null;
+  has_milestones: boolean;
+  milestone_templates: MilestoneTemplate[];
+  use_count: number;
+  created_at: string;
+  updated_at: string;
+};
+
+// ─── Ratings ───
+
+export type RatingRole = 'client' | 'freelancer';
+
+export type Rating = {
+  id: string;
+  deal_id: string;
+  rater_user_id: string;
+  rated_user_id: string;
+  stars: number;
+  comment: string | null;
+  role: RatingRole;
   created_at: string;
 };
 
-export type FlagReporterType = "employer" | "applicant" | "system";
+export type RatingWithUser = Rating & {
+  rater: Pick<UserProfile, 'display_name' | 'avatar_url' | 'profile_slug'>;
+};
 
-export type FlagTargetType = "employer" | "listing";
+// ─── Disputes ───
 
-export type FlagReason =
-  | "impersonation"
-  | "ghost_job"
-  | "data_harvesting"
-  | "sensitive_info_request"
-  | "mlm_suspected"
-  | "predatory_listing"
-  | "unresponsive"
-  | "bait_and_switch"
-  | "other";
+export type DisputeStatus =
+  | 'open'
+  | 'under_review'
+  | 'resolved_release'
+  | 'resolved_refund'
+  | 'resolved_partial';
 
-export type FlagStatus = "pending" | "investigating" | "resolved" | "dismissed";
+export type DisputeFeeTarget = 'client' | 'freelancer';
 
-export type Flag = {
+export type Dispute = {
   id: string;
-  reporter_id: string | null;
-  reporter_type: FlagReporterType;
-  target_type: FlagTargetType;
-  target_id: string;
-  reason: FlagReason;
-  description: string | null;
-  status: FlagStatus;
-  severity_weight: number;
+  deal_id: string;
+  milestone_id: string | null;
+  initiated_by: string;
+  reason: string;
+  status: DisputeStatus;
   resolution_notes: string | null;
+  resolution_amount: number | null;
+  dispute_fee_amount: number | null;
+  dispute_fee_charged_to: DisputeFeeTarget | null;
   created_at: string;
   resolved_at: string | null;
   resolved_by: string | null;
 };
 
-export type CheckinType = "30day" | "60day";
+// ─── Dispute Evidence ───
 
-export type CheckinStatus = "pending" | "sent" | "responded" | "expired";
+export type EvidenceType = 'screenshot' | 'file' | 'video' | 'text' | 'link';
 
-export type PostHireCheckin = {
+export type DisputeEvidence = {
   id: string;
-  application_id: string;
-  employer_id: string;
-  user_id: string;
-  checkin_type: CheckinType;
-  sent_at: string | null;
-  responded_at: string | null;
-  response_data: {
-    heard_back?: boolean;
-    job_was_real?: boolean;
-    got_paid?: boolean;
-    rating?: number;
-    comments?: string;
-  } | null;
-  status: CheckinStatus;
+  dispute_id: string;
+  submitted_by: string;
+  evidence_type: EvidenceType;
+  file_url: string | null;
+  file_name: string | null;
+  file_size_bytes: number | null;
+  description: string | null;
   created_at: string;
 };
 
-/**
- * Transparency score breakdown — returned by the score calculation engine.
- * Each component is scored 0.0–5.0, weighted, then combined into a total.
- */
-export type TransparencyScoreBreakdown = {
-  total: number;
-  hire_rate: number;
-  responsiveness: number;
-  closeout_compliance: number;
-  checkin_results: number;
-  review_rate: number;
-  flag_penalty: number;
-  last_calculated_at: string | null;
+// ─── Email Notifications ───
+
+export type NotificationType =
+  | 'deal_created'
+  | 'deal_accepted'
+  | 'escrow_funded'
+  | 'milestone_funded'
+  | 'work_submitted'
+  | 'milestone_submitted'
+  | 'milestone_approved'
+  | 'deal_completed'
+  | 'rating_reminder'
+  | 'dispute_opened'
+  | 'dispute_resolved'
+  | 'auto_release_warning_24h'
+  | 'auto_release_warning_6h'
+  | 'auto_release_completed'
+  | 'interest_received'
+  | 'interest_accepted'
+  | 'deal_filled'
+  | 'revision_requested'
+  | 'milestone_proposed'
+  | 'milestone_change_approved'
+  | 'deal_cancelled';
+
+export type EmailNotification = {
+  id: string;
+  user_id: string;
+  deal_id: string | null;
+  notification_type: NotificationType;
+  email_address: string;
+  sent_at: string | null;
+  created_at: string;
 };

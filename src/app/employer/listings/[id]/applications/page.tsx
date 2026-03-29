@@ -341,6 +341,7 @@ export default function EmployerApplicationsPage({
                   <CandidateCard
                     candidate={candidate}
                     onStatusChange={handleStatusChange}
+                    companyName={undefined}
                   />
                 </div>
               </motion.div>

@@ -116,9 +116,13 @@ export const GET = withApiHandler(async function GET(
     req
   );
 
-  return NextResponse.json({
+  const response = NextResponse.json({
     ok: true,
     resume_url: signedUrlData.signedUrl,
     expires_in_seconds: SIGNED_URL_EXPIRY_SECONDS,
   });
+  response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate");
+  response.headers.set("Pragma", "no-cache");
+  response.headers.set("Expires", "0");
+  return response;
 });

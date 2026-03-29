@@ -16,6 +16,8 @@ export type EmployerContext = {
     tier_level: number;
     slug: string | null;
     domain_email_verified_at: string | null;
+    is_founding_employer: boolean;
+    account_status: string;
     created_at: string;
   };
 };
@@ -51,6 +53,8 @@ export async function getEmployerForUser(): Promise<EmployerContext | null> {
         tier_level,
         slug,
         domain_email_verified_at,
+        is_founding_employer,
+        account_status,
         created_at
       )
     `

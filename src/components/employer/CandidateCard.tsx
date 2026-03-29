@@ -27,6 +27,7 @@ import type { CandidateView } from "@/types/database";
 interface CandidateCardProps {
   candidate: CandidateView;
   onStatusChange: (applicationId: string, newStatus: string) => void;
+  companyName?: string;
 }
 
 function MaskedEmailDisplayLoader({ applicationId }: { applicationId: string }) {
@@ -49,7 +50,7 @@ function MaskedEmailDisplayLoader({ applicationId }: { applicationId: string }) 
   return <MaskedEmailDisplay applicantMaskedEmail={maskedEmail} />;
 }
 
-export function CandidateCard({ candidate, onStatusChange }: CandidateCardProps) {
+export function CandidateCard({ candidate, onStatusChange, companyName }: CandidateCardProps) {
   const [expanded, setExpanded] = useState(false);
 
   const STATUS_COLORS: Record<string, string> = {
@@ -78,9 +79,23 @@ export function CandidateCard({ candidate, onStatusChange }: CandidateCardProps)
 
   return (
     <div
-      className="select-none rounded-xl border border-gray-200 bg-white p-5"
+      className="relative select-none overflow-hidden rounded-xl border border-gray-200 bg-white p-5"
       style={{ WebkitUserSelect: "none", userSelect: "none" }}
     >
+      {/* Watermark overlay — traces screenshots back to the employer account */}
+      {companyName && (
+        <div
+          className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center opacity-[0.03]"
+          aria-hidden="true"
+        >
+          <span
+            className="whitespace-nowrap font-display text-4xl font-bold text-slate-900"
+            style={{ transform: "rotate(-30deg)" }}
+          >
+            {companyName}
+          </span>
+        </div>
+      )}
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
           {/* Identity row */}

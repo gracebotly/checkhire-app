@@ -216,6 +216,7 @@ export const POST = withApiHandler(async function POST(req: Request) {
       mlm_flag_score: mlmScore,
       slug,
       status,
+      payment_status: "free",
       escrow_status: escrowStatus,
       expires_at: expiresAt.toISOString(),
     })

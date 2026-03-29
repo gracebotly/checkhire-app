@@ -4,17 +4,17 @@ import { Shield } from "lucide-react";
 const LINKS = {
   Product: [
     { label: "Browse Jobs", href: "/jobs" },
-    { label: "For Employers", href: "/login" },
-    { label: "Pricing", href: "/login" },
+    { label: "For Employers", href: "/signup" },
+    { label: "Pricing", href: "/pricing" },
   ],
   Company: [
-    { label: "About", href: "#" },
-    { label: "Blog", href: "#" },
-    { label: "Contact", href: "#" },
+    { label: "About", href: "/about" },
+    { label: "Blog", href: "/blog" },
+    { label: "Contact", href: "/contact" },
   ],
   Legal: [
-    { label: "Terms of Service", href: "#" },
-    { label: "Privacy Policy", href: "#" },
+    { label: "Terms of Service", href: "/terms" },
+    { label: "Privacy Policy", href: "/privacy" },
   ],
 };
 

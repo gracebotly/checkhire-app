@@ -61,6 +61,7 @@ export function CandidateCard({ candidate, onStatusChange }: CandidateCardProps)
     offered: "bg-emerald-50 text-emerald-700 border-emerald-200",
     hired: "bg-emerald-50 text-emerald-800 border-emerald-200",
     rejected: "bg-gray-50 text-slate-600 border-gray-200",
+    withdrawn: "bg-orange-50 text-orange-700 border-orange-200",
   };
 
   const statusColor = STATUS_COLORS[candidate.status] || STATUS_COLORS.applied;

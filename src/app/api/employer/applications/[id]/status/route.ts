@@ -7,6 +7,8 @@ import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import { sendInterviewNotification } from "@/lib/email/interviewNotification";
 import { deactivateMaskedPair } from "@/lib/email/maskedEmail";
+import { scheduleAllCheckins } from "@/lib/email/postHireCheckin";
+import { recalculateScore } from "@/lib/employer/recalculateScore";
 
 export const runtime = "nodejs";
 
@@ -124,10 +126,15 @@ export const PATCH = withApiHandler(async function PATCH(
     );
   }
 
-  // Update status (disclosure_level is NOT changed here)
+  // Build update payload — add hired_at timestamp when transitioning to 'hired'
+  const updatePayload: Record<string, unknown> = { status: newStatus };
+  if (newStatus === "hired") {
+    updatePayload.hired_at = new Date().toISOString();
+  }
+
   const { error: updateError } = await supabaseAdmin
     .from("applications")
-    .update({ status: newStatus })
+    .update(updatePayload)
     .eq("id", id);
 
   if (updateError) {
@@ -179,6 +186,24 @@ export const PATCH = withApiHandler(async function PATCH(
         console.error("[status] Interview notification error:", err);
       }
     })();
+  }
+
+  // Schedule post-hire check-ins when hired (non-blocking)
+  if (newStatus === "hired") {
+    const { data: hiredApp } = await supabaseAdmin
+      .from("applications")
+      .select("user_id")
+      .eq("id", id)
+      .single();
+
+    if (hiredApp?.user_id) {
+      scheduleAllCheckins(id, ctx.employerId, hiredApp.user_id).catch((err) =>
+        console.error("[status] Check-in scheduling error:", err)
+      );
+    }
+
+    // Recalculate transparency score
+    recalculateScore(ctx.employerId).catch(() => {});
   }
 
   // Log access

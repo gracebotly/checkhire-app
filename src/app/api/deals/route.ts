@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { withApiHandler } from "@/lib/api/withApiHandler";
 import { createDealSchema } from "@/lib/validation/deals";
 import { generateSlug } from "@/lib/deals/generateSlug";
+import { sendAndLogNotification } from "@/lib/email/logNotification";
 
 export const POST = withApiHandler(async (req: Request) => {
   const supabase = await createClient();
@@ -96,7 +98,7 @@ export const POST = withApiHandler(async (req: Request) => {
   // Insert system activity log
   const { data: profile } = await supabase
     .from("user_profiles")
-    .select("display_name")
+    .select("display_name, email")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -106,6 +108,19 @@ export const POST = withApiHandler(async (req: Request) => {
     entry_type: "system",
     content: `Gig created by ${profile?.display_name || "Unknown"}`,
   });
+
+  // Notify creator
+  if (profile?.email) {
+    const serviceClient = createServiceClient();
+    await sendAndLogNotification({
+      supabase: serviceClient,
+      type: "deal_created",
+      userId: user.id,
+      dealId: deal.id,
+      email: profile.email,
+      data: { dealTitle: deal.title, dealSlug: deal.deal_link_slug },
+    });
+  }
 
   return NextResponse.json({ ok: true, deal, slug: deal.deal_link_slug });
 });

@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { withApiHandler } from "@/lib/api/withApiHandler";
 import { submitWorkSchema } from "@/lib/validation/escrow";
-import { sendWorkSubmittedEmail } from "@/lib/email/escrow-notifications";
+import { sendAndLogNotification } from "@/lib/email/logNotification";
 
 export const POST = withApiHandler(
   async (req: Request, { params }: { params: Promise<{ id: string }> }) => {
@@ -45,10 +46,26 @@ export const POST = withApiHandler(
     }
 
     // Email the client
-    const { data: clientProfile } = await supabase.from("user_profiles").select("email").eq("id", deal.client_user_id).maybeSingle();
+    const { data: clientProfile } = await supabase
+      .from("user_profiles")
+      .select("email")
+      .eq("id", deal.client_user_id)
+      .maybeSingle();
+
     if (clientProfile?.email) {
-      await sendWorkSubmittedEmail({ to: clientProfile.email, dealTitle: deal.title, dealSlug: deal.deal_link_slug, amount: deal.total_amount });
-      await supabase.from("email_notifications").insert({ user_id: deal.client_user_id, deal_id: id, notification_type: "work_submitted", email_address: clientProfile.email, sent_at: new Date().toISOString() });
+      const serviceClient = createServiceClient();
+      await sendAndLogNotification({
+        supabase: serviceClient,
+        type: "work_submitted",
+        userId: deal.client_user_id,
+        dealId: id,
+        email: clientProfile.email,
+        data: {
+          dealTitle: deal.title,
+          dealSlug: deal.deal_link_slug,
+          amount: deal.total_amount,
+        },
+      });
     }
 
     return NextResponse.json({ ok: true, auto_release_at: autoReleaseAt });

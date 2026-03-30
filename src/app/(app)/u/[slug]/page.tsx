@@ -1,9 +1,11 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { Navbar } from "@/components/layout/Navbar";
+import { createServiceClient } from "@/lib/supabase/service";
 import { TrustBadge } from "@/components/gig/TrustBadge";
+import { StarRating } from "@/components/gig/StarRating";
+import { RatingDisplay } from "@/components/gig/RatingDisplay";
 import type { Metadata } from "next";
-import type { TrustBadge as TrustBadgeType } from "@/types/database";
+import type { TrustBadge as TrustBadgeType, RatingWithUser } from "@/types/database";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -14,7 +16,7 @@ async function getProfile(slug: string) {
   const { data } = await supabase
     .from("user_profiles")
     .select(
-      "display_name, avatar_url, bio, trust_badge, completed_deals_count, average_rating, profile_slug, created_at"
+      "id, display_name, avatar_url, bio, trust_badge, completed_deals_count, average_rating, profile_slug, created_at"
     )
     .eq("profile_slug", slug)
     .maybeSingle();
@@ -27,7 +29,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!profile) return { title: "User Not Found" };
   return {
     title: `${profile.display_name || slug} on CheckHire`,
-    description: `${profile.trust_badge} • ${profile.completed_deals_count} gigs completed`,
+    description: `${profile.trust_badge} · ${profile.completed_deals_count} gigs completed`,
   };
 }
 
@@ -44,10 +46,50 @@ function getInitials(name: string | null): string {
 export default async function UserProfilePage({ params }: Props) {
   const { slug } = await params;
   const profile = await getProfile(slug);
+  if (!profile) notFound();
 
-  if (!profile) {
-    notFound();
-  }
+  // Fetch ratings received (public read — anyone can see ratings)
+  const supabase = await createClient();
+  const { data: ratingsData } = await supabase
+    .from("ratings")
+    .select(
+      "*, rater:user_profiles!ratings_rater_user_id_fkey(display_name, avatar_url, profile_slug)"
+    )
+    .eq("rated_user_id", profile.id)
+    .order("created_at", { ascending: false })
+    .limit(10);
+
+  const ratings = (ratingsData || []) as RatingWithUser[];
+
+  // Fetch recent completed deals using service client (bypasses participant-only RLS)
+  const serviceClient = createServiceClient();
+  const { data: dealsData } = await serviceClient
+    .from("deals")
+    .select(
+      "id, title, total_amount, completed_at, deal_link_slug, client_user_id, freelancer_user_id, client:user_profiles!deals_client_user_id_fkey(display_name), freelancer:user_profiles!deals_freelancer_user_id_fkey(display_name)"
+    )
+    .or(
+      `client_user_id.eq.${profile.id},freelancer_user_id.eq.${profile.id}`
+    )
+    .eq("status", "completed")
+    .order("completed_at", { ascending: false })
+    .limit(10);
+
+  const recentDeals = (dealsData || []).map((d) => {
+    const isClient = d.client_user_id === profile.id;
+    const otherParty = isClient
+      ? (d.freelancer as unknown as { display_name: string | null })?.display_name
+      : (d.client as unknown as { display_name: string | null })?.display_name;
+    return {
+      id: d.id,
+      title: d.title,
+      total_amount: d.total_amount,
+      completed_at: d.completed_at,
+      deal_link_slug: d.deal_link_slug,
+      otherPartyName: otherParty || "Unknown",
+      roleLabel: isClient ? "as client" : "as freelancer",
+    };
+  });
 
   const memberSince = new Date(profile.created_at).toLocaleDateString(
     "en-US",
@@ -87,40 +129,87 @@ export default async function UserProfilePage({ params }: Props) {
 
       {/* Stats */}
       <div className="mt-6 flex items-center gap-6">
-        <div>
-          <p className="text-sm font-semibold text-slate-900">
-            {profile.completed_deals_count} gigs completed
-          </p>
-        </div>
-        <div>
-          <p className="text-sm font-semibold text-slate-900">
-            {profile.average_rating
-              ? `${Number(profile.average_rating).toFixed(1)} avg rating`
-              : "No ratings yet"}
-          </p>
+        <p className="text-sm font-semibold text-slate-900">
+          {profile.completed_deals_count} gigs completed
+        </p>
+        <div className="flex items-center gap-2">
+          {profile.average_rating ? (
+            <>
+              <StarRating
+                rating={Number(profile.average_rating)}
+                size="sm"
+              />
+              <span className="text-sm font-semibold text-slate-900">
+                {Number(profile.average_rating).toFixed(1)}
+              </span>
+            </>
+          ) : (
+            <p className="text-sm text-slate-600">No ratings yet</p>
+          )}
         </div>
       </div>
 
-      <p className="mt-2 text-xs text-slate-600">
-        Member since {memberSince}
-      </p>
+      <p className="mt-2 text-xs text-slate-600">Member since {memberSince}</p>
 
-      {/* Completed Gigs placeholder */}
+      {/* Completed Gigs */}
       <div className="mt-8">
         <h2 className="text-base font-semibold text-slate-900">
           Completed Gigs
         </h2>
-        <p className="mt-2 text-sm text-slate-600">
-          No completed gigs yet
-        </p>
+        {recentDeals.length > 0 ? (
+          <div className="mt-3 space-y-3">
+            {recentDeals.map((deal) => (
+              <a
+                key={deal.id}
+                href={`/deal/${deal.deal_link_slug}`}
+                className="block cursor-pointer rounded-xl border border-gray-200 bg-white p-4 transition-colors duration-200 hover:border-gray-300 hover:bg-gray-50/50"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold text-slate-900">
+                    {deal.title}
+                  </span>
+                  <span className="font-mono text-sm font-semibold tabular-nums text-slate-900">
+                    ${(deal.total_amount / 100).toFixed(2)}
+                  </span>
+                </div>
+                <div className="mt-1 flex items-center gap-2 text-xs text-slate-600">
+                  <span>with {deal.otherPartyName}</span>
+                  <span>·</span>
+                  <span>{deal.roleLabel}</span>
+                  {deal.completed_at && (
+                    <>
+                      <span>·</span>
+                      <span>
+                        {new Date(deal.completed_at).toLocaleDateString(
+                          "en-US",
+                          { month: "short", day: "numeric" }
+                        )}
+                      </span>
+                    </>
+                  )}
+                </div>
+              </a>
+            ))}
+          </div>
+        ) : (
+          <p className="mt-2 text-sm text-slate-600">
+            No completed gigs yet
+          </p>
+        )}
       </div>
 
-      {/* Ratings placeholder */}
+      {/* Ratings */}
       <div className="mt-8">
-        <h2 className="text-base font-semibold text-slate-900">
-          Ratings
-        </h2>
-        <p className="mt-2 text-sm text-slate-600">No ratings yet</p>
+        <h2 className="text-base font-semibold text-slate-900">Ratings</h2>
+        {ratings.length > 0 ? (
+          <div className="mt-3 divide-y divide-gray-100">
+            {ratings.map((rating) => (
+              <RatingDisplay key={rating.id} rating={rating} />
+            ))}
+          </div>
+        ) : (
+          <p className="mt-2 text-sm text-slate-600">No ratings yet</p>
+        )}
       </div>
     </div>
   );

@@ -29,8 +29,17 @@ import {
 import { useToast } from "@/components/ui/toast";
 import type { DealTemplate, DealCategory } from "@/types/database";
 
+type RepeatDealData = {
+  title: string;
+  description: string;
+  deliverables: string | null;
+  total_amount: number;
+  category: string | null;
+};
+
 type Props = {
   initialTemplate?: DealTemplate | null;
+  initialRepeatData?: RepeatDealData | null;
 };
 
 const CATEGORIES: { value: DealCategory; label: string }[] = [
@@ -50,25 +59,29 @@ const STEP_TITLES = [
   "Review & Post",
 ];
 
-export function GigCreateForm({ initialTemplate }: Props) {
+export function GigCreateForm({ initialTemplate, initialRepeatData }: Props) {
   const router = useRouter();
   const { toast } = useToast();
 
   // Form state
-  const [title, setTitle] = useState(initialTemplate?.title || "");
+  const [title, setTitle] = useState(
+    initialRepeatData?.title || initialTemplate?.title || ""
+  );
   const [description, setDescription] = useState(
-    initialTemplate?.description || ""
+    initialRepeatData?.description || initialTemplate?.description || ""
   );
   const [deliverables, setDeliverables] = useState(
-    initialTemplate?.deliverables || ""
+    initialRepeatData?.deliverables || initialTemplate?.deliverables || ""
   );
   const [category, setCategory] = useState<DealCategory | "">(
-    ""
+    (initialRepeatData?.category as DealCategory) || ""
   );
   const [amount, setAmount] = useState(
-    initialTemplate?.default_amount
-      ? (initialTemplate.default_amount / 100).toString()
-      : ""
+    initialRepeatData?.total_amount
+      ? (initialRepeatData.total_amount / 100).toString()
+      : initialTemplate?.default_amount
+        ? (initialTemplate.default_amount / 100).toString()
+        : ""
   );
   const [hasMilestones, setHasMilestones] = useState(
     initialTemplate?.has_milestones || false

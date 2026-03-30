@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { withApiHandler } from "@/lib/api/withApiHandler";
 import { revisionSchema } from "@/lib/validation/escrow";
-import { sendRevisionRequestedEmail } from "@/lib/email/escrow-notifications";
+import { sendAndLogNotification } from "@/lib/email/logNotification";
 
 export const POST = withApiHandler(
   async (req: Request, { params }: { params: Promise<{ id: string }> }) => {
@@ -43,13 +44,37 @@ export const POST = withApiHandler(
     }
 
     // Email freelancer
-    const { data: freelancerProfile } = await supabase.from("user_profiles").select("email").eq("id", deal.freelancer_user_id!).maybeSingle();
+    const { data: freelancerProfile } = await supabase
+      .from("user_profiles")
+      .select("email")
+      .eq("id", deal.freelancer_user_id!)
+      .maybeSingle();
+
     if (freelancerProfile?.email) {
-      const count = milestone_id
-        ? ((await supabase.from("milestones").select("revision_count").eq("id", milestone_id).maybeSingle()).data?.revision_count || 1)
-        : (deal.revision_count + 1);
-      await sendRevisionRequestedEmail({ to: freelancerProfile.email, dealTitle: deal.title, dealSlug: deal.deal_link_slug, notes, revisionNumber: count });
-      await supabase.from("email_notifications").insert({ user_id: deal.freelancer_user_id!, deal_id: id, notification_type: "revision_requested", email_address: freelancerProfile.email, sent_at: new Date().toISOString() });
+      const serviceClient = createServiceClient();
+      const revNumber = milestone_id
+        ? (
+            await supabase
+              .from("milestones")
+              .select("revision_count")
+              .eq("id", milestone_id)
+              .maybeSingle()
+          ).data?.revision_count || 1
+        : deal.revision_count + 1;
+
+      await sendAndLogNotification({
+        supabase: serviceClient,
+        type: "revision_requested",
+        userId: deal.freelancer_user_id!,
+        dealId: id,
+        email: freelancerProfile.email,
+        data: {
+          dealTitle: deal.title,
+          dealSlug: deal.deal_link_slug,
+          notes,
+          revisionNumber: revNumber,
+        },
+      });
     }
 
     return NextResponse.json({ ok: true });

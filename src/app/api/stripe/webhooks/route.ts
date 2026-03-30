@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe/client";
 import { createServiceClient } from "@/lib/supabase/service";
-import { sendEscrowFundedEmail, sendMilestoneFundedEmail } from "@/lib/email/escrow-notifications";
+import { sendAndLogNotification } from "@/lib/email/logNotification";
 
 export const runtime = "nodejs";
 
@@ -105,8 +105,19 @@ export async function POST(req: Request) {
           if (deal.freelancer_user_id) {
             const { data: freelancer } = await supabase.from("user_profiles").select("email").eq("id", deal.freelancer_user_id).maybeSingle();
             if (freelancer?.email) {
-              await sendMilestoneFundedEmail({ to: freelancer.email, dealTitle: deal.title, dealSlug: deal.deal_link_slug, milestoneTitle: milestone.title, amount: milestone.amount });
-              await supabase.from("email_notifications").insert({ user_id: deal.freelancer_user_id, deal_id: dealId, notification_type: "milestone_funded", email_address: freelancer.email, sent_at: new Date().toISOString() });
+              await sendAndLogNotification({
+                supabase,
+                type: "milestone_funded",
+                userId: deal.freelancer_user_id,
+                dealId: dealId,
+                email: freelancer.email,
+                data: {
+                  dealTitle: deal.title,
+                  dealSlug: deal.deal_link_slug,
+                  milestoneTitle: milestone.title,
+                  amount: milestone.amount,
+                },
+              });
             }
           }
 
@@ -135,8 +146,18 @@ export async function POST(req: Request) {
         if ((!milestoneId || milestoneId === "" || milestoneId === "all") && deal.freelancer_user_id) {
           const { data: freelancer } = await supabase.from("user_profiles").select("email").eq("id", deal.freelancer_user_id).maybeSingle();
           if (freelancer?.email) {
-            await sendEscrowFundedEmail({ to: freelancer.email, dealTitle: deal.title, dealSlug: deal.deal_link_slug, amount: escrowAmount });
-            await supabase.from("email_notifications").insert({ user_id: deal.freelancer_user_id, deal_id: dealId, notification_type: "escrow_funded", email_address: freelancer.email, sent_at: new Date().toISOString() });
+            await sendAndLogNotification({
+              supabase,
+              type: "escrow_funded",
+              userId: deal.freelancer_user_id,
+              dealId: dealId,
+              email: freelancer.email,
+              data: {
+                dealTitle: deal.title,
+                dealSlug: deal.deal_link_slug,
+                amount: escrowAmount,
+              },
+            });
           }
         }
 

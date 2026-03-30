@@ -62,6 +62,14 @@ export default function DashboardPage() {
         <h1 className="font-display text-2xl font-bold text-slate-900">
           My Gigs
         </h1>
+        <div className="mt-2 mb-6">
+          <Link
+            href="/gigs"
+            className="cursor-pointer text-sm font-medium text-brand transition-colors duration-200 hover:text-brand-hover"
+          >
+            Browse open gigs →
+          </Link>
+        </div>
 
         <Tabs
           value={filter}

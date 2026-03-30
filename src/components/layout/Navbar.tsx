@@ -80,6 +80,12 @@ export function Navbar() {
             </Link>
           )}
           <Link
+            href="/gigs"
+            className="cursor-pointer text-sm font-medium text-slate-600 transition-colors duration-200 hover:text-slate-900"
+          >
+            Browse Gigs
+          </Link>
+          <Link
             href="/about"
             className="cursor-pointer text-sm font-medium text-slate-600 transition-colors duration-200 hover:text-slate-900"
           >
@@ -172,6 +178,13 @@ export function Navbar() {
                   </Link>
                 </>
               )}
+              <Link
+                href="/gigs"
+                onClick={closeMobile}
+                className="cursor-pointer rounded-lg px-3 py-2 text-sm font-medium text-slate-900 transition-colors duration-200 hover:bg-gray-50"
+              >
+                Browse Gigs
+              </Link>
               <Link
                 href="/about"
                 onClick={closeMobile}

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { withApiHandler } from "@/lib/api/withApiHandler";
+import { sendAndLogNotification } from "@/lib/email/logNotification";
 
 export const PATCH = withApiHandler(
   async (
@@ -97,6 +99,29 @@ export const PATCH = withApiHandler(
         content: `${displayName} accepted the gig`,
       });
 
+      // Notify client that freelancer accepted
+      const { data: clientProf } = await supabase
+        .from("user_profiles")
+        .select("email")
+        .eq("id", deal.client_user_id)
+        .maybeSingle();
+
+      if (clientProf?.email) {
+        const serviceClient = createServiceClient();
+        await sendAndLogNotification({
+          supabase: serviceClient,
+          type: "deal_accepted",
+          userId: deal.client_user_id,
+          dealId: id,
+          email: clientProf.email,
+          data: {
+            dealTitle: deal.title,
+            dealSlug: deal.deal_link_slug,
+            otherPartyName: displayName,
+          },
+        });
+      }
+
       return NextResponse.json({ ok: true, deal: updatedDeal });
     }
 
@@ -148,6 +173,30 @@ export const PATCH = withApiHandler(
         entry_type: "system",
         content: `Gig cancelled by ${displayName}`,
       });
+
+      // Notify freelancer if one was assigned
+      if (deal.freelancer_user_id) {
+        const { data: freelancerProf } = await supabase
+          .from("user_profiles")
+          .select("email")
+          .eq("id", deal.freelancer_user_id)
+          .maybeSingle();
+
+        if (freelancerProf?.email) {
+          const serviceClient = createServiceClient();
+          await sendAndLogNotification({
+            supabase: serviceClient,
+            type: "deal_cancelled",
+            userId: deal.freelancer_user_id,
+            dealId: id,
+            email: freelancerProf.email,
+            data: {
+              dealTitle: deal.title,
+              dealSlug: deal.deal_link_slug,
+            },
+          });
+        }
+      }
 
       return NextResponse.json({ ok: true, deal: updatedDeal });
     }

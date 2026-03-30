@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
@@ -10,17 +10,28 @@ import {
   CheckCircle,
   ChevronDown,
   ChevronUp,
+  AlertTriangle,
+  DollarSign,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Alert } from "@/components/ui/alert";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogClose,
+} from "@/components/ui/dialog";
 import { EscrowStatusBar } from "@/components/gig/EscrowStatusBar";
 import { MilestoneTracker } from "@/components/gig/MilestoneTracker";
 import { TrustBadge } from "@/components/gig/TrustBadge";
 import { ActivityLog } from "@/components/gig/ActivityLog";
 import { ActivityInput } from "@/components/gig/ActivityInput";
 import { ShareButton } from "@/components/gig/ShareButton";
+import { CountdownTimer } from "@/components/gig/CountdownTimer";
+import { StripeConnectPrompt } from "@/components/gig/StripeConnectPrompt";
+import { InstantPayoutCard } from "@/components/gig/InstantPayoutCard";
 import { useToast } from "@/components/ui/toast";
 import type {
   DealWithParticipants,
@@ -35,6 +46,7 @@ type Props = {
   activity: ActivityLogEntryWithUser[];
   role: "client" | "freelancer" | "visitor";
   currentUserId: string | null;
+  fundedStatus: string | null;
 };
 
 const statusMap: Record<
@@ -78,6 +90,7 @@ export function GigPageClient({
   activity: initialActivity,
   role,
   currentUserId,
+  fundedStatus,
 }: Props) {
   const router = useRouter();
   const { toast } = useToast();
@@ -86,9 +99,29 @@ export function GigPageClient({
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // Dialog states
+  const [revisionNotes, setRevisionNotes] = useState("");
+  const [revisionDialogOpen, setRevisionDialogOpen] = useState(false);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [submitDialogOpen, setSubmitDialogOpen] = useState(false);
+
   const status = statusMap[deal.status] || statusMap.pending_acceptance;
   const dealUrl = typeof window !== "undefined" ? window.location.href : "";
   const isParticipant = role === "client" || role === "freelancer";
+
+  const platformFee = Math.round(deal.total_amount * 0.05);
+  const totalCharge = deal.total_amount + platformFee;
+
+  // Handle ?funded=true/cancelled query param
+  useEffect(() => {
+    if (fundedStatus === "true") {
+      toast("Payment secured! The freelancer can start work.", "success");
+      window.history.replaceState(null, "", `/deal/${deal.deal_link_slug}`);
+    } else if (fundedStatus === "cancelled") {
+      toast("Checkout cancelled — escrow not funded.", "info");
+      window.history.replaceState(null, "", `/deal/${deal.deal_link_slug}`);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const refreshActivity = useCallback(async () => {
     try {
@@ -101,6 +134,8 @@ export function GigPageClient({
       // silent
     }
   }, [deal.deal_link_slug]);
+
+  // ── Existing handlers ──
 
   const handleAccept = async () => {
     if (!currentUserId) {
@@ -126,22 +161,133 @@ export function GigPageClient({
     }
   };
 
-  const handleCancel = async () => {
+  // ── New handlers ──
+
+  const handleFundEscrow = async (milestoneId?: string, fundAll?: boolean) => {
     setActionLoading(true);
     setError("");
     try {
-      const res = await fetch(`/api/deals/${deal.id}`, {
-        method: "PATCH",
+      const res = await fetch("/api/stripe/checkout", {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "cancel" }),
+        body: JSON.stringify({
+          deal_id: deal.id,
+          milestone_id: milestoneId,
+          fund_all: fundAll,
+        }),
       });
       const data = await res.json();
       if (!data.ok) throw new Error(data.message);
-      toast("Gig cancelled", "info");
+      window.location.href = data.url;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to start checkout");
+      setActionLoading(false);
+    }
+  };
+
+  const handleSubmitWork = async (milestoneId?: string) => {
+    setActionLoading(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/deals/${deal.id}/submit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ milestone_id: milestoneId }),
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.message);
+      toast("Work submitted! The client has 72 hours to review.", "success");
+      setSubmitDialogOpen(false);
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to submit");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleConfirmDelivery = async (milestoneId?: string) => {
+    setActionLoading(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/deals/${deal.id}/confirm`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ milestone_id: milestoneId }),
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.message);
+      toast("Delivery confirmed! Payment released.", "success");
+      setConfirmDialogOpen(false);
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to confirm");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleRequestRevision = async (milestoneId?: string) => {
+    if (!revisionNotes.trim()) return;
+    setActionLoading(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/deals/${deal.id}/revision`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ notes: revisionNotes.trim(), milestone_id: milestoneId }),
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.message);
+      toast("Revision requested", "info");
+      setRevisionNotes("");
+      setRevisionDialogOpen(false);
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to request revision");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleCancelWithRefund = async () => {
+    setActionLoading(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/deals/${deal.id}/cancel`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.message);
+      toast(
+        deal.escrow_status === "funded"
+          ? "Gig cancelled — refund issued"
+          : "Gig cancelled",
+        "info"
+      );
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to cancel");
     } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleStripeConnect = async () => {
+    setActionLoading(true);
+    try {
+      const res = await fetch("/api/stripe/connect", { method: "POST" });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.message);
+      if (data.already_connected) {
+        toast("Stripe already connected!", "success");
+        setActionLoading(false);
+        return;
+      }
+      window.location.href = data.url;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to connect Stripe");
       setActionLoading(false);
     }
   };
@@ -188,6 +334,19 @@ export function GigPageClient({
         <EscrowStatusBar status={deal.escrow_status} amount={deal.total_amount} />
       </div>
 
+      {/* 2b. 72-Hour Countdown */}
+      {deal.auto_release_at &&
+        new Date(deal.auto_release_at) > new Date() &&
+        isParticipant && (
+          <div className="mb-6">
+            <CountdownTimer
+              autoReleaseAt={deal.auto_release_at}
+              role={role === "client" ? "client" : "freelancer"}
+              onExpired={() => router.refresh()}
+            />
+          </div>
+        )}
+
       {/* 3. Deal Terms Card */}
       <div className="mb-6 rounded-xl border border-gray-200 bg-white p-5 space-y-4">
         <div>
@@ -215,7 +374,12 @@ export function GigPageClient({
             <h3 className="mb-2 text-sm font-semibold text-slate-900">
               Milestones
             </h3>
-            <MilestoneTracker milestones={initialMilestones} />
+            <MilestoneTracker
+              milestones={initialMilestones}
+              dealId={deal.id}
+              role={role}
+              onAction={() => router.refresh()}
+            />
           </div>
         )}
       </div>
@@ -297,6 +461,25 @@ export function GigPageClient({
         </div>
       </div>
 
+      {/* Stripe Connect Prompt for freelancers */}
+      {role === "freelancer" &&
+        deal.freelancer?.stripe_onboarding_complete === false &&
+        deal.escrow_status !== "unfunded" && (
+          <div className="mb-6">
+            <StripeConnectPrompt
+              onConnect={handleStripeConnect}
+              loading={actionLoading}
+            />
+          </div>
+        )}
+
+      {/* Instant Payout for completed deals */}
+      {role === "freelancer" && deal.status === "completed" && (
+        <div className="mb-6">
+          <InstantPayoutCard amount={deal.total_amount} dealId={deal.id} />
+        </div>
+      )}
+
       {/* 5. Activity Log */}
       {isParticipant && (
         <div className="mb-6">
@@ -374,25 +557,14 @@ export function GigPageClient({
 
       {/* 7. Action Buttons — sticky on mobile */}
       <div className="fixed bottom-16 left-0 right-0 z-40 border-t border-gray-200 bg-white px-6 py-3 md:static md:border-0 md:px-0 md:py-0">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {/* Always show Copy Link for participants */}
           {isParticipant && (
             <ShareButton url={dealUrl} title={deal.title} />
           )}
 
-          {/* Visitor (unauth) */}
+          {/* ── Visitor actions ── */}
           {role === "visitor" &&
-            !currentUserId &&
-            deal.status === "pending_acceptance" &&
-            !deal.freelancer && (
-              <Button onClick={handleAccept} disabled={actionLoading}>
-                Accept Gig
-              </Button>
-            )}
-
-          {/* Visitor (auth, not participant) */}
-          {role === "visitor" &&
-            currentUserId &&
             deal.status === "pending_acceptance" &&
             !deal.freelancer && (
               <Button onClick={handleAccept} disabled={actionLoading}>
@@ -400,19 +572,235 @@ export function GigPageClient({
               </Button>
             )}
 
-          {/* Client actions */}
-          {role === "client" && deal.status === "pending_acceptance" && (
-            <Button
-              variant="ghost"
-              onClick={handleCancel}
-              disabled={actionLoading}
-              className="text-red-600 hover:text-red-700 hover:bg-red-50"
-            >
-              Cancel Gig
-            </Button>
+          {/* ── Client actions ── */}
+          {role === "client" && (
+            <>
+              {/* Pending acceptance — cancel */}
+              {deal.status === "pending_acceptance" &&
+                deal.escrow_status === "unfunded" && (
+                  <Button
+                    variant="ghost"
+                    onClick={handleCancelWithRefund}
+                    disabled={actionLoading}
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  >
+                    Cancel Gig
+                  </Button>
+                )}
+
+              {/* Freelancer assigned, unfunded — fund escrow */}
+              {deal.freelancer_user_id &&
+                deal.escrow_status === "unfunded" &&
+                deal.status !== "cancelled" &&
+                !deal.has_milestones && (
+                  <div>
+                    <Button
+                      onClick={() => handleFundEscrow()}
+                      disabled={actionLoading}
+                    >
+                      <DollarSign className="mr-1 h-4 w-4" />
+                      {actionLoading
+                        ? "Redirecting..."
+                        : `Fund Escrow — $${(totalCharge / 100).toFixed(2)}`}
+                    </Button>
+                    <p className="mt-1 text-xs text-slate-600">
+                      ${(deal.total_amount / 100).toFixed(2)} +{" "}
+                      ${(platformFee / 100).toFixed(2)} platform fee (5%)
+                    </p>
+                  </div>
+                )}
+
+              {/* Funded but no work started — cancel & refund */}
+              {deal.status === "funded" &&
+                deal.escrow_status === "funded" && (
+                  <Button
+                    variant="ghost"
+                    onClick={handleCancelWithRefund}
+                    disabled={actionLoading}
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  >
+                    Cancel & Refund
+                  </Button>
+                )}
+
+              {/* Work submitted — confirm or revise */}
+              {deal.status === "submitted" && !deal.has_milestones && (
+                <>
+                  <Button
+                    onClick={() => setConfirmDialogOpen(true)}
+                    disabled={actionLoading}
+                  >
+                    Confirm & Release ${(deal.total_amount / 100).toFixed(2)}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setRevisionNotes("");
+                      setRevisionDialogOpen(true);
+                    }}
+                    disabled={actionLoading || deal.revision_count >= 3}
+                    title={
+                      deal.revision_count >= 3
+                        ? "Maximum revisions reached"
+                        : undefined
+                    }
+                  >
+                    Request Revision ({deal.revision_count}/3)
+                  </Button>
+                </>
+              )}
+
+              {/* Revision requested — waiting */}
+              {deal.status === "revision_requested" && (
+                <p className="text-sm text-slate-600">
+                  Waiting for revised work...
+                </p>
+              )}
+
+              {/* In progress — waiting */}
+              {deal.status === "in_progress" && (
+                <p className="text-sm text-slate-600">
+                  Waiting for delivery...
+                </p>
+              )}
+
+              {/* Completed */}
+              {deal.status === "completed" && (
+                <Badge variant="success">Gig Complete</Badge>
+              )}
+            </>
+          )}
+
+          {/* ── Freelancer actions ── */}
+          {role === "freelancer" && (
+            <>
+              {/* Unfunded — waiting for client */}
+              {deal.escrow_status === "unfunded" &&
+                deal.freelancer_user_id && (
+                  <p className="text-sm text-slate-600">
+                    Waiting for client to fund escrow...
+                  </p>
+                )}
+
+              {/* Work can be submitted (non-milestone deals only) */}
+              {!deal.has_milestones &&
+                ["in_progress", "funded", "revision_requested"].includes(
+                  deal.status
+                ) && (
+                  <Button
+                    onClick={() => setSubmitDialogOpen(true)}
+                    disabled={actionLoading}
+                  >
+                    Mark Work Complete
+                  </Button>
+                )}
+
+              {/* Work submitted — awaiting review */}
+              {deal.status === "submitted" && (
+                <p className="text-sm text-slate-600">
+                  Work Submitted — Awaiting Review
+                </p>
+              )}
+
+              {/* Completed */}
+              {deal.status === "completed" && (
+                <Badge variant="success">Gig Complete</Badge>
+              )}
+            </>
           )}
         </div>
+
+        {/* Dispute placeholder */}
+        {isParticipant &&
+          ["in_progress", "submitted", "revision_requested"].includes(
+            deal.status
+          ) && (
+            <button
+              type="button"
+              disabled
+              className="mt-2 text-xs text-slate-600 cursor-not-allowed"
+              title="Dispute resolution coming soon — email support@checkhire.com"
+            >
+              <AlertTriangle className="inline h-3 w-3 mr-1" />
+              Open a Dispute (Coming Soon)
+            </button>
+          )}
       </div>
+
+      {/* ── Dialogs ── */}
+
+      {/* Submit Work Dialog */}
+      <Dialog open={submitDialogOpen} onOpenChange={setSubmitDialogOpen}>
+        <DialogContent>
+          <DialogHeader
+            title="Submit Work for Review"
+            description="The client will have 72 hours to review your work. If they don't respond, funds will auto-release to you."
+          />
+          <div className="flex justify-end gap-2 mt-4">
+            <DialogClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </DialogClose>
+            <Button
+              onClick={() => handleSubmitWork()}
+              disabled={actionLoading}
+            >
+              {actionLoading ? "Submitting..." : "Submit Work"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirm Delivery Dialog */}
+      <Dialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
+        <DialogContent>
+          <DialogHeader
+            title="Confirm Delivery"
+            description={`Release $${(deal.total_amount / 100).toFixed(2)} to the freelancer? This cannot be undone.`}
+          />
+          <div className="flex justify-end gap-2 mt-4">
+            <DialogClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </DialogClose>
+            <Button
+              onClick={() => handleConfirmDelivery()}
+              disabled={actionLoading}
+            >
+              {actionLoading
+                ? "Releasing..."
+                : `Release $${(deal.total_amount / 100).toFixed(2)}`}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Request Revision Dialog */}
+      <Dialog open={revisionDialogOpen} onOpenChange={setRevisionDialogOpen}>
+        <DialogContent>
+          <DialogHeader
+            title="Request Revision"
+            description={`Revision ${deal.revision_count + 1} of 3. The 72-hour countdown will pause until the freelancer resubmits.`}
+          />
+          <textarea
+            value={revisionNotes}
+            onChange={(e) => setRevisionNotes(e.target.value)}
+            placeholder="Describe what needs to change..."
+            maxLength={1000}
+            rows={4}
+            className="flex w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-ring/40 focus:border-brand resize-none"
+          />
+          <div className="flex justify-end gap-2 mt-4">
+            <DialogClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </DialogClose>
+            <Button
+              onClick={() => handleRequestRevision()}
+              disabled={actionLoading || !revisionNotes.trim()}
+            >
+              {actionLoading ? "Requesting..." : "Request Revision"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </motion.div>
   );
 }

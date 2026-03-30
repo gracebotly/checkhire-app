@@ -320,4 +320,5 @@ export type PlatformStats = {
   average_rating: number | null;
   active_users_30d: number;
   open_disputes: number;
+  total_users: number;
 };

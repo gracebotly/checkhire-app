@@ -149,10 +149,6 @@ export default function HomePage() {
               <Link href="/for-clients" className="text-brand transition-colors duration-200 hover:text-brand-hover">
                 For Clients
               </Link>
-              {" · "}
-              <Link href="/blog" className="text-brand transition-colors duration-200 hover:text-brand-hover">
-                Blog
-              </Link>
             </p>
           </div>
         </section>

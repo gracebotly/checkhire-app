@@ -6,7 +6,6 @@ const LINKS = {
     { label: "How It Works", href: "/how-it-works" },
     { label: "For Freelancers", href: "/for-freelancers" },
     { label: "For Clients", href: "/for-clients" },
-    { label: "Blog", href: "/blog" },
   ],
   Community: [
     {

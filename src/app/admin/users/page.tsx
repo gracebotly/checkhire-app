@@ -23,6 +23,8 @@ type User = {
   is_platform_admin: boolean;
   suspended: boolean;
   created_at: string;
+  deals_as_client: number;
+  deals_as_freelancer: number;
 };
 
 function formatDate(iso: string) {
@@ -175,6 +177,7 @@ export default function AdminUsersPage() {
                   <div className="flex items-center gap-4 flex-shrink-0">
                     <div className="hidden sm:flex items-center gap-4 text-xs text-slate-600">
                       <span>{u.completed_deals_count} deals</span>
+                      <span>{u.deals_as_client}C / {u.deals_as_freelancer}F</span>
                       <span>
                         {u.average_rating
                           ? `${u.average_rating.toFixed(1)} stars`
@@ -192,7 +195,7 @@ export default function AdminUsersPage() {
 
                 {expandedId === u.id && (
                   <div className="border-t border-gray-100 px-4 py-3">
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs mb-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-xs mb-3">
                       <div>
                         <p className="text-slate-600">Trust Badge</p>
                         <p className="font-medium text-slate-900 capitalize">
@@ -203,6 +206,18 @@ export default function AdminUsersPage() {
                         <p className="text-slate-600">Completed Deals</p>
                         <p className="font-medium text-slate-900">
                           {u.completed_deals_count}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-slate-600">Gigs Posted (Client)</p>
+                        <p className="font-medium text-slate-900">
+                          {u.deals_as_client}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-slate-600">Gigs Worked (Freelancer)</p>
+                        <p className="font-medium text-slate-900">
+                          {u.deals_as_freelancer}
                         </p>
                       </div>
                       <div>

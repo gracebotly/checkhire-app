@@ -24,6 +24,7 @@ type Stats = {
   average_rating: number | null;
   active_users_30d: number;
   open_disputes: number;
+  total_users: number;
 };
 
 export default function AdminStatsPage() {
@@ -101,6 +102,12 @@ export default function AdminStatsPage() {
     {
       label: "Active Users (30d)",
       value: stats.active_users_30d.toLocaleString(),
+      icon: Users,
+      highlight: false,
+    },
+    {
+      label: "Total Users",
+      value: stats.total_users.toLocaleString(),
       icon: Users,
       highlight: false,
     },

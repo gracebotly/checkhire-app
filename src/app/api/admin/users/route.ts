@@ -35,9 +35,29 @@ export const GET = withApiHandler(async (req: Request) => {
       { status: 500 }
     );
 
+  // Enrich users with role breakdown
+  const enriched = [];
+  for (const user of users || []) {
+    const { count: dealsAsClient } = await serviceClient
+      .from("deals")
+      .select("id", { count: "exact", head: true })
+      .eq("client_user_id", user.id);
+
+    const { count: dealsAsFreelancer } = await serviceClient
+      .from("deals")
+      .select("id", { count: "exact", head: true })
+      .eq("freelancer_user_id", user.id);
+
+    enriched.push({
+      ...user,
+      deals_as_client: dealsAsClient || 0,
+      deals_as_freelancer: dealsAsFreelancer || 0,
+    });
+  }
+
   return NextResponse.json({
     ok: true,
-    users: users || [],
+    users: enriched,
     total: count || 0,
     page,
     pageSize,

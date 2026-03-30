@@ -83,6 +83,11 @@ export const GET = withApiHandler(async () => {
     .select("id", { count: "exact", head: true })
     .in("status", ["open", "under_review"]);
 
+  // Total registered users
+  const { count: totalUsers } = await serviceClient
+    .from("user_profiles")
+    .select("id", { count: "exact", head: true });
+
   return NextResponse.json({
     ok: true,
     stats: {
@@ -95,6 +100,7 @@ export const GET = withApiHandler(async () => {
       average_rating: avgRating,
       active_users_30d: activeUserIds.size,
       open_disputes: openDisputes || 0,
+      total_users: totalUsers || 0,
     },
   });
 });

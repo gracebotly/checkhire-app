@@ -8,6 +8,7 @@ import type { ActivityLogEntryWithUser, Milestone } from "@/types/database";
 
 type Props = {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ funded?: string }>;
 };
 
 async function fetchDealBySlug(slug: string) {
@@ -15,7 +16,7 @@ async function fetchDealBySlug(slug: string) {
   const { data } = await supabase
     .from("deals")
     .select(
-      `*, client:user_profiles!deals_client_user_id_fkey(display_name, avatar_url, trust_badge, completed_deals_count, average_rating, profile_slug), freelancer:user_profiles!deals_freelancer_user_id_fkey(display_name, avatar_url, trust_badge, completed_deals_count, average_rating, profile_slug)`
+      `*, client:user_profiles!deals_client_user_id_fkey(display_name, avatar_url, trust_badge, completed_deals_count, average_rating, profile_slug), freelancer:user_profiles!deals_freelancer_user_id_fkey(display_name, avatar_url, trust_badge, completed_deals_count, average_rating, profile_slug, stripe_onboarding_complete)`
     )
     .eq("deal_link_slug", slug)
     .maybeSingle();
@@ -38,8 +39,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function DealPage({ params }: Props) {
+export default async function DealPage({ params, searchParams }: Props) {
   const { slug } = await params;
+  const { funded } = await searchParams;
   const supabase = await createClient();
 
   // Fetch deal
@@ -103,6 +105,7 @@ export default async function DealPage({ params }: Props) {
             activity={activity}
             role={role}
             currentUserId={user?.id || null}
+            fundedStatus={funded || null}
           />
         </main>
       </div>

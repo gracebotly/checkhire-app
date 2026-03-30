@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
+import { CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Alert } from "@/components/ui/alert";
@@ -10,6 +12,7 @@ import { useToast } from "@/components/ui/toast";
 
 export default function SettingsPage() {
   const { toast } = useToast();
+  const searchParams = useSearchParams();
   const [displayName, setDisplayName] = useState("");
   const [bio, setBio] = useState("");
   const [profileSlug, setProfileSlug] = useState("");
@@ -17,6 +20,12 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  // Stripe Connect state
+  const [stripeStatus, setStripeStatus] = useState<
+    "loading" | "not_connected" | "pending" | "connected"
+  >("loading");
+  const [connectingStripe, setConnectingStripe] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -39,9 +48,49 @@ export default function SettingsPage() {
         setAvatarUrl(profile.avatar_url || "");
       }
       setLoading(false);
+
+      // Check Stripe Connect status
+      try {
+        const stripeRes = await fetch("/api/stripe/connect");
+        const stripeData = await stripeRes.json();
+        if (stripeData.ok) {
+          if (stripeData.connected) setStripeStatus("connected");
+          else if (stripeData.details_submitted === false)
+            setStripeStatus("pending");
+          else setStripeStatus("not_connected");
+        } else {
+          setStripeStatus("not_connected");
+        }
+      } catch {
+        setStripeStatus("not_connected");
+      }
     }
     load();
   }, []);
+
+  // Handle ?stripe=complete/refresh
+  useEffect(() => {
+    const stripeParam = searchParams.get("stripe");
+    if (stripeParam === "complete") {
+      // Re-check status
+      fetch("/api/stripe/connect")
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.ok && data.connected) {
+            setStripeStatus("connected");
+            toast("Stripe connected successfully!", "success");
+          } else {
+            setStripeStatus("pending");
+            toast("Stripe setup incomplete — please finish onboarding.", "info");
+          }
+        })
+        .catch(() => {});
+      window.history.replaceState(null, "", "/settings");
+    } else if (stripeParam === "refresh") {
+      setStripeStatus("pending");
+      window.history.replaceState(null, "", "/settings");
+    }
+  }, [searchParams, toast]);
 
   const generateSlug = (name: string) => {
     return name
@@ -82,6 +131,25 @@ export default function SettingsPage() {
       );
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleConnectStripe = async () => {
+    setConnectingStripe(true);
+    try {
+      const res = await fetch("/api/stripe/connect", { method: "POST" });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.message);
+      if (data.already_connected) {
+        setStripeStatus("connected");
+        toast("Stripe already connected!", "success");
+        return;
+      }
+      window.location.href = data.url;
+    } catch (err) {
+      toast(err instanceof Error ? err.message : "Failed to connect", "error");
+    } finally {
+      setConnectingStripe(false);
     }
   };
 
@@ -180,6 +248,70 @@ export default function SettingsPage() {
               placeholder="https://example.com/avatar.jpg"
               type="url"
             />
+          </div>
+
+          {/* Payout Settings */}
+          <div className="mt-8 rounded-xl border border-gray-200 bg-white p-5">
+            <h2 className="text-base font-semibold text-slate-900">
+              Payout Settings
+            </h2>
+            <p className="mt-1 text-sm text-slate-600">
+              Connect your bank account to receive payments from gig work.
+            </p>
+
+            <div className="mt-4">
+              {stripeStatus === "loading" && (
+                <div className="h-10 w-48 animate-pulse rounded bg-gray-100" />
+              )}
+
+              {stripeStatus === "connected" && (
+                <div className="flex items-center gap-2">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-50">
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">
+                      Stripe Connected
+                    </p>
+                    <p className="text-xs text-slate-600">
+                      Your bank account is linked. You can receive payouts.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {stripeStatus === "not_connected" && (
+                <div>
+                  <p className="text-sm text-slate-600 mb-3">
+                    You haven&apos;t connected a bank account yet. This is
+                    required to receive payments.
+                  </p>
+                  <Button
+                    onClick={handleConnectStripe}
+                    disabled={connectingStripe}
+                    size="sm"
+                  >
+                    {connectingStripe ? "Connecting..." : "Connect with Stripe"}
+                  </Button>
+                </div>
+              )}
+
+              {stripeStatus === "pending" && (
+                <div>
+                  <p className="text-sm text-slate-600 mb-3">
+                    Your Stripe onboarding is incomplete. Please finish setting
+                    up your account.
+                  </p>
+                  <Button
+                    onClick={handleConnectStripe}
+                    disabled={connectingStripe}
+                    size="sm"
+                  >
+                    {connectingStripe ? "Connecting..." : "Complete Setup"}
+                  </Button>
+                </div>
+              )}
+            </div>
           </div>
 
           <Button onClick={handleSave} disabled={saving}>

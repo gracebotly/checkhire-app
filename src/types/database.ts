@@ -86,7 +86,7 @@ export type Deal = {
 
 export type DealWithParticipants = Deal & {
   client: Pick<UserProfile, 'display_name' | 'avatar_url' | 'trust_badge' | 'completed_deals_count' | 'average_rating' | 'profile_slug'>;
-  freelancer: Pick<UserProfile, 'display_name' | 'avatar_url' | 'trust_badge' | 'completed_deals_count' | 'average_rating' | 'profile_slug'> | null;
+  freelancer: Pick<UserProfile, 'display_name' | 'avatar_url' | 'trust_badge' | 'completed_deals_count' | 'average_rating' | 'profile_slug' | 'stripe_onboarding_complete'> | null;
 };
 
 // ─── Milestones ───

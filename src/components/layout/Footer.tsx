@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Shield } from "lucide-react";
+import { NewsletterSignup } from "@/components/newsletter/NewsletterSignup";
 
 const LINKS = {
   Product: [
@@ -43,6 +44,13 @@ export function Footer() {
               Safe escrow for gig work. You found each other — we make sure
               nobody gets screwed.
             </p>
+            <div className="mt-4">
+              <NewsletterSignup
+                variant="compact"
+                utmCampaign="footer"
+                placeholder="your@email.com"
+              />
+            </div>
           </div>
 
           {/* Link columns */}

@@ -5,6 +5,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { ArrowLeft, Shield } from "lucide-react";
 import { getAllPosts, getPostBySlug } from "@/lib/blog";
+import { NewsletterSignup } from "@/components/newsletter/NewsletterSignup";
 import { MDXRemote } from "next-mdx-remote/rsc";
 import { ProductCallout } from "@/components/gig/ProductCallout";
 
@@ -158,6 +159,16 @@ export default async function BlogPostPage({ params }: Props) {
         <article className="prose prose-slate max-w-none prose-headings:font-display prose-headings:text-slate-900 prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-p:text-slate-600 prose-li:text-slate-600 prose-strong:text-slate-900">
           <MDXRemote source={post.content} components={components} />
         </article>
+
+        {/* Newsletter */}
+        <div className="mt-12 pt-8 border-t border-gray-100">
+          <NewsletterSignup
+            variant="inline"
+            utmCampaign="blog_post"
+            heading="Protect your next gig"
+            description="Get weekly scam teardowns and safety tips. Free, no spam, unsubscribe anytime."
+          />
+        </div>
 
         {/* Related Posts */}
         {related.length > 0 && (

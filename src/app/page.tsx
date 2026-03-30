@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { NewsletterSignup } from "@/components/newsletter/NewsletterSignup";
 import { Shield, ArrowRight, Lock, Clock, DollarSign, FileText, Zap } from "lucide-react";
 
 export default function HomePage() {
@@ -35,6 +36,19 @@ export default function HomePage() {
               >
                 How It Works
               </Link>
+            </div>
+            <div className="mt-8 flex items-center gap-3 mx-auto max-w-sm">
+              <div className="h-px flex-1 bg-gray-200" />
+              <span className="text-xs text-slate-600">or stay informed</span>
+              <div className="h-px flex-1 bg-gray-200" />
+            </div>
+            <div className="mt-4 mx-auto max-w-md">
+              <NewsletterSignup
+                variant="inline"
+                utmCampaign="hero"
+                placeholder="Enter your email for scam alerts"
+                buttonText="Subscribe"
+              />
             </div>
           </div>
         </section>
@@ -155,21 +169,31 @@ export default function HomePage() {
 
         {/* Final CTA */}
         <section className="px-6 py-16">
-          <div className="mx-auto max-w-4xl text-center">
-            <h2 className="font-display text-2xl font-bold text-slate-900">
-              Ready to get started?
-            </h2>
-            <p className="mx-auto mt-3 max-w-lg text-sm text-slate-600">
-              Create your first gig in under 2 minutes. No fees for
-              freelancers, ever.
-            </p>
-            <Link
-              href="/login?mode=signup&redirect=/deal/new"
-              className="mt-6 inline-flex cursor-pointer items-center gap-2 rounded-lg bg-brand px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-brand-hover"
-            >
-              Post a Gig — It&apos;s Free
-              <ArrowRight className="h-4 w-4" />
-            </Link>
+          <div className="mx-auto max-w-4xl">
+            <div className="grid gap-8 md:grid-cols-2 items-start">
+              <div className="text-center md:text-left">
+                <h2 className="font-display text-2xl font-bold text-slate-900">
+                  Ready to get started?
+                </h2>
+                <p className="mt-3 max-w-lg text-sm text-slate-600">
+                  Create your first gig in under 2 minutes. No fees for
+                  freelancers, ever.
+                </p>
+                <Link
+                  href="/login?mode=signup&redirect=/deal/new"
+                  className="mt-6 inline-flex cursor-pointer items-center gap-2 rounded-lg bg-brand px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-brand-hover"
+                >
+                  Post a Gig — It&apos;s Free
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
+              <NewsletterSignup
+                variant="card"
+                utmCampaign="bottom_cta"
+                heading="Not ready yet?"
+                description="Get weekly scam teardowns and gig safety tips from real Reddit posts."
+              />
+            </div>
           </div>
         </section>
       </main>

@@ -12,6 +12,7 @@ import {
   ArrowRight,
   FileText,
 } from "lucide-react";
+import { NewsletterSignup } from "@/components/newsletter/NewsletterSignup";
 
 export const metadata: Metadata = {
   title: "For Clients — Hire with Confidence | CheckHire",
@@ -150,6 +151,18 @@ export default function ForClientsPage() {
                 </div>
               ))}
             </div>
+          </div>
+        </section>
+
+        {/* Newsletter */}
+        <section className="px-6 py-12">
+          <div className="mx-auto max-w-4xl">
+            <NewsletterSignup
+              variant="card"
+              utmCampaign="for_clients"
+              heading="Hiring tips that actually help"
+              description="Learn how to vet freelancers, structure deals, and protect your budget. Free weekly newsletter."
+            />
           </div>
         </section>
 

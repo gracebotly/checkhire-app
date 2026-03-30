@@ -11,6 +11,7 @@ import {
   Zap,
   ArrowRight,
 } from "lucide-react";
+import { NewsletterSignup } from "@/components/newsletter/NewsletterSignup";
 
 export const metadata: Metadata = {
   title: "For Freelancers — Keep 100% of What You Earn | CheckHire",
@@ -169,6 +170,18 @@ export default function ForFreelancersPage() {
               after 3 gigs, <strong>Established</strong> after 10,{" "}
               <strong>Verified</strong> after 25.
             </p>
+          </div>
+        </section>
+
+        {/* Newsletter */}
+        <section className="px-6 py-12">
+          <div className="mx-auto max-w-4xl">
+            <NewsletterSignup
+              variant="card"
+              utmCampaign="for_freelancers"
+              heading="Never get scammed again"
+              description="Weekly scam teardowns from real Reddit posts. Learn the red flags so you can spot them before they cost you."
+            />
           </div>
         </section>
 

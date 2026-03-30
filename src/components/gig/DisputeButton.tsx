@@ -23,7 +23,7 @@ export function DisputeButton({ dealId, dealStatus, completedAt }: Props) {
   const [reason, setReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const router = useRouter();
-  const { addToast } = useToast();
+  const { toast } = useToast();
 
   // Visibility logic
   const disputeableStatuses = [
@@ -57,14 +57,14 @@ export function DisputeButton({ dealId, dealStatus, completedAt }: Props) {
       });
       const data = await res.json();
       if (!res.ok) {
-        addToast(data.message || "Failed to open dispute", "error");
+        toast(data.message || "Failed to open dispute", "error");
         return;
       }
-      addToast("Dispute opened — funds are frozen", "success");
+      toast("Dispute opened — funds are frozen", "success");
       setOpen(false);
       router.refresh();
     } catch {
-      addToast("Something went wrong", "error");
+      toast("Something went wrong", "error");
     } finally {
       setSubmitting(false);
     }

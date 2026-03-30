@@ -130,7 +130,7 @@ function formatBytes(bytes: number) {
 
 export default function DisputePage() {
   const { id } = useParams<{ id: string }>();
-  const { addToast } = useToast();
+  const { toast } = useToast();
 
   const [loading, setLoading] = useState(true);
   const [dispute, setDispute] = useState<DisputeData | null>(null);
@@ -163,11 +163,11 @@ export default function DisputePage() {
         setFreelancer(data.freelancer);
       }
     } catch {
-      addToast("Failed to load dispute", "error");
+      toast("Failed to load dispute", "error");
     } finally {
       setLoading(false);
     }
-  }, [id, addToast]);
+  }, [id, toast]);
 
   useEffect(() => {
     fetchDispute();
@@ -182,19 +182,19 @@ export default function DisputePage() {
 
       if (["screenshot", "file", "video"].includes(evidenceType)) {
         if (!evidenceFile) {
-          addToast("Please select a file", "error");
+          toast("Please select a file", "error");
           return;
         }
         formData.append("file", evidenceFile);
       } else if (evidenceType === "text") {
         if (!evidenceText.trim()) {
-          addToast("Please enter text content", "error");
+          toast("Please enter text content", "error");
           return;
         }
         formData.append("content", evidenceText);
       } else if (evidenceType === "link") {
         if (!evidenceUrl.trim()) {
-          addToast("Please enter a URL", "error");
+          toast("Please enter a URL", "error");
           return;
         }
         formData.append("url", evidenceUrl);
@@ -206,17 +206,17 @@ export default function DisputePage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        addToast(data.message || "Failed to submit evidence", "error");
+        toast(data.message || "Failed to submit evidence", "error");
         return;
       }
-      addToast("Evidence submitted", "success");
+      toast("Evidence submitted", "success");
       setEvidenceFile(null);
       setEvidenceDescription("");
       setEvidenceText("");
       setEvidenceUrl("");
       fetchDispute();
     } catch {
-      addToast("Something went wrong", "error");
+      toast("Something went wrong", "error");
     } finally {
       setSubmittingEvidence(false);
     }

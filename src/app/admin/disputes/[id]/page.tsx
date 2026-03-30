@@ -113,7 +113,7 @@ const badgeMap: Record<string, { variant: "danger" | "warning" | "success" | "ou
 
 export default function AdminDisputeDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { addToast } = useToast();
+  const { toast } = useToast();
 
   const [loading, setLoading] = useState(true);
   const [dispute, setDispute] = useState<DisputeDetail | null>(null);
@@ -143,11 +143,11 @@ export default function AdminDisputeDetailPage() {
         setFreelancer(data.freelancer);
       }
     } catch {
-      addToast("Failed to load dispute", "error");
+      toast("Failed to load dispute", "error");
     } finally {
       setLoading(false);
     }
-  }, [id, addToast]);
+  }, [id, toast]);
 
   useEffect(() => {
     fetchData();
@@ -163,13 +163,13 @@ export default function AdminDisputeDetailPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        addToast(data.message || "Failed to update status", "error");
+        toast(data.message || "Failed to update status", "error");
         return;
       }
-      addToast("Status set to Under Review", "success");
+      toast("Status set to Under Review", "success");
       fetchData();
     } catch {
-      addToast("Something went wrong", "error");
+      toast("Something went wrong", "error");
     } finally {
       setSettingUnderReview(false);
     }
@@ -196,14 +196,14 @@ export default function AdminDisputeDetailPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        addToast(data.message || "Failed to resolve", "error");
+        toast(data.message || "Failed to resolve", "error");
         return;
       }
-      addToast("Dispute resolved", "success");
+      toast("Dispute resolved", "success");
       setConfirmOpen(false);
       fetchData();
     } catch {
-      addToast("Something went wrong", "error");
+      toast("Something went wrong", "error");
     } finally {
       setResolving(false);
     }

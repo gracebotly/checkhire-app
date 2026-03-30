@@ -21,7 +21,7 @@ export function ScreenRecorder({ disputeId, onUploadComplete }: Props) {
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const { addToast } = useToast();
+  const { toast } = useToast();
 
   useEffect(() => {
     setSupported(!!navigator.mediaDevices?.getDisplayMedia);
@@ -84,7 +84,7 @@ export function ScreenRecorder({ disputeId, onUploadComplete }: Props) {
         setElapsed((prev) => {
           const next = prev + 1;
           if (next >= 105) {
-            addToast("Recording will stop in 15 seconds", "warning");
+            toast("Recording will stop in 15 seconds", "info");
           }
           if (next >= 120) {
             stopRecording();
@@ -93,7 +93,7 @@ export function ScreenRecorder({ disputeId, onUploadComplete }: Props) {
         });
       }, 1000);
     } catch {
-      addToast("Screen recording was cancelled or denied", "error");
+      toast("Screen recording was cancelled or denied", "error");
     }
   };
 
@@ -115,14 +115,14 @@ export function ScreenRecorder({ disputeId, onUploadComplete }: Props) {
       });
       const data = await res.json();
       if (!res.ok) {
-        addToast(data.message || "Upload failed", "error");
+        toast(data.message || "Upload failed", "error");
         return;
       }
-      addToast("Screen recording uploaded", "success");
+      toast("Screen recording uploaded", "success");
       discard();
       onUploadComplete();
     } catch {
-      addToast("Upload failed", "error");
+      toast("Upload failed", "error");
     } finally {
       setUploading(false);
     }

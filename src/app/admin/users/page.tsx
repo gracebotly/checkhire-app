@@ -34,7 +34,7 @@ function formatDate(iso: string) {
 }
 
 export default function AdminUsersPage() {
-  const { addToast } = useToast();
+  const { toast } = useToast();
   const [users, setUsers] = useState<User[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -59,11 +59,11 @@ export default function AdminUsersPage() {
       setUsers(data.users || []);
       setTotal(data.total || 0);
     } catch {
-      addToast("Failed to load users", "error");
+      toast("Failed to load users", "error");
     } finally {
       setLoading(false);
     }
-  }, [page, search, addToast]);
+  }, [page, search, toast]);
 
   useEffect(() => {
     fetchUsers();
@@ -89,10 +89,10 @@ export default function AdminUsersPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        addToast(data.message || "Action failed", "error");
+        toast(data.message || "Action failed", "error");
         return;
       }
-      addToast(
+      toast(
         confirmAction.action === "suspend"
           ? "User suspended"
           : "User unsuspended",
@@ -101,7 +101,7 @@ export default function AdminUsersPage() {
       setConfirmAction(null);
       fetchUsers();
     } catch {
-      addToast("Something went wrong", "error");
+      toast("Something went wrong", "error");
     } finally {
       setActionLoading(false);
     }

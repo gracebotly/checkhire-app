@@ -402,25 +402,15 @@ export function GigPageClient({
 
           {/* Client actions */}
           {role === "client" && deal.status === "pending_acceptance" && (
-            <>
-              <ShareButton url={dealUrl} title={deal.title} />
-              <Button
-                variant="ghost"
-                onClick={handleCancel}
-                disabled={actionLoading}
-                className="text-red-600 hover:text-red-700 hover:bg-red-50"
-              >
-                Cancel Gig
-              </Button>
-            </>
+            <Button
+              variant="ghost"
+              onClick={handleCancel}
+              disabled={actionLoading}
+              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              Cancel Gig
+            </Button>
           )}
-
-          {/* Client funded+ just show share */}
-          {role === "client" &&
-            deal.status !== "pending_acceptance" &&
-            deal.status !== "cancelled" && (
-              <ShareButton url={dealUrl} title={deal.title} />
-            )}
         </div>
       </div>
     </motion.div>

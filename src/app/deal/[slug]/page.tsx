@@ -4,6 +4,7 @@ import { GigPageClient } from "@/components/gig/GigPageClient";
 import { Navbar } from "@/components/layout/Navbar";
 import { ToastProvider } from "@/components/ui/toast";
 import type { Metadata } from "next";
+import type { ActivityLogEntryWithUser, Milestone } from "@/types/database";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -56,8 +57,8 @@ export default async function DealPage({ params }: Props) {
     else if (deal.freelancer_user_id === user.id) role = "freelancer";
   }
 
-  let milestones: Awaited<ReturnType<typeof supabase.from>>[] = [];
-  let activity: Awaited<ReturnType<typeof supabase.from>>[] = [];
+  let milestones: Milestone[] = [];
+  let activity: ActivityLogEntryWithUser[] = [];
 
   if (role !== "visitor") {
     const { data: ms } = await supabase
@@ -65,7 +66,7 @@ export default async function DealPage({ params }: Props) {
       .select("*")
       .eq("deal_id", deal.id)
       .order("position", { ascending: true });
-    milestones = ms || [];
+    milestones = (ms || []) as Milestone[];
 
     const { data: acts } = await supabase
       .from("deal_activity_log")
@@ -74,7 +75,21 @@ export default async function DealPage({ params }: Props) {
       )
       .eq("deal_id", deal.id)
       .order("created_at", { ascending: true });
-    activity = acts || [];
+    activity = (acts || []) as ActivityLogEntryWithUser[];
+
+    const fileEntries = activity.filter(
+      (entry) => entry.entry_type === "file" && entry.file_url
+    );
+
+    for (const entry of fileEntries) {
+      const { data: signed } = await supabase.storage
+        .from("deal-files")
+        .createSignedUrl(entry.file_url as string, 60 * 15);
+
+      if (signed?.signedUrl) {
+        entry.file_url = signed.signedUrl;
+      }
+    }
   }
 
   return (
@@ -84,8 +99,8 @@ export default async function DealPage({ params }: Props) {
         <main>
           <GigPageClient
             deal={deal}
-            milestones={milestones as never[]}
-            activity={activity as never[]}
+            milestones={milestones}
+            activity={activity}
             role={role}
             currentUserId={user?.id || null}
           />

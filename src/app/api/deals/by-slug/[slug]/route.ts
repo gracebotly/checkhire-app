@@ -65,6 +65,22 @@ export const GET = withApiHandler(
         .eq("deal_id", deal.id)
         .order("created_at", { ascending: true });
       activity = acts || [];
+
+      if (activity.length > 0) {
+        const fileEntries = activity.filter(
+          (entry) => entry.entry_type === "file" && entry.file_url
+        );
+
+        for (const entry of fileEntries) {
+          const { data: signed } = await supabase.storage
+            .from("deal-files")
+            .createSignedUrl(entry.file_url as string, 60 * 15);
+
+          if (signed?.signedUrl) {
+            entry.file_url = signed.signedUrl;
+          }
+        }
+      }
     }
 
     return NextResponse.json({

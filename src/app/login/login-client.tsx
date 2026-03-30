@@ -51,7 +51,8 @@ export default function AuthShell() {
         return;
       }
 
-      router.push("/dashboard");
+      const redirectTo = params.get("redirect");
+      router.push(redirectTo || "/dashboard");
       router.refresh();
     } catch {
       setMessage("Something went wrong. Please try again.");

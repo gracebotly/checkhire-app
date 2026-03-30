@@ -30,7 +30,7 @@ export default function HomePage() {
                 <ArrowRight className="h-4 w-4" />
               </Link>
               <Link
-                href="/about"
+                href="/how-it-works"
                 className="cursor-pointer rounded-lg border border-gray-200 bg-white px-6 py-3 text-sm font-semibold text-slate-900 shadow-sm transition-colors duration-200 hover:bg-gray-50"
               >
                 How It Works
@@ -127,6 +127,36 @@ export default function HomePage() {
             </div>
           </div>
         </section>
+        {/* Social Proof */}
+        <section className="px-6 py-10">
+          <div className="mx-auto max-w-4xl text-center">
+            <div className="flex items-center justify-center gap-2 text-sm text-slate-600">
+              <Lock className="h-4 w-4 text-slate-400" />
+              <span>Escrow-protected payments powered by Stripe</span>
+            </div>
+          </div>
+        </section>
+
+        {/* Learn More Links */}
+        <section className="px-6 pb-6">
+          <div className="mx-auto max-w-4xl text-center">
+            <p className="text-sm text-slate-600">
+              Learn more:{" "}
+              <Link href="/for-freelancers" className="text-brand transition-colors duration-200 hover:text-brand-hover">
+                For Freelancers
+              </Link>
+              {" · "}
+              <Link href="/for-clients" className="text-brand transition-colors duration-200 hover:text-brand-hover">
+                For Clients
+              </Link>
+              {" · "}
+              <Link href="/blog" className="text-brand transition-colors duration-200 hover:text-brand-hover">
+                Blog
+              </Link>
+            </p>
+          </div>
+        </section>
+
         {/* Final CTA */}
         <section className="px-6 py-16">
           <div className="mx-auto max-w-4xl text-center">

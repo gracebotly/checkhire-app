@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /settings/
+Disallow: /templates/
+Disallow: /dashboard/
+
+Sitemap: https://checkhire.com/sitemap.xml

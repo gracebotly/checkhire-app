@@ -15,6 +15,8 @@ const PUBLIC_PATHS = [
   "/u",
   // Public deals catalog
   "/deals",
+  // Public browse gigs page
+  "/gigs",
   // Static informational pages
   "/about",
   "/contact",

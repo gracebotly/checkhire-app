@@ -36,7 +36,7 @@ type PublicDeal = {
   interested_count: number;
 };
 
-export default function BrowseGigsPage() {
+export function BrowseGigsContent() {
   const [deals, setDeals] = useState<PublicDeal[]>([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);

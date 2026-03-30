@@ -48,6 +48,26 @@
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 }
 
+/* ─── Base text color fix for Tailwind 4 ─── */
+@layer base {
+  body {
+    color: #0f172a;
+    background-color: #ffffff;
+  }
+
+  input,
+  textarea,
+  select,
+  button {
+    color: inherit;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: #475569;
+  }
+}
+
 /* ─── Custom Scrollbar ─── */
 .thin-scrollbar::-webkit-scrollbar {
   width: 8px;

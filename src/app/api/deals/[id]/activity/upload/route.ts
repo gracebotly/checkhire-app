@@ -109,9 +109,7 @@ export const POST = withApiHandler(
     // Get URL (signed since bucket is private)
     const { data: urlData } = await supabase.storage
       .from("deal-files")
-      .createSignedUrl(storagePath, 60 * 60 * 24 * 7); // 7 days
-
-    const fileUrl = urlData?.signedUrl || "";
+      .createSignedUrl(storagePath, 60 * 15); // 15 minutes
 
     const { data: entry, error: logError } = await supabase
       .from("deal_activity_log")
@@ -119,7 +117,7 @@ export const POST = withApiHandler(
         deal_id: id,
         user_id: user.id,
         entry_type: "file",
-        file_url: fileUrl,
+        file_url: storagePath,
         file_name: file.name,
         file_size_bytes: file.size,
       })
@@ -133,6 +131,6 @@ export const POST = withApiHandler(
       );
     }
 
-    return NextResponse.json({ ok: true, entry });
+    return NextResponse.json({ ok: true, entry: { ...entry, file_url: urlData?.signedUrl || "" } });
   }
 );

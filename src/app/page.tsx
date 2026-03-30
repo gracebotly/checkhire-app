@@ -138,7 +138,7 @@ export default function HomePage() {
               freelancers, ever.
             </p>
             <Link
-              href="/deal/new"
+              href="/login?mode=signup&redirect=/deal/new"
               className="mt-6 inline-flex cursor-pointer items-center gap-2 rounded-lg bg-brand px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-brand-hover"
             >
               Post a Gig — It&apos;s Free

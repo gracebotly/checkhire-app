@@ -13,7 +13,7 @@ const tabs: {
 }[] = [
   { label: "My Gigs", icon: Briefcase, href: "/dashboard" },
   { label: "Post a Gig", icon: PlusCircle, href: "/deal/new", prominent: true },
-  { label: "Profile", icon: User, href: "/settings" },
+  { label: "Profile", icon: User, href: "/profile" },
   { label: "Settings", icon: Settings, href: "/settings" },
 ];
 
@@ -26,7 +26,7 @@ export function BottomNav() {
         {tabs.map((tab) => {
           const isActive =
             pathname === tab.href ||
-            (tab.href === "/dashboard" && pathname === "/dashboard");
+            (tab.href === "/profile" && pathname.startsWith("/u/"));
           const Icon = tab.icon;
 
           return (

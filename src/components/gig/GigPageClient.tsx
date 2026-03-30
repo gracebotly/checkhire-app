@@ -35,6 +35,9 @@ import { InstantPayoutCard } from "@/components/gig/InstantPayoutCard";
 import { RatingForm } from "@/components/gig/RatingForm";
 import { RatingDisplay } from "@/components/gig/RatingDisplay";
 import { StarRating } from "@/components/gig/StarRating";
+import { InterestForm } from "@/components/gig/InterestForm";
+import { InterestList } from "@/components/gig/InterestList";
+import { RepeatDealButton } from "@/components/gig/RepeatDealButton";
 import { useToast } from "@/components/ui/toast";
 import type {
   DealWithParticipants,
@@ -42,6 +45,8 @@ import type {
   ActivityLogEntryWithUser,
   DealStatus,
   Rating,
+  DealInterest,
+  DealInterestWithUser,
 } from "@/types/database";
 
 type Props = {
@@ -53,6 +58,8 @@ type Props = {
   fundedStatus: string | null;
   userRating: Rating | null;
   otherRating: Rating | null;
+  interests: DealInterestWithUser[];
+  userInterest: DealInterest | null;
 };
 
 const statusMap: Record<
@@ -99,6 +106,8 @@ export function GigPageClient({
   fundedStatus,
   userRating: initialUserRating,
   otherRating: initialOtherRating,
+  interests,
+  userInterest,
 }: Props) {
   const router = useRouter();
   const { toast } = useToast();
@@ -471,6 +480,28 @@ export function GigPageClient({
         </div>
       </div>
 
+      {/* Interest Section for Public Deals */}
+      {deal.deal_type === "public" && (
+        <div className="mb-6">
+          {/* Client sees interest list */}
+          {role === "client" && (
+            <InterestList dealId={deal.id} interests={interests} />
+          )}
+
+          {/* Visitor (authenticated, not client) sees interest form */}
+          {role === "visitor" &&
+            currentUserId &&
+            deal.status === "pending_acceptance" &&
+            !deal.freelancer_user_id && (
+              <InterestForm
+                dealId={deal.id}
+                existingInterest={userInterest}
+                onSubmitted={() => router.refresh()}
+              />
+            )}
+        </div>
+      )}
+
       {/* Stripe Connect Prompt for freelancers */}
       {role === "freelancer" &&
         deal.freelancer?.stripe_onboarding_complete === false &&
@@ -797,6 +828,18 @@ export function GigPageClient({
               Open a Dispute (Coming Soon)
             </button>
           )}
+
+        {/* Repeat Deal button for completed deals */}
+        {deal.status === "completed" && isParticipant && (
+          <RepeatDealButton
+            dealId={deal.id}
+            otherPartyName={
+              role === "client"
+                ? deal.freelancer?.display_name || "freelancer"
+                : deal.client.display_name || "client"
+            }
+          />
+        )}
       </div>
 
       {/* ── Dialogs ── */}

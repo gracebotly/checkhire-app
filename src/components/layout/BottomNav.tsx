@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Briefcase, PlusCircle, User, Settings } from "lucide-react";
+import { Briefcase, Search, PlusCircle, User, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const tabs: {
@@ -12,7 +12,8 @@ const tabs: {
   prominent?: boolean;
 }[] = [
   { label: "My Gigs", icon: Briefcase, href: "/dashboard" },
-  { label: "Post a Gig", icon: PlusCircle, href: "/deal/new", prominent: true },
+  { label: "Browse", icon: Search, href: "/gigs" },
+  { label: "Post", icon: PlusCircle, href: "/deal/new", prominent: true },
   { label: "Profile", icon: User, href: "/profile" },
   { label: "Settings", icon: Settings, href: "/settings" },
 ];
@@ -26,7 +27,8 @@ export function BottomNav() {
         {tabs.map((tab) => {
           const isActive =
             pathname === tab.href ||
-            (tab.href === "/profile" && pathname.startsWith("/u/"));
+            (tab.href === "/profile" && pathname.startsWith("/u/")) ||
+            (tab.href === "/gigs" && pathname === "/gigs");
           const Icon = tab.icon;
 
           return (

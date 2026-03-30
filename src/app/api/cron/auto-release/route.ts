@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getStripe } from "@/lib/stripe/client";
-import { sendAutoReleaseCompletedEmail } from "@/lib/email/escrow-notifications";
+import { sendAndLogNotification } from "@/lib/email/logNotification";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -73,12 +73,34 @@ export async function GET(req: Request) {
 
       // Emails
       if (freelancer.email) {
-        await sendAutoReleaseCompletedEmail({ to: freelancer.email, dealTitle: deal.title, dealSlug: deal.deal_link_slug, amount: deal.total_amount, role: "freelancer" });
-        await supabase.from("email_notifications").insert({ user_id: deal.freelancer_user_id, deal_id: deal.id, notification_type: "auto_release_completed", email_address: freelancer.email, sent_at: new Date().toISOString() });
+        await sendAndLogNotification({
+          supabase,
+          type: "auto_release_completed",
+          userId: deal.freelancer_user_id,
+          dealId: deal.id,
+          email: freelancer.email,
+          data: {
+            dealTitle: deal.title,
+            dealSlug: deal.deal_link_slug,
+            amount: deal.total_amount,
+            role: "freelancer",
+          },
+        });
       }
       if (client?.email) {
-        await sendAutoReleaseCompletedEmail({ to: client.email, dealTitle: deal.title, dealSlug: deal.deal_link_slug, amount: deal.total_amount, role: "client" });
-        await supabase.from("email_notifications").insert({ user_id: deal.client_user_id, deal_id: deal.id, notification_type: "auto_release_completed", email_address: client.email, sent_at: new Date().toISOString() });
+        await sendAndLogNotification({
+          supabase,
+          type: "auto_release_completed",
+          userId: deal.client_user_id,
+          dealId: deal.id,
+          email: client.email,
+          data: {
+            dealTitle: deal.title,
+            dealSlug: deal.deal_link_slug,
+            amount: deal.total_amount,
+            role: "client",
+          },
+        });
       }
 
       dealsReleased++;

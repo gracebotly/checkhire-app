@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { sendAutoReleaseWarningEmail } from "@/lib/email/escrow-notifications";
+import { sendAndLogNotification } from "@/lib/email/logNotification";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -40,8 +40,18 @@ export async function GET(req: Request) {
 
       const { data: client } = await supabase.from("user_profiles").select("email").eq("id", deal.client_user_id).maybeSingle();
       if (client?.email) {
-        await sendAutoReleaseWarningEmail({ to: client.email, dealTitle: deal.title, dealSlug: deal.deal_link_slug, amount: deal.total_amount, hoursRemaining: 24 });
-        await supabase.from("email_notifications").insert({ user_id: deal.client_user_id, deal_id: deal.id, notification_type: "auto_release_warning_24h", email_address: client.email, sent_at: new Date().toISOString() });
+        await sendAndLogNotification({
+          supabase,
+          type: "auto_release_warning_24h",
+          userId: deal.client_user_id,
+          dealId: deal.id,
+          email: client.email,
+          data: {
+            dealTitle: deal.title,
+            dealSlug: deal.deal_link_slug,
+            amount: deal.total_amount,
+          },
+        });
         warningsSent++;
       }
     }
@@ -69,8 +79,18 @@ export async function GET(req: Request) {
 
       const { data: client } = await supabase.from("user_profiles").select("email").eq("id", deal.client_user_id).maybeSingle();
       if (client?.email) {
-        await sendAutoReleaseWarningEmail({ to: client.email, dealTitle: deal.title, dealSlug: deal.deal_link_slug, amount: deal.total_amount, hoursRemaining: 6 });
-        await supabase.from("email_notifications").insert({ user_id: deal.client_user_id, deal_id: deal.id, notification_type: "auto_release_warning_6h", email_address: client.email, sent_at: new Date().toISOString() });
+        await sendAndLogNotification({
+          supabase,
+          type: "auto_release_warning_6h",
+          userId: deal.client_user_id,
+          dealId: deal.id,
+          email: client.email,
+          data: {
+            dealTitle: deal.title,
+            dealSlug: deal.deal_link_slug,
+            amount: deal.total_amount,
+          },
+        });
         warningsSent++;
       }
     }
@@ -91,8 +111,18 @@ export async function GET(req: Request) {
 
       const { data: client } = await supabase.from("user_profiles").select("email").eq("id", deal.client_user_id).maybeSingle();
       if (client?.email) {
-        await sendAutoReleaseWarningEmail({ to: client.email, dealTitle: `${deal.title} — ${ms.title}`, dealSlug: deal.deal_link_slug, amount: ms.amount, hoursRemaining: 24 });
-        await supabase.from("email_notifications").insert({ user_id: deal.client_user_id, deal_id: ms.deal_id, notification_type: "auto_release_warning_24h", email_address: client.email, sent_at: new Date().toISOString() });
+        await sendAndLogNotification({
+          supabase,
+          type: "auto_release_warning_24h",
+          userId: deal.client_user_id,
+          dealId: ms.deal_id,
+          email: client.email,
+          data: {
+            dealTitle: `${deal.title} — ${ms.title}`,
+            dealSlug: deal.deal_link_slug,
+            amount: ms.amount,
+          },
+        });
         warningsSent++;
       }
     }
@@ -112,8 +142,18 @@ export async function GET(req: Request) {
 
       const { data: client } = await supabase.from("user_profiles").select("email").eq("id", deal.client_user_id).maybeSingle();
       if (client?.email) {
-        await sendAutoReleaseWarningEmail({ to: client.email, dealTitle: `${deal.title} — ${ms.title}`, dealSlug: deal.deal_link_slug, amount: ms.amount, hoursRemaining: 6 });
-        await supabase.from("email_notifications").insert({ user_id: deal.client_user_id, deal_id: ms.deal_id, notification_type: "auto_release_warning_6h", email_address: client.email, sent_at: new Date().toISOString() });
+        await sendAndLogNotification({
+          supabase,
+          type: "auto_release_warning_6h",
+          userId: deal.client_user_id,
+          dealId: ms.deal_id,
+          email: client.email,
+          data: {
+            dealTitle: `${deal.title} — ${ms.title}`,
+            dealSlug: deal.deal_link_slug,
+            amount: ms.amount,
+          },
+        });
         warningsSent++;
       }
     }

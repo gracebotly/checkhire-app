@@ -4,7 +4,7 @@ import { GigPageClient } from "@/components/gig/GigPageClient";
 import { Navbar } from "@/components/layout/Navbar";
 import { ToastProvider } from "@/components/ui/toast";
 import type { Metadata } from "next";
-import type { ActivityLogEntryWithUser, Milestone } from "@/types/database";
+import type { ActivityLogEntryWithUser, Milestone, Rating } from "@/types/database";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -94,6 +94,21 @@ export default async function DealPage({ params, searchParams }: Props) {
     }
   }
 
+  // Fetch ratings for completed deals
+  let userRating: Rating | null = null;
+  let otherRating: Rating | null = null;
+  if (role !== "visitor" && deal.status === "completed") {
+    const { data: dealRatings } = await supabase
+      .from("ratings")
+      .select("*")
+      .eq("deal_id", deal.id);
+
+    if (dealRatings) {
+      userRating = dealRatings.find((r) => r.rater_user_id === user!.id) || null;
+      otherRating = dealRatings.find((r) => r.rater_user_id !== user!.id) || null;
+    }
+  }
+
   return (
     <ToastProvider>
       <div className="min-h-screen bg-white">
@@ -106,6 +121,8 @@ export default async function DealPage({ params, searchParams }: Props) {
             role={role}
             currentUserId={user?.id || null}
             fundedStatus={funded || null}
+            userRating={userRating}
+            otherRating={otherRating}
           />
         </main>
       </div>

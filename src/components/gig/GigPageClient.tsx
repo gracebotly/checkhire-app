@@ -32,12 +32,16 @@ import { ShareButton } from "@/components/gig/ShareButton";
 import { CountdownTimer } from "@/components/gig/CountdownTimer";
 import { StripeConnectPrompt } from "@/components/gig/StripeConnectPrompt";
 import { InstantPayoutCard } from "@/components/gig/InstantPayoutCard";
+import { RatingForm } from "@/components/gig/RatingForm";
+import { RatingDisplay } from "@/components/gig/RatingDisplay";
+import { StarRating } from "@/components/gig/StarRating";
 import { useToast } from "@/components/ui/toast";
 import type {
   DealWithParticipants,
   Milestone,
   ActivityLogEntryWithUser,
   DealStatus,
+  Rating,
 } from "@/types/database";
 
 type Props = {
@@ -47,6 +51,8 @@ type Props = {
   role: "client" | "freelancer" | "visitor";
   currentUserId: string | null;
   fundedStatus: string | null;
+  userRating: Rating | null;
+  otherRating: Rating | null;
 };
 
 const statusMap: Record<
@@ -91,10 +97,14 @@ export function GigPageClient({
   role,
   currentUserId,
   fundedStatus,
+  userRating: initialUserRating,
+  otherRating: initialOtherRating,
 }: Props) {
   const router = useRouter();
   const { toast } = useToast();
   const [activityEntries, setActivityEntries] = useState(initialActivity);
+  const [userRating, setUserRating] = useState(initialUserRating);
+  const [otherRating, setOtherRating] = useState(initialOtherRating);
   const [escrowExpanded, setEscrowExpanded] = useState(role === "visitor");
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState("");
@@ -491,6 +501,68 @@ export function GigPageClient({
             <Separator />
             <ActivityInput dealId={deal.id} onNewEntry={refreshActivity} />
           </div>
+        </div>
+      )}
+
+      {/* Rating Section */}
+      {deal.status === "completed" && isParticipant && (
+        <div className="mb-6 space-y-4">
+          <h3 className="text-sm font-semibold text-slate-900">Ratings</h3>
+
+          {/* Show RatingForm if user hasn't rated yet */}
+          {!userRating && (
+            <RatingForm
+              dealId={deal.id}
+              onRated={() => router.refresh()}
+            />
+          )}
+
+          {/* Show user's submitted rating */}
+          {userRating && (
+            <div className="rounded-xl border border-gray-200 bg-white p-5">
+              <p className="mb-2 text-xs font-semibold text-slate-600">
+                Your rating
+              </p>
+              <div className="flex items-center gap-2">
+                <StarRating rating={userRating.stars} size="md" />
+                <span className="text-sm font-semibold text-slate-900">
+                  {userRating.stars}/5
+                </span>
+              </div>
+              {userRating.comment && (
+                <p className="mt-2 text-sm text-slate-600">
+                  {userRating.comment}
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Show other party's rating ONLY if user has already rated (prevents peeking) */}
+          {userRating && otherRating && (
+            <div className="rounded-xl border border-gray-200 bg-white p-5">
+              <p className="mb-2 text-xs font-semibold text-slate-600">
+                {role === "client" ? "Freelancer's" : "Client's"} rating
+              </p>
+              <div className="flex items-center gap-2">
+                <StarRating rating={otherRating.stars} size="md" />
+                <span className="text-sm font-semibold text-slate-900">
+                  {otherRating.stars}/5
+                </span>
+              </div>
+              {otherRating.comment && (
+                <p className="mt-2 text-sm text-slate-600">
+                  {otherRating.comment}
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Waiting state: user rated but other party hasn't yet */}
+          {userRating && !otherRating && (
+            <p className="text-xs text-slate-600">
+              Waiting for the other party to leave their rating...
+            </p>
+          )}
         </div>
       )}
 

@@ -1,27 +1,58 @@
 import Link from "next/link";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
-import { Shield, ArrowRight, Lock, Clock, DollarSign, FileText, Zap } from "lucide-react";
+import { NewsletterSignup } from "@/components/newsletter/NewsletterSignup";
+import {
+  Shield,
+  ArrowRight,
+  Lock,
+  Clock,
+  DollarSign,
+  FileText,
+  Zap,
+} from "lucide-react";
 
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
       <main>
-        {/* Hero */}
+        {/* Hero — email capture is the PRIMARY action */}
         <section className="px-6 py-20 md:py-28">
           <div className="mx-auto max-w-4xl text-center">
-            <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-muted">
-              <Shield className="h-7 w-7 text-brand" />
+            {/* Pill badge */}
+            <div className="mx-auto mb-6 inline-flex items-center gap-2 rounded-full border border-brand-muted bg-brand-muted px-4 py-1.5">
+              <Shield className="h-4 w-4 text-brand" />
+              <span className="text-xs font-semibold text-brand">
+                ESCROW-PROTECTED PAYMENTS
+              </span>
             </div>
-            <h1 className="font-display text-3xl font-bold text-slate-900 md:text-5xl">
-              Safe escrow for gig work
+
+            <h1 className="font-display text-3xl font-bold text-slate-900 md:text-5xl md:leading-tight">
+              Stop getting{" "}
+              <span className="text-brand">ghosted.</span>
+              <br />
+              Start getting{" "}
+              <span className="text-brand">paid.</span>
             </h1>
-            <p className="mx-auto mt-4 max-w-2xl text-base text-slate-600 md:text-lg">
-              You found each other. We make sure nobody gets screwed. Create a
-              deal, fund escrow, and release payment when work is complete.
+
+            <p className="mx-auto mt-4 max-w-lg text-base text-slate-600 md:text-lg">
+              Weekly scam alerts, safe hiring tips, and escrow deals from
+              freelancers who&apos;ve been burned before.
             </p>
-            <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+
+            {/* Email capture — prominent, centered */}
+            <div className="mx-auto mt-8 max-w-md">
+              <NewsletterSignup
+                variant="inline"
+                utmCampaign="hero"
+                placeholder="Enter your email..."
+                buttonText="Get alerts"
+              />
+            </div>
+
+            {/* Secondary CTA */}
+            <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
               <Link
                 href="/login?mode=signup"
                 className="flex cursor-pointer items-center gap-2 rounded-lg bg-brand px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-brand-hover"
@@ -35,6 +66,36 @@ export default function HomePage() {
               >
                 How It Works
               </Link>
+            </div>
+
+            {/* Stat bar */}
+            <div className="mx-auto mt-10 flex max-w-md items-center justify-center gap-6 border-t border-gray-100 pt-8">
+              <div className="text-center">
+                <p className="font-mono text-xl font-bold tabular-nums text-brand">
+                  $0
+                </p>
+                <p className="mt-0.5 text-xs text-slate-600">
+                  Freelancer fees
+                </p>
+              </div>
+              <div className="h-8 w-px bg-gray-200" />
+              <div className="text-center">
+                <p className="font-mono text-xl font-bold tabular-nums text-brand">
+                  72hr
+                </p>
+                <p className="mt-0.5 text-xs text-slate-600">
+                  Auto-release
+                </p>
+              </div>
+              <div className="h-8 w-px bg-gray-200" />
+              <div className="text-center">
+                <p className="font-mono text-xl font-bold tabular-nums text-brand">
+                  100%
+                </p>
+                <p className="mt-0.5 text-xs text-slate-600">
+                  You keep it all
+                </p>
+              </div>
             </div>
           </div>
         </section>
@@ -97,8 +158,8 @@ export default function HomePage() {
                 Funds locked before work starts
               </h3>
               <p className="mt-2 text-sm text-slate-600">
-                Client pays into escrow. Freelancer sees &ldquo;Payment Secured&rdquo;
-                with the exact amount held for them.
+                Client pays into escrow. Freelancer sees &ldquo;Payment
+                Secured&rdquo; with the exact amount held for them.
               </p>
             </div>
             <div className="text-center">
@@ -127,11 +188,12 @@ export default function HomePage() {
             </div>
           </div>
         </section>
+
         {/* Social Proof */}
         <section className="px-6 py-10">
           <div className="mx-auto max-w-4xl text-center">
             <div className="flex items-center justify-center gap-2 text-sm text-slate-600">
-              <Lock className="h-4 w-4 text-slate-400" />
+              <Lock className="h-4 w-4 text-slate-600" />
               <span>Escrow-protected payments powered by Stripe</span>
             </div>
           </div>
@@ -142,11 +204,17 @@ export default function HomePage() {
           <div className="mx-auto max-w-4xl text-center">
             <p className="text-sm text-slate-600">
               Learn more:{" "}
-              <Link href="/for-freelancers" className="text-brand transition-colors duration-200 hover:text-brand-hover">
+              <Link
+                href="/for-freelancers"
+                className="text-brand transition-colors duration-200 hover:text-brand-hover"
+              >
                 For Freelancers
               </Link>
               {" · "}
-              <Link href="/for-clients" className="text-brand transition-colors duration-200 hover:text-brand-hover">
+              <Link
+                href="/for-clients"
+                className="text-brand transition-colors duration-200 hover:text-brand-hover"
+              >
                 For Clients
               </Link>
             </p>
@@ -155,21 +223,31 @@ export default function HomePage() {
 
         {/* Final CTA */}
         <section className="px-6 py-16">
-          <div className="mx-auto max-w-4xl text-center">
-            <h2 className="font-display text-2xl font-bold text-slate-900">
-              Ready to get started?
-            </h2>
-            <p className="mx-auto mt-3 max-w-lg text-sm text-slate-600">
-              Create your first gig in under 2 minutes. No fees for
-              freelancers, ever.
-            </p>
-            <Link
-              href="/login?mode=signup&redirect=/deal/new"
-              className="mt-6 inline-flex cursor-pointer items-center gap-2 rounded-lg bg-brand px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-brand-hover"
-            >
-              Post a Gig — It&apos;s Free
-              <ArrowRight className="h-4 w-4" />
-            </Link>
+          <div className="mx-auto max-w-4xl">
+            <div className="grid items-start gap-8 md:grid-cols-2">
+              <div className="text-center md:text-left">
+                <h2 className="font-display text-2xl font-bold text-slate-900">
+                  Ready to get started?
+                </h2>
+                <p className="mt-3 max-w-lg text-sm text-slate-600">
+                  Create your first gig in under 2 minutes. No fees for
+                  freelancers, ever.
+                </p>
+                <Link
+                  href="/login?mode=signup&redirect=/deal/new"
+                  className="mt-6 inline-flex cursor-pointer items-center gap-2 rounded-lg bg-brand px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-brand-hover"
+                >
+                  Post a Gig — It&apos;s Free
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
+              <NewsletterSignup
+                variant="card"
+                utmCampaign="bottom_cta"
+                heading="Not ready yet?"
+                description="Get weekly scam teardowns and gig safety tips from real Reddit posts."
+              />
+            </div>
           </div>
         </section>
       </main>

@@ -4,6 +4,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { BookOpen, Shield } from "lucide-react";
 import { getAllPosts } from "@/lib/blog";
+import { NewsletterSignup } from "@/components/newsletter/NewsletterSignup";
 
 export const metadata: Metadata = {
   title: "Blog — Safety Guides & Resources | CheckHire",
@@ -52,6 +53,15 @@ export default function BlogPage() {
             Scam teardowns, escrow guides, and everything you need to hire and
             get hired safely online.
           </p>
+        </div>
+
+        <div className="mb-10">
+          <NewsletterSignup
+            variant="card"
+            utmCampaign="blog_index"
+            heading="Get scam alerts in your inbox"
+            description="Weekly breakdowns of real freelancer scams — plus escrow tips to protect your income."
+          />
         </div>
 
         {posts.length === 0 ? (

@@ -13,6 +13,7 @@ import {
   AlertTriangle,
   Scale,
 } from "lucide-react";
+import { NewsletterSignup } from "@/components/newsletter/NewsletterSignup";
 
 export const metadata: Metadata = {
   title: "How CheckHire Works — Safe Escrow for Gig Work",
@@ -230,6 +231,17 @@ export default function HowItWorksPage() {
               Get Started
               <ArrowRight className="h-4 w-4" />
             </Link>
+          </div>
+        </section>
+        {/* Newsletter */}
+        <section className="px-6 py-12 border-t border-gray-100">
+          <div className="mx-auto max-w-4xl">
+            <NewsletterSignup
+              variant="inline"
+              utmCampaign="how_it_works"
+              heading="Stay updated"
+              description="New features, safety tips, and community updates. No spam, ever."
+            />
           </div>
         </section>
       </main>

@@ -1,51 +1,81 @@
 @import "tailwindcss";
 
-:root {
-  /* ─── Base Palette (Light) ─── */
-  --background: 0 0% 100%;
-  --foreground: 220 20% 10%;
-  --card: 0 0% 100%;
-  --card-foreground: 220 20% 10%;
-  --muted: 220 14% 96%;
-  --muted-foreground: 215 16% 35%;
-
-  --border: 220 13% 91%;
-  --ring: 172 66% 40%;
-
-  /* ─── Brand — Deep Teal (Trust-First) ─── */
-  --brand-primary: 172 66% 32%;
-  --brand-primary-hover: 172 66% 26%;
-  --brand-foreground: 0 0% 100%;
-  --brand-muted: 172 40% 94%;
-
-  /* ─── Trust Badges ─── */
-  --trust-new: 220 14% 46%;
-  --trust-trusted: 172 66% 32%;
-  --trust-established: 172 66% 22%;
-  --trust-verified: 210 80% 48%;
-
-  /* ─── Escrow Status Colors ─── */
-  --escrow-unfunded: 220 14% 46%;
-  --escrow-funded: 160 84% 39%;
-  --escrow-released: 172 66% 32%;
-  --escrow-frozen: 38 92% 50%;
-  --escrow-refunded: 0 72% 51%;
-
-  /* ─── Feedback ─── */
-  --success: 160 84% 39%;
-  --success-foreground: 0 0% 100%;
-  --warning: 38 92% 50%;
-  --warning-foreground: 0 0% 100%;
-  --danger: 0 72% 51%;
-  --danger-foreground: 0 0% 100%;
+@theme {
+  /* ─── Brand Colors ─── */
+  --color-brand: hsl(172, 66%, 32%);
+  --color-brand-hover: hsl(172, 66%, 26%);
+  --color-brand-foreground: hsl(0, 0%, 100%);
+  --color-brand-muted: hsl(172, 40%, 94%);
 
   /* ─── Surfaces ─── */
-  --main-bg: 220 20% 98%;
+  --color-background: hsl(0, 0%, 100%);
+  --color-foreground: hsl(220, 20%, 10%);
+  --color-card: hsl(0, 0%, 100%);
+  --color-card-foreground: hsl(220, 20%, 10%);
+  --color-muted: hsl(220, 14%, 96%);
+  --color-muted-foreground: hsl(215, 16%, 35%);
 
-  /* ─── Typography ─── */
+  /* ─── Border & Ring ─── */
+  --color-border: hsl(220, 13%, 91%);
+  --color-ring: hsl(172, 66%, 40%);
+
+  /* ─── Trust Badges ─── */
+  --color-trust-new: hsl(220, 14%, 46%);
+  --color-trust-trusted: hsl(172, 66%, 32%);
+  --color-trust-established: hsl(172, 66%, 22%);
+  --color-trust-verified: hsl(210, 80%, 48%);
+
+  /* ─── Escrow Status ─── */
+  --color-escrow-unfunded: hsl(220, 14%, 46%);
+  --color-escrow-funded: hsl(160, 84%, 39%);
+  --color-escrow-released: hsl(172, 66%, 32%);
+  --color-escrow-frozen: hsl(38, 92%, 50%);
+  --color-escrow-refunded: hsl(0, 72%, 51%);
+
+  /* ─── Feedback ─── */
+  --color-success: hsl(160, 84%, 39%);
+  --color-success-foreground: hsl(0, 0%, 100%);
+  --color-warning: hsl(38, 92%, 50%);
+  --color-warning-foreground: hsl(0, 0%, 100%);
+  --color-danger: hsl(0, 72%, 51%);
+  --color-danger-foreground: hsl(0, 0%, 100%);
+
+  /* ─── Fonts ─── */
   --font-display: var(--font-plus-jakarta), ui-sans-serif, system-ui, sans-serif;
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  /* ─── Animations ─── */
+  --animate-shimmer: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* ─── Base text color fix ─── */
+@layer base {
+  body {
+    color: #0f172a;
+    background-color: #ffffff;
+  }
+
+  input,
+  textarea,
+  select,
+  button {
+    color: inherit;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: #475569;
+  }
 }
 
 /* ─── Custom Scrollbar ─── */

@@ -35,6 +35,7 @@ export function BottomNav() {
             <Link
               key={tab.label}
               href={tab.href}
+              prefetch={false}
               className={cn(
                 "flex flex-1 cursor-pointer flex-col items-center gap-1 py-2 text-xs font-medium transition-colors duration-200",
                 isActive ? "text-brand" : "text-slate-600"

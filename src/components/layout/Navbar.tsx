@@ -77,6 +77,7 @@ export function Navbar() {
           {authState === "authenticated" && (
             <Link
               href="/dashboard"
+              prefetch={false}
               className="cursor-pointer text-sm font-medium text-slate-600 transition-colors duration-200 hover:text-slate-900"
             >
               My Gigs
@@ -103,6 +104,7 @@ export function Navbar() {
           {isAdmin && (
             <Link
               href="/admin"
+              prefetch={false}
               className="cursor-pointer text-sm font-medium text-red-600 transition-colors duration-200 hover:text-red-700"
             >
               Admin
@@ -135,6 +137,7 @@ export function Navbar() {
             <div className="flex items-center gap-3">
               <Link
                 href="/deal/new"
+                prefetch={false}
                 className="cursor-pointer rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-brand-hover"
               >
                 Post a Gig
@@ -181,6 +184,7 @@ export function Navbar() {
                 <>
                   <Link
                     href="/dashboard"
+                    prefetch={false}
                     onClick={closeMobile}
                     className="cursor-pointer rounded-lg px-3 py-2 text-sm font-medium text-slate-900 transition-colors duration-200 hover:bg-gray-50"
                   >
@@ -219,6 +223,7 @@ export function Navbar() {
               {isAdmin && (
                 <Link
                   href="/admin"
+                  prefetch={false}
                   onClick={closeMobile}
                   className="cursor-pointer rounded-lg px-3 py-2 text-sm font-medium text-red-600 transition-colors duration-200 hover:bg-red-50"
                 >

@@ -4,23 +4,26 @@ import { NextResponse, type NextRequest } from "next/server";
 const PUBLIC_PATHS = [
   "/",
   "/login",
-  "/signup",
   "/auth/callback",
   "/auth/confirm",
   "/auth/auth-code-error",
   "/api/auth/signup",
-  // Public job board (no auth required to browse)
-  "/jobs",
-  // Public informational pages
-  "/for-employers",
-  "/pricing",
+  "/api/auth/send-signin-link",
+  // Public deal pages (anyone can view a deal by slug)
+  "/deal",
+  // Public user profiles
+  "/u",
+  // Public deals catalog
+  "/deals",
+  // Static informational pages
   "/about",
   "/contact",
   "/terms",
   "/privacy",
   "/blog",
-  // Public employer profiles
-  "/employers",
+  "/how-it-works",
+  "/for-freelancers",
+  "/for-clients",
 ];
 
 export async function updateSession(request: NextRequest) {

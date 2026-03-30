@@ -38,6 +38,7 @@ import { StarRating } from "@/components/gig/StarRating";
 import { InterestForm } from "@/components/gig/InterestForm";
 import { InterestList } from "@/components/gig/InterestList";
 import { RepeatDealButton } from "@/components/gig/RepeatDealButton";
+import { DisputeButton } from "@/components/gig/DisputeButton";
 import { useToast } from "@/components/ui/toast";
 import type {
   DealWithParticipants,
@@ -60,6 +61,7 @@ type Props = {
   otherRating: Rating | null;
   interests: DealInterestWithUser[];
   userInterest: DealInterest | null;
+  disputeId: string | null;
 };
 
 const statusMap: Record<
@@ -108,6 +110,7 @@ export function GigPageClient({
   otherRating: initialOtherRating,
   interests,
   userInterest,
+  disputeId,
 }: Props) {
   const router = useRouter();
   const { toast } = useToast();
@@ -353,7 +356,27 @@ export function GigPageClient({
         <EscrowStatusBar status={deal.escrow_status} amount={deal.total_amount} />
       </div>
 
-      {/* 2b. 72-Hour Countdown */}
+      {/* 2b. Dispute Banner */}
+      {deal.status === "disputed" && isParticipant && disputeId && (
+        <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-red-600" />
+            <div>
+              <p className="text-sm font-medium text-red-900">
+                This gig is under dispute. Funds are frozen.
+              </p>
+              <a
+                href={`/deal/${deal.id}/dispute`}
+                className="mt-1 inline-block text-sm font-medium text-red-700 underline underline-offset-2 transition-colors duration-200 hover:text-red-900"
+              >
+                View Dispute &rarr;
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 2c. 72-Hour Countdown */}
       {deal.auto_release_at &&
         new Date(deal.auto_release_at) > new Date() &&
         isParticipant && (
@@ -813,21 +836,14 @@ export function GigPageClient({
           )}
         </div>
 
-        {/* Dispute placeholder */}
-        {isParticipant &&
-          ["in_progress", "submitted", "revision_requested"].includes(
-            deal.status
-          ) && (
-            <button
-              type="button"
-              disabled
-              className="mt-2 text-xs text-slate-600 cursor-not-allowed"
-              title="Dispute resolution coming soon — email support@checkhire.com"
-            >
-              <AlertTriangle className="inline h-3 w-3 mr-1" />
-              Open a Dispute (Coming Soon)
-            </button>
-          )}
+        {/* Dispute */}
+        {isParticipant && (
+          <DisputeButton
+            dealId={deal.id}
+            dealStatus={deal.status}
+            completedAt={deal.completed_at}
+          />
+        )}
 
         {/* Repeat Deal button for completed deals */}
         {deal.status === "completed" && isParticipant && (

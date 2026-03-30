@@ -24,6 +24,7 @@ export async function GET(req: Request) {
       .from("deals")
       .select("*, freelancer:user_profiles!deals_freelancer_user_id_fkey(stripe_connected_account_id, stripe_onboarding_complete, email), client:user_profiles!deals_client_user_id_fkey(email)")
       .eq("status", "submitted")
+      .eq("escrow_status", "funded")
       .not("auto_release_at", "is", null)
       .lte("auto_release_at", new Date().toISOString());
 
@@ -114,8 +115,19 @@ export async function GET(req: Request) {
       .not("auto_release_at", "is", null)
       .lte("auto_release_at", new Date().toISOString());
 
+    // Safety: re-check deal isn't disputed before releasing milestone
     for (const milestone of expiredMilestones || []) {
       const deal = milestone.deal as { id: string; title: string; deal_link_slug: string; client_user_id: string; freelancer_user_id: string };
+
+      // Re-check deal status to prevent race with dispute opening
+      const { data: currentDeal } = await supabase
+        .from("deals")
+        .select("status, escrow_status")
+        .eq("id", deal.id)
+        .maybeSingle();
+      if (!currentDeal || currentDeal.status === "disputed" || currentDeal.escrow_status === "frozen") {
+        continue;
+      }
 
       const { data: freelancer } = await supabase.from("user_profiles").select("stripe_connected_account_id, stripe_onboarding_complete, email").eq("id", deal.freelancer_user_id).maybeSingle();
       if (!freelancer?.stripe_connected_account_id || !freelancer.stripe_onboarding_complete) continue;

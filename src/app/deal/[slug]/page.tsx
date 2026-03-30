@@ -109,6 +109,18 @@ export default async function DealPage({ params, searchParams }: Props) {
     }
   }
 
+  // Fetch active dispute
+  let disputeId: string | null = null;
+  if (role !== "visitor") {
+    const { data: activeDispute } = await supabase
+      .from("disputes")
+      .select("id")
+      .eq("deal_id", deal.id)
+      .in("status", ["open", "under_review"])
+      .maybeSingle();
+    disputeId = activeDispute?.id || null;
+  }
+
   // Fetch interest data for public deals
   let interests: DealInterestWithUser[] = [];
   let userInterest: DealInterest | null = null;
@@ -152,6 +164,7 @@ export default async function DealPage({ params, searchParams }: Props) {
             otherRating={otherRating}
             interests={interests}
             userInterest={userInterest}
+            disputeId={disputeId}
           />
         </main>
       </div>

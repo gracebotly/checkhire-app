@@ -3,9 +3,9 @@ import { Shield } from "lucide-react";
 
 const LINKS = {
   Product: [
-    { label: "How It Works", href: "/about" },
-    { label: "Create a Deal", href: "/deal/new" },
-    { label: "Blog", href: "/blog" },
+    { label: "How It Works", href: "/how-it-works" },
+    { label: "For Freelancers", href: "/for-freelancers" },
+    { label: "For Clients", href: "/for-clients" },
   ],
   Community: [
     {

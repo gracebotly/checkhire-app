@@ -20,6 +20,7 @@ export type UserProfile = {
   stripe_connected_account_id: string | null;
   stripe_onboarding_complete: boolean;
   is_platform_admin: boolean;
+  suspended: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -296,4 +297,28 @@ export type EmailNotification = {
   email_address: string;
   sent_at: string | null;
   created_at: string;
+};
+
+// ─── Dispute with Deal Info (Admin Views) ───
+
+export type DisputeWithDealInfo = Dispute & {
+  deal: Pick<Deal, 'id' | 'title' | 'total_amount' | 'deal_link_slug' | 'status' | 'escrow_status' | 'client_user_id' | 'freelancer_user_id' | 'has_milestones'>;
+  client: Pick<UserProfile, 'display_name' | 'email' | 'trust_badge' | 'completed_deals_count'>;
+  freelancer: Pick<UserProfile, 'display_name' | 'email' | 'trust_badge' | 'completed_deals_count'> | null;
+  initiator: Pick<UserProfile, 'display_name'>;
+};
+
+// ─── Platform Stats ───
+
+export type PlatformStats = {
+  total_deals: number;
+  active_deals: number;
+  completed_deals: number;
+  total_volume_cents: number;
+  average_deal_size_cents: number;
+  dispute_rate: number;
+  average_rating: number | null;
+  active_users_30d: number;
+  open_disputes: number;
+  total_users: number;
 };

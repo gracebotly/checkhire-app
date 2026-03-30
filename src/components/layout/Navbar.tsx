@@ -13,6 +13,7 @@ export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [authState, setAuthState] = useState<AuthState>("loading");
   const [displayName, setDisplayName] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -30,11 +31,12 @@ export function Navbar() {
 
         const { data: profile } = await supabase
           .from("user_profiles")
-          .select("display_name")
+          .select("display_name, is_platform_admin")
           .eq("id", user.id)
           .maybeSingle();
 
         setDisplayName(profile?.display_name || user.email || null);
+        setIsAdmin(profile?.is_platform_admin === true);
         setAuthState("authenticated");
       } catch {
         setAuthState("anon");
@@ -48,6 +50,7 @@ export function Navbar() {
     await supabase.auth.signOut();
     setAuthState("anon");
     setDisplayName(null);
+    setIsAdmin(false);
     setMobileOpen(false);
     router.push("/");
     router.refresh();
@@ -86,11 +89,25 @@ export function Navbar() {
             Browse Gigs
           </Link>
           <Link
+            href="/how-it-works"
+            className="cursor-pointer text-sm font-medium text-slate-600 transition-colors duration-200 hover:text-slate-900"
+          >
+            How It Works
+          </Link>
+          <Link
             href="/about"
             className="cursor-pointer text-sm font-medium text-slate-600 transition-colors duration-200 hover:text-slate-900"
           >
             About
           </Link>
+          {isAdmin && (
+            <Link
+              href="/admin"
+              className="cursor-pointer text-sm font-medium text-red-600 transition-colors duration-200 hover:text-red-700"
+            >
+              Admin
+            </Link>
+          )}
         </nav>
 
         {/* Desktop CTAs */}
@@ -186,12 +203,28 @@ export function Navbar() {
                 Browse Gigs
               </Link>
               <Link
+                href="/how-it-works"
+                onClick={closeMobile}
+                className="cursor-pointer rounded-lg px-3 py-2 text-sm font-medium text-slate-900 transition-colors duration-200 hover:bg-gray-50"
+              >
+                How It Works
+              </Link>
+              <Link
                 href="/about"
                 onClick={closeMobile}
                 className="cursor-pointer rounded-lg px-3 py-2 text-sm font-medium text-slate-900 transition-colors duration-200 hover:bg-gray-50"
               >
                 About
               </Link>
+              {isAdmin && (
+                <Link
+                  href="/admin"
+                  onClick={closeMobile}
+                  className="cursor-pointer rounded-lg px-3 py-2 text-sm font-medium text-red-600 transition-colors duration-200 hover:bg-red-50"
+                >
+                  Admin
+                </Link>
+              )}
 
               <div className="my-1 h-px bg-gray-100" />
 

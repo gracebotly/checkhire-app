@@ -142,23 +142,47 @@ export async function POST(req: Request) {
           });
         }
 
+        // Set expires_at on deal (30 days from funding)
+        const fundedAt = deal.funded_at || new Date().toISOString();
+        const expiresAt = new Date(new Date(fundedAt).getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
+        await supabase.from("deals").update({ expires_at: expiresAt }).eq("id", dealId);
+
         // Email the freelancer that escrow is funded (for non-milestone or fund-all)
-        if ((!milestoneId || milestoneId === "" || milestoneId === "all") && deal.freelancer_user_id) {
-          const { data: freelancer } = await supabase.from("user_profiles").select("email").eq("id", deal.freelancer_user_id).maybeSingle();
-          if (freelancer?.email) {
-            await sendAndLogNotification({
-              supabase,
-              type: "escrow_funded",
-              userId: deal.freelancer_user_id,
-              dealId: dealId,
-              email: freelancer.email,
-              data: {
-                dealTitle: deal.title,
-                dealSlug: deal.deal_link_slug,
-                amount: escrowAmount,
-              },
-            });
+        if (!milestoneId || milestoneId === "" || milestoneId === "all") {
+          const hasFreelancer = deal.freelancer_user_id || deal.guest_freelancer_email;
+          if (hasFreelancer) {
+            if (deal.freelancer_user_id) {
+              const { data: freelancer } = await supabase.from("user_profiles").select("email").eq("id", deal.freelancer_user_id).maybeSingle();
+              if (freelancer?.email) {
+                await sendAndLogNotification({
+                  supabase,
+                  type: "escrow_funded_after_accept",
+                  userId: deal.freelancer_user_id,
+                  dealId: dealId,
+                  email: freelancer.email,
+                  data: {
+                    dealTitle: deal.title,
+                    dealSlug: deal.deal_link_slug,
+                    amount: escrowAmount,
+                  },
+                });
+              }
+            } else if (deal.guest_freelancer_email) {
+              await sendAndLogNotification({
+                supabase,
+                type: "escrow_funded_after_accept",
+                userId: "guest",
+                dealId: dealId,
+                email: deal.guest_freelancer_email,
+                data: {
+                  dealTitle: deal.title,
+                  dealSlug: deal.deal_link_slug,
+                  amount: escrowAmount,
+                },
+              });
+            }
           }
+          // No email if deal has no freelancer yet — nobody to notify
         }
 
         break;

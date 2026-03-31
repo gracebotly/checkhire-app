@@ -77,6 +77,11 @@ export type Deal = {
   auto_release_at: string | null;
   revision_count: number;
   template_id: string | null;
+  guest_freelancer_email: string | null;
+  guest_freelancer_name: string | null;
+  guest_freelancer_stripe_account_id: string | null;
+  guest_email_verified_at: string | null;
+  expires_at: string | null;
   created_at: string;
   funded_at: string | null;
   submitted_at: string | null;
@@ -153,6 +158,7 @@ export type DealActivityLogEntry = {
   file_name: string | null;
   file_size_bytes: number | null;
   milestone_id: string | null;
+  is_submission_evidence: boolean;
   created_at: string;
 };
 
@@ -230,6 +236,14 @@ export type DisputeStatus =
   | 'resolved_refund'
   | 'resolved_partial';
 
+export type DisputeCategory =
+  | 'not_delivered'
+  | 'wrong_deliverables'
+  | 'incomplete_work'
+  | 'quality_mismatch'
+  | 'communication_issues'
+  | 'other';
+
 export type DisputeFeeTarget = 'client' | 'freelancer';
 
 export type Dispute = {
@@ -243,6 +257,18 @@ export type Dispute = {
   resolution_amount: number | null;
   dispute_fee_amount: number | null;
   dispute_fee_charged_to: DisputeFeeTarget | null;
+  category: DisputeCategory | null;
+  claimant_proposed_percentage: number | null;
+  claimant_justification: string | null;
+  respondent_proposed_percentage: number | null;
+  respondent_justification: string | null;
+  negotiation_round: number;
+  claimant_round2_percentage: number | null;
+  respondent_round2_percentage: number | null;
+  evidence_deadline_at: string | null;
+  response_deadline_at: string | null;
+  auto_resolved: boolean;
+  extension_count: number;
   created_at: string;
   resolved_at: string | null;
   resolved_by: string | null;
@@ -263,6 +289,17 @@ export type DisputeEvidence = {
   description: string | null;
   created_at: string;
 };
+
+// ─── Timeline ───
+
+export type TimelineNodeVariant =
+  | 'system'
+  | 'payment'
+  | 'evidence'
+  | 'submission'
+  | 'resolution'
+  | 'dispute'
+  | 'message';
 
 // ─── Email Notifications ───
 
@@ -287,7 +324,22 @@ export type NotificationType =
   | 'revision_requested'
   | 'milestone_proposed'
   | 'milestone_change_approved'
-  | 'deal_cancelled';
+  | 'deal_cancelled'
+  | 'guest_verification_code'
+  | 'deal_accepted_escrow_pending'
+  | 'escrow_funded_after_accept'
+  | 'funds_released'
+  | 'deal_cancelled_to_freelancer'
+  | 'auto_expire_warning_14d'
+  | 'auto_expire_warning_27d'
+  | 'auto_expire_completed'
+  | 'freelancer_ghost_nudge_7d'
+  | 'freelancer_ghost_warning_14d'
+  | 'guest_deal_invite'
+  | 'dispute_proposal_received'
+  | 'dispute_auto_resolved'
+  | 'dispute_negotiation_round'
+  | 'dispute_escalated';
 
 export type EmailNotification = {
   id: string;

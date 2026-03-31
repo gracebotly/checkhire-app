@@ -18,7 +18,7 @@ export const GET = withApiHandler(async (req: Request) => {
   let query = serviceClient
     .from("deals")
     .select(
-      `*, client:user_profiles!deals_client_user_id_fkey(display_name, email), freelancer:user_profiles!deals_freelancer_user_id_fkey(display_name, email)`,
+      `*, client:user_profiles!deals_client_user_id_profile_fkey(display_name, email), freelancer:user_profiles!deals_freelancer_user_id_profile_fkey(display_name, email)`,
       { count: "exact" }
     );
 

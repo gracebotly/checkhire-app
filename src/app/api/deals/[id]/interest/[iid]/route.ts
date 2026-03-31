@@ -47,7 +47,7 @@ export const PATCH = withApiHandler(
     // Fetch interest entry
     const { data: interest } = await supabase
       .from("deal_interest")
-      .select("*, user:user_profiles!deal_interest_user_id_fkey(display_name, email)")
+      .select("*, user:user_profiles!deal_interest_user_id_profile_fkey(display_name, email)")
       .eq("id", iid)
       .eq("deal_id", id)
       .maybeSingle();
@@ -112,7 +112,7 @@ export const PATCH = withApiHandler(
       // Notify ALL rejected freelancers (batch)
       const { data: rejectedInterests } = await serviceClient
         .from("deal_interest")
-        .select("user_id, user:user_profiles!deal_interest_user_id_fkey(email)")
+        .select("user_id, user:user_profiles!deal_interest_user_id_profile_fkey(email)")
         .eq("deal_id", id)
         .eq("status", "rejected");
 

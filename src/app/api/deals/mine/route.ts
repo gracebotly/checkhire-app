@@ -19,7 +19,7 @@ export const GET = withApiHandler(async (req: Request) => {
   let query = supabase
     .from("deals")
     .select(
-      `*, client:user_profiles!deals_client_user_id_fkey(display_name, avatar_url, trust_badge, completed_deals_count, average_rating, profile_slug), freelancer:user_profiles!deals_freelancer_user_id_fkey(display_name, avatar_url, trust_badge, completed_deals_count, average_rating, profile_slug)`
+      `*, client:user_profiles!deals_client_user_id_profile_fkey(display_name, avatar_url, trust_badge, completed_deals_count, average_rating, profile_slug), freelancer:user_profiles!deals_freelancer_user_id_profile_fkey(display_name, avatar_url, trust_badge, completed_deals_count, average_rating, profile_slug)`
     )
     .or(`client_user_id.eq.${user.id},freelancer_user_id.eq.${user.id}`);
 

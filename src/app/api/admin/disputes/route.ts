@@ -15,7 +15,7 @@ export const GET = withApiHandler(async (req: Request) => {
   let query = serviceClient
     .from("disputes")
     .select(
-      `*, deal:deals!inner(id, title, total_amount, deal_link_slug, status, escrow_status, client_user_id, freelancer_user_id, has_milestones), initiator:user_profiles!disputes_initiated_by_fkey(display_name)`
+      `*, deal:deals!inner(id, title, total_amount, deal_link_slug, status, escrow_status, client_user_id, freelancer_user_id, has_milestones), initiator:user_profiles!disputes_initiated_by_profile_fkey(display_name)`
     );
 
   if (statusFilter === "resolved") {

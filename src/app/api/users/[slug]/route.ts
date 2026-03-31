@@ -37,7 +37,7 @@ export const GET = withApiHandler(
     const { data: ratings } = await supabase
       .from("ratings")
       .select(
-        "*, rater:user_profiles!ratings_rater_user_id_fkey(display_name, avatar_url, profile_slug)"
+        "*, rater:user_profiles!ratings_rater_user_id_profile_fkey(display_name, avatar_url, profile_slug)"
       )
       .eq("rated_user_id", profile.id)
       .order("created_at", { ascending: false })
@@ -48,7 +48,7 @@ export const GET = withApiHandler(
     const { data: deals } = await serviceClient
       .from("deals")
       .select(
-        "id, title, total_amount, completed_at, deal_link_slug, client_user_id, freelancer_user_id, client:user_profiles!deals_client_user_id_fkey(display_name), freelancer:user_profiles!deals_freelancer_user_id_fkey(display_name)"
+        "id, title, total_amount, completed_at, deal_link_slug, client_user_id, freelancer_user_id, client:user_profiles!deals_client_user_id_profile_fkey(display_name), freelancer:user_profiles!deals_freelancer_user_id_profile_fkey(display_name)"
       )
       .or(`client_user_id.eq.${profile.id},freelancer_user_id.eq.${profile.id}`)
       .eq("status", "completed")

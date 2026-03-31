@@ -20,7 +20,7 @@ export const GET = withApiHandler(
     const { data: deal, error } = await supabase
       .from("deals")
       .select(
-        `*, client:user_profiles!deals_client_user_id_fkey(display_name, avatar_url, trust_badge, completed_deals_count, average_rating, profile_slug), freelancer:user_profiles!deals_freelancer_user_id_fkey(display_name, avatar_url, trust_badge, completed_deals_count, average_rating, profile_slug, stripe_onboarding_complete)`
+        `*, client:user_profiles!deals_client_user_id_profile_fkey(display_name, avatar_url, trust_badge, completed_deals_count, average_rating, profile_slug), freelancer:user_profiles!deals_freelancer_user_id_profile_fkey(display_name, avatar_url, trust_badge, completed_deals_count, average_rating, profile_slug, stripe_onboarding_complete)`
       )
       .eq("deal_link_slug", slug)
       .maybeSingle();
@@ -154,7 +154,7 @@ export const GET = withApiHandler(
       const { data: acts } = await queryClient
         .from("deal_activity_log")
         .select(
-          `*, user:user_profiles!deal_activity_log_user_id_fkey(display_name, avatar_url)`
+          `*, user:user_profiles!deal_activity_log_user_id_profile_fkey(display_name, avatar_url)`
         )
         .eq("deal_id", deal.id)
         .order("created_at", { ascending: true });

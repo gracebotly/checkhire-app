@@ -22,7 +22,7 @@ export async function GET(req: Request) {
     // ── Auto-release deals ──
     const { data: expiredDeals } = await supabase
       .from("deals")
-      .select("*, freelancer:user_profiles!deals_freelancer_user_id_fkey(stripe_connected_account_id, stripe_onboarding_complete, email), client:user_profiles!deals_client_user_id_fkey(email)")
+      .select("*, freelancer:user_profiles!deals_freelancer_user_id_profile_fkey(stripe_connected_account_id, stripe_onboarding_complete, email), client:user_profiles!deals_client_user_id_profile_fkey(email)")
       .eq("status", "submitted")
       .eq("escrow_status", "funded")
       .not("auto_release_at", "is", null)

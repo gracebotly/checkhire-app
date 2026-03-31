@@ -304,42 +304,42 @@ export type TimelineNodeVariant =
 // ─── Email Notifications ───
 
 export type NotificationType =
-  | 'deal_created'
-  | 'deal_accepted'
-  | 'escrow_funded'
-  | 'milestone_funded'
-  | 'work_submitted'
-  | 'milestone_submitted'
-  | 'milestone_approved'
-  | 'deal_completed'
-  | 'rating_reminder'
-  | 'dispute_opened'
-  | 'dispute_resolved'
-  | 'auto_release_warning_24h'
-  | 'auto_release_warning_6h'
-  | 'auto_release_completed'
-  | 'interest_received'
-  | 'interest_accepted'
-  | 'deal_filled'
-  | 'revision_requested'
-  | 'milestone_proposed'
-  | 'milestone_change_approved'
-  | 'deal_cancelled'
-  | 'guest_verification_code'
-  | 'deal_accepted_escrow_pending'
-  | 'escrow_funded_after_accept'
-  | 'funds_released'
+  | 'deal_created' | 'deal_accepted' | 'escrow_funded'
+  | 'work_submitted' | 'auto_release_warning_24h' | 'auto_release_warning_6h'
+  | 'auto_release_completed' | 'milestone_funded' | 'milestone_approved'
+  | 'deal_completed' | 'revision_requested' | 'rating_reminder'
+  | 'dispute_opened' | 'dispute_resolved' | 'interest_received'
+  | 'interest_accepted' | 'deal_filled' | 'milestone_proposed'
+  | 'milestone_change_approved' | 'deal_cancelled'
+  | 'guest_verification_code' | 'deal_accepted_escrow_pending'
+  | 'escrow_funded_after_accept' | 'funds_released'
   | 'deal_cancelled_to_freelancer'
-  | 'auto_expire_warning_14d'
-  | 'auto_expire_warning_27d'
-  | 'auto_expire_completed'
-  | 'freelancer_ghost_nudge_7d'
-  | 'freelancer_ghost_warning_14d'
+  | 'auto_expire_warning_14d' | 'auto_expire_warning_27d' | 'auto_expire_completed'
+  | 'freelancer_ghost_nudge_7d' | 'freelancer_ghost_warning_14d'
   | 'guest_deal_invite'
-  | 'dispute_proposal_received'
-  | 'dispute_auto_resolved'
-  | 'dispute_negotiation_round'
-  | 'dispute_escalated';
+  | 'dispute_proposal_received' | 'dispute_auto_resolved'
+  | 'dispute_negotiation_round' | 'dispute_escalated';
+
+export type NotificationData = {
+  dealTitle: string;
+  dealSlug: string;
+  amount?: number;
+  otherPartyName?: string;
+  notes?: string;
+  milestoneTitle?: string;
+  role?: 'client' | 'freelancer';
+  revisionNumber?: number;
+  initials?: string;
+  guestName?: string;
+  refundAmount?: number;
+  proposedPercentage?: number;
+  hoursRemaining?: number;
+  verificationCode?: string;
+  code?: string;
+  escrowFunded?: boolean;
+  isNonResponse?: boolean;
+  isGuestFreelancer?: boolean;
+};
 
 export type EmailNotification = {
   id: string;

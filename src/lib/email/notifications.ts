@@ -1,313 +1,163 @@
-import { sendEmail } from "./send";
-import type { NotificationType } from "@/types/database";
+import { sendEmail } from './send';
+import type { NotificationData as DbNotificationData, NotificationType } from '@/types/database';
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://checkhire.com";
+export type NotificationData = DbNotificationData;
+
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://checkhire.com';
+
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function formatAmount(cents: number): string {
+  return (cents / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+}
 
 function dealUrl(slug: string): string {
   return `${APP_URL}/deal/${slug}`;
 }
 
-function formatAmount(cents: number): string {
-  return `$${(cents / 100).toFixed(2)}`;
-}
+function buildEmailHtml(options: { body: string; accentColor?: string }): string {
+  const accent = options.accentColor || '#0d9488';
 
-function ctaButton(href: string, label: string): string {
-  return `<a href="${href}" style="display: inline-block; background: #0d9488; color: #fff; padding: 10px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; margin-top: 16px;">${label}</a>`;
-}
-
-function wrapHtml(body: string): string {
   return `
-    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
-      ${body}
-      <p style="margin-top: 32px; font-size: 12px; color: #64748b;">
-        CheckHire — You found each other. We make sure nobody gets screwed.
-      </p>
-    </div>
-  `;
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #f8fafc; padding: 32px 16px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
+  <tr>
+    <td align="center">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 520px; background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden;">
+        <tr><td style="height: 4px; background: ${accent}; font-size: 0; line-height: 0;">&nbsp;</td></tr>
+        <tr><td style="padding: 24px 32px 16px 32px; font-size: 18px; font-weight: 700; color: #0f172a;">🛡️ CheckHire</td></tr>
+        <tr><td style="height: 1px; background: #f1f5f9; font-size: 0; line-height: 0;">&nbsp;</td></tr>
+        <tr><td style="padding: 24px 32px 32px 32px;">${options.body}</td></tr>
+        <tr>
+          <td style="background-color: #f8fafc; border-top: 1px solid #f1f5f9; padding: 20px 32px; text-align: center; font-size: 12px; color: #94a3b8;">
+            CheckHire — Secure escrow for gig work<br/>
+            <a href="${APP_URL}" style="color: #64748b; text-decoration: underline;">checkhire.com</a>
+          </td>
+        </tr>
+      </table>
+      <div style="max-width: 520px; margin-top: 12px; font-size: 11px; color: #94a3b8; text-align: center;">
+        You received this email because of activity on your CheckHire gig.<br/>
+        <a href="${APP_URL}/settings" style="color: #64748b; text-decoration: underline;">Manage notifications</a>
+      </div>
+    </td>
+  </tr>
+</table>`;
 }
 
-export type NotificationData = {
-  dealTitle: string;
-  dealSlug: string;
-  amount?: number;
-  otherPartyName?: string;
-  notes?: string;
-  milestoneTitle?: string;
-  role?: "client" | "freelancer";
-  revisionNumber?: number;
-  code?: string;
-  category?: string;
-  percentage?: number;
-};
+function buildCtaButton(href: string, label: string, variant: 'primary' | 'urgent' | 'success' | 'neutral' = 'primary'): string {
+  const colors = {
+    primary: '#0d9488',
+    urgent: '#d97706',
+    success: '#16a34a',
+    neutral: '#475569',
+  } as const;
 
-type NotificationConfig = {
+  return `
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin-top: 20px;">
+  <tr>
+    <td style="border-radius: 8px; background: ${colors[variant]};">
+      <a href="${href}" style="display: inline-block; padding: 14px 32px; color: #ffffff; font-size: 15px; font-weight: 600; text-decoration: none;">${label}</a>
+    </td>
+  </tr>
+</table>`;
+}
+
+function buildHeroAmount(amountCents: number, label?: string, variant = 'secured'): string {
+  const variants: Record<string, { icon: string; color: string; bg: string; label: string }> = {
+    secured: { icon: '🔒', color: '#0d9488', bg: '#f0fdfa', label: 'Held securely in escrow' },
+    released: { icon: '✅', color: '#16a34a', bg: '#f0fdf4', label: 'Released to your bank' },
+    milestone: { icon: '✅', color: '#16a34a', bg: '#f0fdf4', label: 'Milestone payment released' },
+    refund: { icon: '↩️', color: '#64748b', bg: '#f8fafc', label: 'Refund processing — 5-10 business days' },
+    auto_released: { icon: '⚡', color: '#16a34a', bg: '#f0fdf4', label: 'Auto-released — 72hr review expired' },
+    slate: { icon: 'ℹ️', color: '#475569', bg: '#f8fafc', label: 'Review period expired' },
+  };
+  const v = variants[variant] || variants.secured;
+
+  return `<div style="background: ${v.bg}; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; text-align: center; margin: 8px 0 18px 0;">
+    <div style="font-size: 18px; color: ${v.color}; margin-bottom: 8px;">${v.icon}</div>
+    <div style="font-size: 36px; font-weight: 700; letter-spacing: -0.5px; font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace, -apple-system, sans-serif; color: #0f172a;">${formatAmount(amountCents)}</div>
+    <div style="margin-top: 8px; font-size: 13px; color: #64748b;">${label || v.label}</div>
+  </div>`;
+}
+
+function buildCountdownBlock(hours: number): string {
+  const style =
+    hours > 24
+      ? { color: '#0d9488', bg: '#f0fdfa' }
+      : hours > 6
+        ? { color: '#d97706', bg: '#fffbeb' }
+        : { color: '#dc2626', bg: '#fef2f2' };
+
+  return `<div style="background: ${style.bg}; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px 12px; text-align: center; margin: 8px 0 16px 0;">
+    <div style="font-size: 42px; font-weight: 700; letter-spacing: 2px; font-family: monospace; color: ${style.color};">${hours}:00:00</div>
+    <div style="font-size: 11px; letter-spacing: 1.6px; color: ${style.color}; font-weight: 700;">HOURS REMAINING</div>
+  </div>`;
+}
+
+function buildVerificationCodeBlock(code: string): string {
+  return `<div style="text-align: center; margin: 10px 0 18px 0;">
+    <div style="font-size: 36px; font-weight: 700; letter-spacing: 8px; font-family: monospace; color: #0f172a; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 28px 16px;">${escapeHtml(code)}</div>
+    <div style="margin-top: 10px; font-size: 12px; color: #64748b;">Expires in 15 minutes</div>
+  </div>`;
+}
+
+function personBlock(d: NotificationData): string {
+  const initials = escapeHtml(d.initials || '?');
+  const name = escapeHtml(d.otherPartyName || d.guestName || 'Someone');
+  return `<div style="display: flex; align-items: center; gap: 10px; margin: 8px 0 16px 0;">
+    <div style="width: 40px; height: 40px; border-radius: 999px; background: #f0fdfa; color: #0d9488; display: inline-flex; align-items: center; justify-content: center; font-weight: 700;">${initials}</div>
+    <div style="display: inline-block; vertical-align: middle; margin-left: 10px; font-weight: 600; color: #0f172a;">${name}</div>
+  </div>`;
+}
+
+type TemplateConfig = {
   subject: (d: NotificationData) => string;
+  accent: string;
   body: (d: NotificationData) => string;
-  cta: (d: NotificationData) => { label: string; href: string } | null;
 };
 
-const NOTIFICATION_CONFIG: Record<NotificationType, NotificationConfig> = {
-  deal_created: {
-    subject: (d) => `Your gig is live — ${d.dealTitle}`,
-    body: (d) =>
-      `<h2 style="color: #0f172a; font-size: 20px;">Gig Created</h2>` +
-      `<p style="color: #475569; font-size: 14px;">Your gig <strong>${d.dealTitle}</strong> is live. Share the link with your freelancer to get started.</p>`,
-    cta: (d) => ({ label: "View Your Gig", href: dealUrl(d.dealSlug) }),
-  },
-  deal_accepted: {
-    subject: (d) => `${d.otherPartyName || "Someone"} accepted your gig`,
-    body: (d) =>
-      `<h2 style="color: #0f172a; font-size: 20px;">Gig Accepted</h2>` +
-      `<p style="color: #475569; font-size: 14px;"><strong>${d.otherPartyName || "A freelancer"}</strong> accepted <strong>${d.dealTitle}</strong>. Fund the escrow to secure the deal and start work.</p>`,
-    cta: (d) => ({ label: "Fund Escrow", href: dealUrl(d.dealSlug) }),
-  },
-  escrow_funded: {
-    subject: (d) => `Payment Secured — ${formatAmount(d.amount!)} for ${d.dealTitle}`,
-    body: (d) =>
-      `<h2 style="color: #0f172a; font-size: 20px;">Payment Secured</h2>` +
-      `<p style="color: #475569; font-size: 14px;"><strong>${formatAmount(d.amount!)}</strong> has been secured in escrow for <strong>${d.dealTitle}</strong>. The client has funded the deal — you're clear to start work.</p>`,
-    cta: (d) => ({ label: "View Gig", href: dealUrl(d.dealSlug) }),
-  },
-  milestone_funded: {
-    subject: (d) => `Milestone funded — ${d.milestoneTitle} (${formatAmount(d.amount!)})`,
-    body: (d) =>
-      `<h2 style="color: #0f172a; font-size: 20px;">Milestone Funded</h2>` +
-      `<p style="color: #475569; font-size: 14px;"><strong>${formatAmount(d.amount!)}</strong> has been secured for milestone <strong>${d.milestoneTitle}</strong> on <strong>${d.dealTitle}</strong>.</p>`,
-    cta: (d) => ({ label: "View Gig", href: dealUrl(d.dealSlug) }),
-  },
-  work_submitted: {
-    subject: (d) => `Work submitted on ${d.dealTitle} — 72 hours to review`,
-    body: (d) =>
-      `<h2 style="color: #0f172a; font-size: 20px;">Work Submitted for Review</h2>` +
-      `<p style="color: #475569; font-size: 14px;">The freelancer has submitted work on <strong>${d.dealTitle}</strong> (${formatAmount(d.amount!)}). You have <strong>72 hours</strong> to review and either confirm delivery, request a revision, or open a dispute. If you take no action, funds will auto-release to the freelancer.</p>`,
-    cta: (d) => ({ label: "Review Now", href: dealUrl(d.dealSlug) }),
-  },
-  milestone_submitted: {
-    subject: (d) => `Milestone submitted — ${d.milestoneTitle}`,
-    body: (d) =>
-      `<h2 style="color: #0f172a; font-size: 20px;">Milestone Submitted</h2>` +
-      `<p style="color: #475569; font-size: 14px;">Milestone <strong>${d.milestoneTitle}</strong> on <strong>${d.dealTitle}</strong> has been submitted for review. You have 72 hours to approve.</p>`,
-    cta: (d) => ({ label: "Review Now", href: dealUrl(d.dealSlug) }),
-  },
-  auto_release_warning_24h: {
-    subject: (d) => `24 hours to review ${d.dealTitle}`,
-    body: (d) =>
-      `<h2 style="color: #d97706; font-size: 20px;">24 Hours Remaining</h2>` +
-      `<p style="color: #475569; font-size: 14px;">You have <strong>24 hours</strong> left to review the submitted work on <strong>${d.dealTitle}</strong> (${formatAmount(d.amount!)}). If you don't confirm delivery, request a revision, or open a dispute before the deadline, funds will <strong>auto-release</strong> to the freelancer.</p>`,
-    cta: (d) => ({ label: "Review Now", href: dealUrl(d.dealSlug) }),
-  },
-  auto_release_warning_6h: {
-    subject: (d) => `6 hours remaining — review ${d.dealTitle}`,
-    body: (d) =>
-      `<h2 style="color: #dc2626; font-size: 20px;">6 Hours Remaining</h2>` +
-      `<p style="color: #475569; font-size: 14px;">You have <strong>6 hours</strong> left to review <strong>${d.dealTitle}</strong> (${formatAmount(d.amount!)}). After the deadline, funds will <strong>auto-release</strong> to the freelancer.</p>`,
-    cta: (d) => ({ label: "Review Now", href: dealUrl(d.dealSlug) }),
-  },
-  auto_release_completed: {
-    subject: (d) => `Funds auto-released — ${d.dealTitle}`,
-    body: (d) => {
-      const msg =
-        d.role === "freelancer"
-          ? `${formatAmount(d.amount!)} has been released to your account for <strong>${d.dealTitle}</strong>. The 72-hour review period expired with no action from the client.`
-          : `The 72-hour review period for <strong>${d.dealTitle}</strong> has expired. ${formatAmount(d.amount!)} has been auto-released to the freelancer.`;
-      return `<h2 style="color: #0f172a; font-size: 20px;">Funds Released</h2><p style="color: #475569; font-size: 14px;">${msg}</p>`;
-    },
-    cta: (d) => ({ label: "View Gig", href: dealUrl(d.dealSlug) }),
-  },
-  milestone_approved: {
-    subject: (d) => `Milestone approved — ${formatAmount(d.amount!)} released`,
-    body: (d) =>
-      `<h2 style="color: #0d9488; font-size: 20px;">Milestone Approved</h2>` +
-      `<p style="color: #475569; font-size: 14px;">The client approved milestone <strong>${d.milestoneTitle}</strong> on <strong>${d.dealTitle}</strong>. <strong>${formatAmount(d.amount!)}</strong> has been released to your account.</p>`,
-    cta: (d) => ({ label: "View Gig", href: dealUrl(d.dealSlug) }),
-  },
-  deal_completed: {
-    subject: (d) => `Gig complete — ${d.dealTitle}`,
-    body: (d) =>
-      `<h2 style="color: #0d9488; font-size: 20px;">Gig Complete</h2>` +
-      `<p style="color: #475569; font-size: 14px;"><strong>${d.dealTitle}</strong> is complete. Leave a rating for ${d.otherPartyName || "the other party"} to build your trust reputation.</p>`,
-    cta: (d) => ({ label: "Leave a Rating", href: dealUrl(d.dealSlug) }),
-  },
-  revision_requested: {
-    subject: (d) => `Revision requested on ${d.dealTitle} (${d.revisionNumber || 1}/3)`,
-    body: (d) =>
-      `<h2 style="color: #0f172a; font-size: 20px;">Revision Requested</h2>` +
-      `<p style="color: #475569; font-size: 14px;">The client has requested a revision on <strong>${d.dealTitle}</strong> (revision ${d.revisionNumber || 1} of 3).</p>` +
-      (d.notes
-        ? `<div style="background: #f8fafc; border-left: 3px solid #0d9488; padding: 12px 16px; margin: 16px 0; font-size: 14px; color: #334155;">${d.notes}</div>`
-        : ""),
-    cta: (d) => ({ label: "View Details", href: dealUrl(d.dealSlug) }),
-  },
-  rating_reminder: {
-    subject: (d) => `Leave a rating for ${d.otherPartyName || "your gig partner"}`,
-    body: (d) =>
-      `<h2 style="color: #0f172a; font-size: 20px;">How Did It Go?</h2>` +
-      `<p style="color: #475569; font-size: 14px;">Your gig <strong>${d.dealTitle}</strong> was completed. Leave a rating for <strong>${d.otherPartyName || "the other party"}</strong> to help build trust in the community.</p>`,
-    cta: (d) => ({ label: "Rate Now", href: dealUrl(d.dealSlug) }),
-  },
-  dispute_opened: {
-    subject: (d) => `Dispute opened on ${d.dealTitle}`,
-    body: (d) =>
-      `<h2 style="color: #dc2626; font-size: 20px;">Dispute Opened</h2>` +
-      `<p style="color: #475569; font-size: 14px;">${d.otherPartyName || "The other party"} has opened a dispute on <strong>${d.dealTitle}</strong>. Funds are frozen until the dispute is resolved.</p>`,
-    cta: (d) => ({ label: "View Dispute", href: dealUrl(d.dealSlug) }),
-  },
-  dispute_resolved: {
-    subject: (d) => `Dispute resolved — ${d.dealTitle}`,
-    body: (d) =>
-      `<h2 style="color: #0f172a; font-size: 20px;">Dispute Resolved</h2>` +
-      `<p style="color: #475569; font-size: 14px;">The dispute on <strong>${d.dealTitle}</strong> has been resolved. Check the deal page for the decision and next steps.</p>`,
-    cta: (d) => ({ label: "View Resolution", href: dealUrl(d.dealSlug) }),
-  },
-  interest_received: {
-    subject: (d) => `Someone is interested in ${d.dealTitle}`,
-    body: (d) =>
-      `<h2 style="color: #0f172a; font-size: 20px;">New Interest</h2>` +
-      `<p style="color: #475569; font-size: 14px;"><strong>${d.otherPartyName || "A freelancer"}</strong> is interested in your gig <strong>${d.dealTitle}</strong>. Review their pitch and decide if they're the right fit.</p>`,
-    cta: (d) => ({ label: "Review Pitches", href: dealUrl(d.dealSlug) }),
-  },
-  interest_accepted: {
-    subject: (d) => `You've been selected for ${d.dealTitle}`,
-    body: (d) =>
-      `<h2 style="color: #0d9488; font-size: 20px;">You're Selected!</h2>` +
-      `<p style="color: #475569; font-size: 14px;">Great news — the client chose you for <strong>${d.dealTitle}</strong>${d.amount ? ` (${formatAmount(d.amount)})` : ""}. Review the deal terms and get started.</p>`,
-    cta: (d) => ({ label: "View Gig", href: dealUrl(d.dealSlug) }),
-  },
-  deal_filled: {
-    subject: (d) => `${d.dealTitle} has been filled`,
-    body: (d) =>
-      `<h2 style="color: #0f172a; font-size: 20px;">Gig Filled</h2>` +
-      `<p style="color: #475569; font-size: 14px;">The client selected someone else for <strong>${d.dealTitle}</strong>. Keep an eye out for other open gigs!</p>`,
-    cta: () => ({ label: "Browse Gigs", href: `${APP_URL}/gigs` }),
-  },
-  milestone_proposed: {
-    subject: (d) => `Milestone change proposed on ${d.dealTitle}`,
-    body: (d) =>
-      `<h2 style="color: #0f172a; font-size: 20px;">Milestone Proposal</h2>` +
-      `<p style="color: #475569; font-size: 14px;">${d.otherPartyName || "The other party"} has proposed a milestone change on <strong>${d.dealTitle}</strong>. Review and approve or reject the proposal.</p>`,
-    cta: (d) => ({ label: "Review Proposal", href: dealUrl(d.dealSlug) }),
-  },
-  milestone_change_approved: {
-    subject: (d) => `Milestone change approved on ${d.dealTitle}`,
-    body: (d) =>
-      `<h2 style="color: #0f172a; font-size: 20px;">Proposal Approved</h2>` +
-      `<p style="color: #475569; font-size: 14px;">Your milestone change proposal on <strong>${d.dealTitle}</strong> was approved.</p>`,
-    cta: (d) => ({ label: "View Gig", href: dealUrl(d.dealSlug) }),
-  },
-  deal_cancelled: {
-    subject: (d) => `Gig cancelled — ${d.dealTitle}`,
-    body: (d) =>
-      `<h2 style="color: #0f172a; font-size: 20px;">Gig Cancelled</h2>` +
-      `<p style="color: #475569; font-size: 14px;">The gig <strong>${d.dealTitle}</strong> has been cancelled.</p>`,
-    cta: (d) => ({ label: "View Details", href: dealUrl(d.dealSlug) }),
-  },
-  guest_verification_code: {
-    subject: (d) => `Your verification code for ${d.dealTitle}`,
-    body: (d) =>
-      `<h2 style="color: #0f172a; font-size: 20px;">Verification Code</h2>` +
-      `<p style="color: #475569; font-size: 14px;">Your code to accept <strong>${d.dealTitle}</strong> is:</p>` +
-      `<p style="font-size: 32px; font-weight: 700; letter-spacing: 6px; text-align: center; color: #0d9488;">${d.code || "------"}</p>` +
-      `<p style="color: #475569; font-size: 14px;">This code expires in 15 minutes.</p>`,
-    cta: () => null,
-  },
-  deal_accepted_escrow_pending: {
-    subject: (d) => `You accepted ${d.dealTitle} — waiting for escrow`,
-    body: (d) =>
-      `<h2 style="color: #0f172a; font-size: 20px;">Gig Accepted</h2>` +
-      `<p style="color: #475569; font-size: 14px;">You accepted <strong>${d.dealTitle}</strong>. The client hasn't funded escrow yet — you'll be notified when payment is secured.</p>`,
-    cta: (d) => ({ label: "View Gig", href: dealUrl(d.dealSlug) }),
-  },
-  escrow_funded_after_accept: {
-    subject: (d) => `Escrow funded — ${d.dealTitle} is ready to start`,
-    body: (d) =>
-      `<h2 style="color: #0d9488; font-size: 20px;">Payment Secured</h2>` +
-      `<p style="color: #475569; font-size: 14px;">${formatAmount(d.amount!)} has been secured in escrow for <strong>${d.dealTitle}</strong>. You're clear to start work.</p>`,
-    cta: (d) => ({ label: "View Gig", href: dealUrl(d.dealSlug) }),
-  },
-  funds_released: {
-    subject: (d) => `Funds released — ${d.dealTitle}`,
-    body: (d) =>
-      `<h2 style="color: #0d9488; font-size: 20px;">Funds Released</h2>` +
-      `<p style="color: #475569; font-size: 14px;">${formatAmount(d.amount!)} has been released for <strong>${d.dealTitle}</strong>.</p>`,
-    cta: (d) => ({ label: "View Gig", href: dealUrl(d.dealSlug) }),
-  },
-  deal_cancelled_to_freelancer: {
-    subject: (d) => `Gig cancelled — ${d.dealTitle}`,
-    body: (d) =>
-      `<h2 style="color: #0f172a; font-size: 20px;">Gig Cancelled</h2>` +
-      `<p style="color: #475569; font-size: 14px;">The client cancelled <strong>${d.dealTitle}</strong>. No further action is needed.</p>`,
-    cta: () => null,
-  },
-  auto_expire_warning_14d: {
-    subject: (d) => `Action needed — ${d.dealTitle} expires in 16 days`,
-    body: (d) =>
-      `<h2 style="color: #d97706; font-size: 20px;">Gig Expiring Soon</h2>` +
-      `<p style="color: #475569; font-size: 14px;">Your funded gig <strong>${d.dealTitle}</strong> has no freelancer yet. If nobody accepts within 30 days of funding, the escrow will be automatically refunded.</p>`,
-    cta: (d) => ({ label: "View Gig", href: dealUrl(d.dealSlug) }),
-  },
-  auto_expire_warning_27d: {
-    subject: (d) => `Final warning — ${d.dealTitle} expires in 3 days`,
-    body: (d) =>
-      `<h2 style="color: #dc2626; font-size: 20px;">Final Warning</h2>` +
-      `<p style="color: #475569; font-size: 14px;">Your gig <strong>${d.dealTitle}</strong> will be auto-refunded in 3 days if no freelancer accepts. Share the gig link to find someone.</p>`,
-    cta: (d) => ({ label: "View Gig", href: dealUrl(d.dealSlug) }),
-  },
-  auto_expire_completed: {
-    subject: (d) => `Gig expired — ${d.dealTitle} refunded`,
-    body: (d) =>
-      `<h2 style="color: #0f172a; font-size: 20px;">Gig Expired & Refunded</h2>` +
-      `<p style="color: #475569; font-size: 14px;">Your gig <strong>${d.dealTitle}</strong> expired without a freelancer. ${formatAmount(d.amount!)} has been refunded to your original payment method.</p>`,
-    cta: () => null,
-  },
-  freelancer_ghost_nudge_7d: {
-    subject: (d) => `Reminder — ${d.dealTitle} is waiting for you`,
-    body: (d) =>
-      `<h2 style="color: #0f172a; font-size: 20px;">Time to Get Started</h2>` +
-      `<p style="color: #475569; font-size: 14px;">It's been 7 days since you accepted <strong>${d.dealTitle}</strong> and no work evidence has been uploaded. The client is waiting — upload your progress to keep things moving.</p>`,
-    cta: (d) => ({ label: "View Gig", href: dealUrl(d.dealSlug) }),
-  },
-  freelancer_ghost_warning_14d: {
-    subject: (d) => `No activity on ${d.dealTitle} — 14 days`,
-    body: (d) =>
-      `<h2 style="color: #d97706; font-size: 20px;">No Freelancer Activity</h2>` +
-      `<p style="color: #475569; font-size: 14px;">It's been 14 days since the freelancer accepted <strong>${d.dealTitle}</strong> with no evidence uploaded. If no progress is made within 21 days, the gig will be auto-refunded. You can also cancel or open a dispute.</p>`,
-    cta: (d) => ({ label: "View Gig", href: dealUrl(d.dealSlug) }),
-  },
-  guest_deal_invite: {
-    subject: (d) => `You've been invited to a gig — ${d.dealTitle}`,
-    body: (d) =>
-      `<h2 style="color: #0f172a; font-size: 20px;">Gig Invitation</h2>` +
-      `<p style="color: #475569; font-size: 14px;">You've been invited to work on <strong>${d.dealTitle}</strong>. Click below to review the details and accept.</p>`,
-    cta: (d) => ({ label: "View Gig", href: dealUrl(d.dealSlug) }),
-  },
-  dispute_proposal_received: {
-    subject: (d) => `Counter-proposal on ${d.dealTitle}`,
-    body: (d) =>
-      `<h2 style="color: #0f172a; font-size: 20px;">Counter-Proposal Received</h2>` +
-      `<p style="color: #475569; font-size: 14px;">The other party has submitted a counter-proposal on the dispute for <strong>${d.dealTitle}</strong>. Review their proposal and respond.</p>`,
-    cta: (d) => ({ label: "View Dispute", href: dealUrl(d.dealSlug) }),
-  },
-  dispute_auto_resolved: {
-    subject: (d) => `Dispute auto-resolved — ${d.dealTitle}`,
-    body: (d) =>
-      `<h2 style="color: #0d9488; font-size: 20px;">Dispute Resolved</h2>` +
-      `<p style="color: #475569; font-size: 14px;">The dispute on <strong>${d.dealTitle}</strong> has been automatically resolved based on the proposals submitted by both parties.</p>`,
-    cta: (d) => ({ label: "View Resolution", href: dealUrl(d.dealSlug) }),
-  },
-  dispute_negotiation_round: {
-    subject: (d) => `Negotiation round on ${d.dealTitle}`,
-    body: (d) =>
-      `<h2 style="color: #0f172a; font-size: 20px;">Negotiation Round</h2>` +
-      `<p style="color: #475569; font-size: 14px;">Both proposals for <strong>${d.dealTitle}</strong> don't overlap. You have one more chance to adjust your proposal before the dispute is escalated for review.</p>`,
-    cta: (d) => ({ label: "Adjust Proposal", href: dealUrl(d.dealSlug) }),
-  },
-  dispute_escalated: {
-    subject: (d) => `Dispute escalated — ${d.dealTitle}`,
-    body: (d) =>
-      `<h2 style="color: #dc2626; font-size: 20px;">Dispute Escalated</h2>` +
-      `<p style="color: #475569; font-size: 14px;">The dispute on <strong>${d.dealTitle}</strong> could not be resolved through negotiation and has been escalated for admin review.</p>`,
-    cta: (d) => ({ label: "View Dispute", href: dealUrl(d.dealSlug) }),
-  },
+const NOTIFICATION_CONFIG: Record<NotificationType, TemplateConfig> = {
+  guest_verification_code: { subject: () => 'Your CheckHire verification code', accent: '#0d9488', body: (d) => `<h2 style="margin: 0 0 10px 0; color: #0f172a;">Verify your email</h2>${buildVerificationCodeBlock(d.verificationCode || d.code || '------')}<p style="color: #475569; font-size: 14px;">Enter this code on the deal page to accept the gig.</p><p style="color: #64748b; font-size: 13px;">If you didn't request this, ignore this email.</p>` },
+  deal_created: { subject: () => 'Your gig is live — share your payment link', accent: '#0d9488', body: (d) => `<h2 style="margin: 0 0 12px 0; color: #0f172a;">Your Gig is Live</h2><div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 14px;"><div style="font-size: 11px; letter-spacing: 1px; color: #64748b; font-weight: 700;">YOUR PAYMENT LINK</div><a href="${dealUrl(d.dealSlug)}" style="color: #0d9488; font-size: 14px; word-break: break-all;">${dealUrl(d.dealSlug)}</a></div>${typeof d.amount === 'number' ? `<p style="color: #475569;">Budget: <strong>${formatAmount(d.amount)}</strong></p>` : ''}${buildCtaButton(dealUrl(d.dealSlug), 'View Your Gig', 'primary')}` },
+  deal_accepted: { subject: (d) => `${escapeHtml(d.otherPartyName || 'Someone')} accepted your gig — ${escapeHtml(d.dealTitle)}`, accent: '#0d9488', body: (d) => `<h2 style="margin: 0 0 10px 0; color: #0f172a;">Gig Accepted</h2>${personBlock(d)}<p style="color: #475569; font-size: 14px;">${d.escrowFunded ? 'The deal is live.' : 'Fund escrow to get started.'}</p>${buildCtaButton(dealUrl(d.dealSlug), d.escrowFunded ? 'View Deal' : 'Fund Escrow', 'primary')}` },
+  deal_accepted_escrow_pending: { subject: (d) => `You accepted ${escapeHtml(d.dealTitle)} — waiting for payment`, accent: '#0d9488', body: (d) => `<h2 style="margin: 0 0 10px 0; color: #0f172a;">You're In</h2><p style="color: #475569;">Client hasn't funded escrow yet — we'll notify you.</p><p style="color: #64748b;">No payment = no obligation.</p>${buildCtaButton(dealUrl(d.dealSlug), 'View Deal', 'primary')}` },
+  escrow_funded: { subject: (d) => `💰 ${formatAmount(d.amount || 0)} secured — ${escapeHtml(d.dealTitle)}`, accent: '#16a34a', body: (d) => `${buildHeroAmount(d.amount || 0, undefined, 'secured')}<p style="color: #475569;">The money is real. Start working and upload evidence.</p>${buildCtaButton(dealUrl(d.dealSlug), 'Start Working', 'success')}` },
+  escrow_funded_after_accept: { subject: (d) => `💰 ${formatAmount(d.amount || 0)} secured — ${escapeHtml(d.dealTitle)}`, accent: '#16a34a', body: (d) => `${buildHeroAmount(d.amount || 0, undefined, 'secured')}<p style="color: #475569;">The money is real. Start working and upload evidence.</p>${buildCtaButton(dealUrl(d.dealSlug), 'Start Working', 'success')}` },
+  work_submitted: { subject: () => '⏰ Work submitted — review within 72 hours', accent: '#d97706', body: (d) => `${buildCountdownBlock(72)}<p style="color: #475569;">You have 72 hours to:</p><p style="margin: 0; color: #334155;">✅ Confirm delivery<br/>✏️ Request revision<br/>⚠️ Open dispute</p><p style="color: #64748b;">If no response, funds auto-release.</p>${buildCtaButton(dealUrl(d.dealSlug), 'Review Now', 'urgent')}` },
+  auto_release_warning_24h: { subject: (d) => `⚠️ 24 hours left — ${formatAmount(d.amount || 0)} releases tomorrow`, accent: '#d97706', body: (d) => `${buildCountdownBlock(24)}<p style="color: #475569;">24 hours left to review.</p>${buildCtaButton(dealUrl(d.dealSlug), 'Review Now', 'urgent')}` },
+  auto_release_warning_6h: { subject: (d) => `🚨 6 hours — ${formatAmount(d.amount || 0)} auto-releases soon`, accent: '#dc2626', body: (d) => `${buildCountdownBlock(6)}<p style="color: #475569;">Final notice. 6 hours left.</p>${buildCtaButton(dealUrl(d.dealSlug), 'Review Now', 'urgent').replace('#d97706', '#dc2626')}` },
+  auto_release_completed: { subject: (d) => d.role === 'freelancer' ? `🎉 ${formatAmount(d.amount || 0)} released — check your bank` : `Funds auto-released — ${escapeHtml(d.dealTitle)}`, accent: '#16a34a', body: (d) => d.role === 'freelancer' ? `${buildHeroAmount(d.amount || 0, undefined, 'auto_released')}<p style="color: #475569;">Payouts may take 1-2 business days to settle in your bank.</p>${d.isGuestFreelancer ? '<div style="background: #f0fdfa; border: 1px solid #ccfbf1; border-radius: 8px; padding: 14px 18px; color: #115e59;">Build your reputation — create a free account.</div>' : ''}${buildCtaButton(dealUrl(d.dealSlug), 'View Payout', 'success')}` : `${buildHeroAmount(d.amount || 0, 'Review period expired.', 'slate')}<p style="color: #475569;">Review period expired.</p>${buildCtaButton(dealUrl(d.dealSlug), 'View Gig', 'neutral')}` },
+  funds_released: { subject: (d) => `🎉 ${formatAmount(d.amount || 0)} released — check your bank`, accent: '#16a34a', body: (d) => `${buildHeroAmount(d.amount || 0, undefined, 'released')}<p style="color: #475569;">Client confirmed delivery.</p><p style="color: #64748b;">Payouts may take 1-2 business days to settle in your bank.</p>${d.isGuestFreelancer ? '<div style="background: #f0fdfa; border: 1px solid #ccfbf1; border-radius: 8px; padding: 14px 18px; color: #115e59;">Build your reputation. Create a free account.</div>' : ''}${buildCtaButton(dealUrl(d.dealSlug), 'View Payout', 'success')}` },
+  deal_completed: { subject: (d) => `Gig complete — leave a rating for ${escapeHtml(d.otherPartyName || 'your collaborator')}`, accent: '#16a34a', body: (d) => `<h2 style="margin: 0 0 10px 0; color: #0f172a;">Gig Complete! 🎉</h2><p style="color: #475569;">Rate your experience with ${escapeHtml(d.otherPartyName || 'the other party')}.</p><div style="text-align: center; font-size: 28px; letter-spacing: 4px; color: #d97706;">☆ ☆ ☆ ☆ ☆</div>${buildCtaButton(dealUrl(d.dealSlug), 'Leave a Rating', 'primary')}` },
+  revision_requested: { subject: (d) => `Revision requested — ${escapeHtml(d.dealTitle)} (${d.revisionNumber || 1}/3)`, accent: '#0d9488', body: (d) => `<h2 style="margin: 0 0 10px 0; color: #0f172a;">Revision Requested</h2><div style="display:inline-block; background:#f0fdfa; color:#0d9488; border-radius:999px; padding:6px 10px; font-size:12px; font-weight:700;">Revision ${d.revisionNumber || 1} of 3</div>${d.notes ? `<div style="background: #f8fafc; border-left: 3px solid #0d9488; padding: 14px 18px; margin-top: 12px; color: #334155;">${escapeHtml(d.notes)}</div>` : ''}<p style="color: #64748b;">Countdown paused.</p>${buildCtaButton(dealUrl(d.dealSlug), 'View Details', 'primary')}` },
+  rating_reminder: { subject: (d) => `How was working with ${escapeHtml(d.otherPartyName || 'them')}?`, accent: '#0d9488', body: (d) => `<div style="text-align:center; font-size: 28px; letter-spacing: 4px; color: #d97706;">☆ ☆ ☆ ☆ ☆</div><p style="color: #475569;">A quick rating helps ${escapeHtml(d.otherPartyName || 'your collaborator')} build their reputation.</p>${buildCtaButton(dealUrl(d.dealSlug), 'Rate Now', 'primary')}` },
+  dispute_opened: { subject: (d) => `⚠️ Dispute opened — ${escapeHtml(d.dealTitle)}`, accent: '#dc2626', body: (d) => `<h2 style="margin:0 0 10px 0; color:#dc2626;">Dispute Opened</h2><div style="background:#fef2f2; border:1px solid #fecaca; border-radius:8px; padding:12px 14px; color:#991b1b;">Funds are frozen.</div><p style="color:#475569;">You have 48 hours to respond.</p>${buildCtaButton(dealUrl(d.dealSlug), 'View Dispute', 'primary')}` },
+  dispute_proposal_received: { subject: (d) => `Respond to dispute proposal — ${escapeHtml(d.dealTitle)}`, accent: '#d97706', body: (d) => `<p style="color:#475569;">Other party submitted their proposal. Respond within 48 hours.</p><p style="color:#991b1b;">No response = resolved in their favor.</p>${buildCtaButton(dealUrl(d.dealSlug), 'Respond Now', 'urgent')}` },
+  dispute_auto_resolved: { subject: (d) => `Dispute resolved — you reached an agreement on ${escapeHtml(d.dealTitle)}`, accent: '#16a34a', body: (d) => `<h2 style="margin:0 0 10px 0; color:#166534;">Agreement Reached! 🤝</h2>${typeof d.amount === 'number' ? buildHeroAmount(d.amount, undefined, 'released') : ''}<p style="color:#475569;">Proposals matched.</p>${d.isNonResponse ? '<p style="color:#64748b;">Other party didn\'t respond.</p>' : ''}${buildCtaButton(dealUrl(d.dealSlug), 'View Resolution', 'success')}` },
+  dispute_negotiation_round: { subject: (d) => `Proposals didn't match — one more round on ${escapeHtml(d.dealTitle)}`, accent: '#d97706', body: (d) => `<p style="color:#475569;">Proposals didn't overlap. One more round.</p>${buildCtaButton(dealUrl(d.dealSlug), 'Adjust Proposal', 'primary')}` },
+  dispute_escalated: { subject: (d) => `Dispute escalated to review — ${escapeHtml(d.dealTitle)}`, accent: '#dc2626', body: (d) => `<p style="color:#475569;">A real human will review within 48 hours. No further action needed.</p>${buildCtaButton(dealUrl(d.dealSlug), 'View Dispute', 'primary')}` },
+  dispute_resolved: { subject: (d) => `Dispute resolved — ${escapeHtml(d.dealTitle)}`, accent: '#0d9488', body: (d) => `<h2 style="margin:0 0 10px 0; color:#0f172a;">Dispute Resolved</h2><p style="color:#475569;">Check deal page for decision.</p>${buildCtaButton(dealUrl(d.dealSlug), 'View Resolution', 'primary')}` },
+  interest_received: { subject: (d) => `${escapeHtml(d.otherPartyName || 'Someone')} is interested in ${escapeHtml(d.dealTitle)}`, accent: '#0d9488', body: (d) => `${personBlock(d)}<p style="color:#475569;">Review their pitch.</p>${buildCtaButton(dealUrl(d.dealSlug), 'Review Pitches', 'primary')}` },
+  interest_accepted: { subject: (d) => `You've been selected for ${escapeHtml(d.dealTitle)}!`, accent: '#16a34a', body: (d) => `<h2 style="margin:0 0 10px 0; color:#166534;">You're Selected! 🎉</h2>${typeof d.amount === 'number' ? buildHeroAmount(d.amount, undefined, 'secured') : ''}${buildCtaButton(dealUrl(d.dealSlug), 'View Gig', 'success')}` },
+  deal_filled: { subject: (d) => `${escapeHtml(d.dealTitle)} has been filled`, accent: '#64748b', body: () => `<h2 style="margin:0 0 10px 0; color:#0f172a;">Gig Filled</h2><p style="color:#475569;">Client selected someone else.</p>${buildCtaButton(`${APP_URL}/gigs`, 'Browse Gigs', 'neutral')}` },
+  milestone_funded: { subject: (d) => `Milestone funded — ${escapeHtml(d.milestoneTitle || 'Milestone')} (${formatAmount(d.amount || 0)})`, accent: '#16a34a', body: (d) => `${buildHeroAmount(d.amount || 0, undefined, 'secured')}<p style="color:#475569;">${formatAmount(d.amount || 0)} secured for milestone ${escapeHtml(d.milestoneTitle || 'milestone')}.</p>${buildCtaButton(dealUrl(d.dealSlug), 'View Milestone', 'primary')}` },
+  milestone_approved: { subject: (d) => `✅ ${formatAmount(d.amount || 0)} released — ${escapeHtml(d.milestoneTitle || 'Milestone')} approved`, accent: '#16a34a', body: (d) => `${buildHeroAmount(d.amount || 0, undefined, 'milestone')}<p style="color:#475569;">Client approved.</p>${buildCtaButton(dealUrl(d.dealSlug), 'View Gig', 'success')}` },
+  milestone_proposed: { subject: (d) => `Milestone change proposed — ${escapeHtml(d.dealTitle)}`, accent: '#0d9488', body: (d) => `<p style="color:#475569;">A milestone update was proposed for this gig.</p>${buildCtaButton(dealUrl(d.dealSlug), 'Review Proposal', 'primary')}` },
+  milestone_change_approved: { subject: (d) => `Milestone change approved — ${escapeHtml(d.dealTitle)}`, accent: '#0d9488', body: (d) => `<p style="color:#475569;">Milestone change approved.</p>${buildCtaButton(dealUrl(d.dealSlug), 'View Gig', 'primary')}` },
+  deal_cancelled: { subject: (d) => `Gig cancelled — ${escapeHtml(d.dealTitle)}`, accent: '#64748b', body: (d) => `<h2 style="margin:0 0 10px 0; color:#0f172a;">Gig Cancelled</h2>${typeof d.refundAmount === 'number' ? buildHeroAmount(d.refundAmount, undefined, 'refund') : ''}<p style="color:#64748b;">Refund processing typically takes 5-10 business days.</p>${buildCtaButton(`${APP_URL}/post`, 'Post a New Gig', 'neutral')}` },
+  deal_cancelled_to_freelancer: { subject: (d) => `Gig cancelled — ${escapeHtml(d.dealTitle)}`, accent: '#64748b', body: (d) => `<h2 style="margin:0 0 10px 0; color:#0f172a;">Gig Cancelled</h2><p style="color:#475569;">No evidence submitted, full refund to client.</p><p style="color:#64748b;">Doesn't affect your reputation.</p>${buildCtaButton(`${APP_URL}/gigs`, 'Browse Gigs', 'neutral')}` },
+  auto_expire_warning_14d: { subject: (d) => `Your gig has been waiting 2 weeks — ${escapeHtml(d.dealTitle)}`, accent: '#d97706', body: (d) => `<p style="color:#475569;">Funded 2 weeks, no one accepted. Auto-refund in 16 days.</p>${buildCtaButton(dealUrl(d.dealSlug), 'View Gig', 'primary')}<p style="margin-top:12px;"><a href="${dealUrl(d.dealSlug)}" style="color:#d97706;">Cancel & Refund Now</a></p>` },
+  auto_expire_warning_27d: { subject: (d) => `Final notice — ${escapeHtml(d.dealTitle)} auto-refunds in 3 days`, accent: '#dc2626', body: (d) => `${buildCountdownBlock(72)}<p style="color:#475569;">Final notice. Auto-refund in 3 days.</p>${buildCtaButton(dealUrl(d.dealSlug), 'Cancel & Refund Now', 'urgent')}<p style="margin-top:12px;"><a href="${dealUrl(d.dealSlug)}" style="color:#475569;">Keep Active</a></p>` },
+  auto_expire_completed: { subject: (d) => `Auto-refund processed — ${formatAmount(d.amount || 0)} for ${escapeHtml(d.dealTitle)}`, accent: '#64748b', body: (d) => `${buildHeroAmount(d.amount || 0, undefined, 'refund')}<p style="color:#475569;">Nobody accepted within 30 days. Refund processing.</p>${buildCtaButton(`${APP_URL}/post`, 'Post a New Gig', 'neutral')}` },
+  freelancer_ghost_nudge_7d: { subject: (d) => `Reminder: upload your progress on ${escapeHtml(d.dealTitle)}`, accent: '#d97706', body: (d) => `<p style="color:#475569;">Accepted 7 days ago. Upload evidence.</p><p style="color:#64748b;">Client may cancel if no evidence.</p>${buildCtaButton(dealUrl(d.dealSlug), 'Upload Evidence', 'primary')}` },
+  freelancer_ghost_warning_14d: { subject: (d) => `No progress on ${escapeHtml(d.dealTitle)} — you can cancel for a full refund`, accent: '#d97706', body: (d) => `<p style="color:#475569;">No evidence in 14 days. You can cancel.</p>${buildCtaButton(dealUrl(d.dealSlug), 'Cancel & Refund', 'urgent')}<p style="margin-top:12px;"><a href="${dealUrl(d.dealSlug)}" style="color:#475569;">View Gig</a></p>` },
+  guest_deal_invite: { subject: (d) => `You've been invited to a gig — ${formatAmount(d.amount || 0)}`, accent: '#16a34a', body: (d) => `${buildHeroAmount(d.amount || 0, undefined, 'secured')}<p style="color:#475569;">Someone wants to hire you. No account needed.</p><div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 14px;"><a href="${dealUrl(d.dealSlug)}" style="color: #0d9488; font-size: 14px; word-break: break-all;">${dealUrl(d.dealSlug)}</a></div>${buildCtaButton(dealUrl(d.dealSlug), 'View & Accept', 'success')}` },
 };
 
 export async function sendDealNotification(params: {
@@ -323,12 +173,11 @@ export async function sendDealNotification(params: {
 
   const subject = config.subject(params.data);
   const bodyHtml = config.body(params.data);
-  const cta = config.cta(params.data);
-  const ctaHtml = cta ? ctaButton(cta.href, cta.label) : "";
+  const html = buildEmailHtml({ body: bodyHtml, accentColor: config.accent });
 
   return sendEmail({
     to: params.to,
     subject,
-    html: wrapHtml(`${bodyHtml}${ctaHtml}`),
+    html,
   });
 }

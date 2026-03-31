@@ -628,31 +628,44 @@ export function GigPageClient({
         )}
 
       {/* 5. Evidence Timeline */}
-      {isParticipant && (
+      {(isParticipant || guestToken) && (
         <div className="mb-6">
-          <h3 className="mb-3 text-sm font-semibold text-slate-900">
-            Activity
-          </h3>
-          <div className="rounded-xl border border-gray-200 bg-white p-5">
-            <EvidenceTimeline
-              entries={activityEntries}
-              deal={deal}
-              role={role}
-              guestFreelancerName={guestFreelancerName || deal.guest_freelancer_name || null}
-              currentUserId={currentUserId}
-              onConfirmDelivery={() => setConfirmDialogOpen(true)}
-              onRequestRevision={() => {
-                setRevisionNotes("");
-                setRevisionDialogOpen(true);
-              }}
-              onOpenDispute={() => {}}
-            />
-          </div>
+          <EvidenceTimeline
+            entries={activityEntries}
+            deal={deal}
+            role={guestToken ? "freelancer" : role}
+            guestFreelancerName={guestFreelancerName || deal.guest_freelancer_name || null}
+            currentUserId={currentUserId}
+            onConfirmDelivery={() => setConfirmDialogOpen(true)}
+            onRequestRevision={() => {
+              setRevisionNotes("");
+              setRevisionDialogOpen(true);
+            }}
+            onOpenDispute={() => {}}
+          />
         </div>
       )}
 
-      {/* 5b. Evidence Upload Card — for freelancers */}
-      {role === "freelancer" && (
+      {/* Dispute Proposals */}
+      {deal.status === "disputed" && disputeId && (
+        <div className="mb-6">
+          <ProposalReveal
+            totalAmountCents={deal.total_amount}
+            claimantPercentage={null}
+            respondentPercentage={null}
+            claimantName="Claimant"
+            respondentName="Respondent"
+            isResolved={false}
+            negotiationRound={0}
+          />
+        </div>
+      )}
+
+      {/* 6. Evidence Upload — for freelancers and guest freelancers */}
+      {(role === "freelancer" || guestToken) &&
+        deal.status !== "completed" &&
+        deal.status !== "cancelled" &&
+        deal.status !== "refunded" && (
         <div className="mb-6">
           <EvidenceUploadCard
             dealId={deal.id}
@@ -798,7 +811,17 @@ export function GigPageClient({
         <div className="flex flex-wrap items-center gap-3">
           {/* Always show Copy Link for participants */}
           {isParticipant && (
-            <ShareButton url={dealUrl} title={deal.title} />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                navigator.clipboard.writeText(dealUrl);
+                toast("Link copied!", "success");
+              }}
+              className="cursor-pointer"
+            >
+              Copy Link
+            </Button>
           )}
 
           {/* ── Visitor actions ── */}

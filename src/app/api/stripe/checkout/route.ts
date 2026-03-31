@@ -71,7 +71,13 @@ export const POST = withApiHandler(async (req: Request) => {
   }
 
   const platformFee = Math.round(amount * 0.05);
-  const totalCharge = amount + platformFee;
+  // Pass Stripe processing fee through to client (2.9% + $0.30)
+  // Formula: total = (amount + platformFee + 30) / (1 - 0.029)
+  // This ensures after Stripe takes 2.9% + $0.30, the remainder covers amount + platformFee exactly
+  const subtotal = amount + platformFee;
+  const totalBeforeStripeCents = Math.round((subtotal + 30) / (1 - 0.029));
+  const stripeFee = totalBeforeStripeCents - subtotal;
+  const totalCharge = totalBeforeStripeCents;
 
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
@@ -92,6 +98,7 @@ export const POST = withApiHandler(async (req: Request) => {
       milestone_id: metadataMilestoneId,
       escrow_amount: amount.toString(),
       platform_fee: platformFee.toString(),
+      stripe_fee: stripeFee.toString(),
     },
     success_url: `${APP_URL}/deal/${deal.deal_link_slug}?funded=true`,
     cancel_url: `${APP_URL}/deal/${deal.deal_link_slug}?funded=cancelled`,

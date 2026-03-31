@@ -146,7 +146,9 @@ export function GigPageClient({
   const hasFreelancer = !!deal.freelancer_user_id || !!deal.guest_freelancer_email;
 
   const platformFee = Math.round(deal.total_amount * 0.05);
-  const totalCharge = deal.total_amount + platformFee;
+  const subtotalCents = deal.total_amount + platformFee;
+  const totalCharge = Math.round((subtotalCents + 30) / (1 - 0.029));
+  const stripeFee = totalCharge - subtotalCents;
 
   // Handle ?funded=true/cancelled query param
   useEffect(() => {
@@ -867,7 +869,7 @@ export function GigPageClient({
                     </Button>
                     <p className="mt-1 text-xs text-slate-600">
                       ${(deal.total_amount / 100).toFixed(2)} +{" "}
-                      ${(platformFee / 100).toFixed(2)} platform fee (5%)
+                      ${(platformFee / 100).toFixed(2)} platform fee (5%) + ${(stripeFee / 100).toFixed(2)} processing
                     </p>
                   </div>
                 )}

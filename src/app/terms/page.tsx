@@ -85,8 +85,8 @@ export default function TermsPage() {
               4.2 Escrow Funding
             </h3>
             <p className="mt-2">
-              The client pays the deal amount plus a 5% platform fee via
-              Stripe. Funds are held in escrow until release conditions are
+              The client pays the deal amount plus a 5% platform fee and
+              Stripe&apos;s card processing fee (2.9% + $0.30) via Stripe. Funds are held in escrow until release conditions are
               met. The freelancer sees &quot;Payment Secured&quot; confirming
               funds are locked.
             </p>
@@ -135,8 +135,8 @@ export default function TermsPage() {
             <h2 className="text-lg font-semibold text-slate-900">5. Fees</h2>
             <ul className="mt-2 list-disc pl-5 space-y-1">
               <li>
-                <strong>Client platform fee:</strong> 5% of the deal amount,
-                charged at escrow funding
+                <strong>Client platform fee:</strong> 5% of the deal amount
+                + Stripe processing (2.9% + $0.30), charged at escrow funding
               </li>
               <li>
                 <strong>Freelancer fee:</strong> 0% — freelancers receive

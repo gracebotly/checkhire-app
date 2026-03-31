@@ -1,4 +1,5 @@
-import type { Metadata } from "next";
+"use client";
+
 import Link from "next/link";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
@@ -14,13 +15,11 @@ import {
   Scale,
 } from "lucide-react";
 import { NewsletterSignup } from "@/components/newsletter/NewsletterSignup";
-
-export const metadata: Metadata = {
-  title: "How CheckHire Works — Safe Escrow for Gig Work",
-  description:
-    "Create a gig, fund escrow, get paid. Learn how CheckHire protects freelancers and clients with secure escrow payments, 72-hour auto-release, and human dispute resolution.",
-  alternates: { canonical: "https://checkhire.com/how-it-works" },
-};
+import { FeeCalculator } from "@/components/gig/FeeCalculator";
+import { WaysToGetPaid } from "@/components/gig/WaysToGetPaid";
+import { StripeOnboardingExplainer } from "@/components/gig/StripeOnboardingExplainer";
+import { PayoutSpeedComparison } from "@/components/gig/PayoutSpeedComparison";
+import { motion } from "framer-motion";
 
 const steps = [
   {
@@ -39,7 +38,7 @@ const steps = [
     icon: Lock,
     title: "Fund Escrow",
     description:
-      'Client pays the deal amount + 5% fee. Freelancer sees "Payment Secured" before starting any work.',
+      'Client pays the deal amount + fees (~7.9%). Freelancer sees "Payment Secured" before starting any work.',
   },
   {
     icon: Briefcase,
@@ -56,10 +55,10 @@ const steps = [
 ];
 
 const comparison = [
-  { platform: "CheckHire", freelancerFee: "0%", clientFee: "5%", highlight: true },
-  { platform: "Upwork", freelancerFee: "10–20%", clientFee: "3.4%", highlight: false },
-  { platform: "Fiverr", freelancerFee: "20%", clientFee: "5.5%", highlight: false },
-  { platform: "PayPal", freelancerFee: "No escrow", clientFee: "Disputes fail for services", highlight: false },
+  { platform: "CheckHire", freelancerFee: "0%", clientFee: "~7.9% + $0.30", payoutSpeed: "30 min or 2 days", highlight: true },
+  { platform: "Upwork", freelancerFee: "10–20%", clientFee: "3.4%", payoutSpeed: "7–10 business days", highlight: false },
+  { platform: "Fiverr", freelancerFee: "20%", clientFee: "5.5%", payoutSpeed: "Up to 14 days", highlight: false },
+  { platform: "PayPal", freelancerFee: "No escrow", clientFee: "N/A", payoutSpeed: "Instant (no protection)", highlight: false },
 ];
 
 export default function HowItWorksPage() {
@@ -107,6 +106,108 @@ export default function HowItWorksPage() {
                 );
               })}
             </div>
+          </div>
+        </section>
+
+        {/* Fee Calculator */}
+        <section className="px-6 py-16">
+          <div className="mx-auto max-w-4xl">
+            <h2 className="mb-8 text-center font-display text-2xl font-bold text-slate-900">
+              Know exactly what you&apos;ll pay
+            </h2>
+            <div className="mx-auto max-w-md">
+              <FeeCalculator />
+            </div>
+          </div>
+        </section>
+
+        {/* Full Pricing Breakdown */}
+        <section className="px-6 py-16 border-t border-gray-100">
+          <div className="mx-auto max-w-4xl">
+            <h2 className="mb-3 text-center font-display text-2xl font-bold text-slate-900">
+              Pricing — No Hidden Fees
+            </h2>
+            <p className="mx-auto mb-8 max-w-xl text-center text-sm text-slate-600">
+              Here&apos;s exactly what every transaction costs. No surprises.
+            </p>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              {/* Client fees */}
+              <div className="rounded-xl border border-gray-200 bg-white p-6">
+                <h3 className="font-semibold text-slate-900 mb-4">What clients pay</h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between border-b border-gray-100 pb-2">
+                    <span className="text-sm text-slate-600">Gig amount</span>
+                    <span className="text-sm font-mono tabular-nums text-slate-900">Set by you</span>
+                  </div>
+                  <div className="flex justify-between border-b border-gray-100 pb-2">
+                    <span className="text-sm text-slate-600">CheckHire platform fee</span>
+                    <span className="text-sm font-mono tabular-nums text-slate-900">5%</span>
+                  </div>
+                  <div className="flex justify-between border-b border-gray-100 pb-2">
+                    <span className="text-sm text-slate-600">Stripe card processing</span>
+                    <span className="text-sm font-mono tabular-nums text-slate-600">2.9% + $0.30</span>
+                  </div>
+                  <div className="flex justify-between border-b border-gray-100 pb-2">
+                    <span className="text-sm text-slate-600">International cards</span>
+                    <span className="text-sm font-mono tabular-nums text-slate-600">+1.5% if applicable</span>
+                  </div>
+                  <div className="flex justify-between pt-1">
+                    <span className="text-sm font-semibold text-slate-900">Effective total (US cards)</span>
+                    <span className="text-sm font-semibold font-mono tabular-nums text-slate-900">~7.9% + $0.30</span>
+                  </div>
+                </div>
+                <p className="mt-3 text-xs text-slate-600">
+                  The 2.9% + $0.30 is Stripe&apos;s standard fee. CheckHire does not mark this up.
+                </p>
+              </div>
+
+              {/* Freelancer fees */}
+              <div className="rounded-xl border border-gray-200 bg-white p-6">
+                <h3 className="font-semibold text-slate-900 mb-4">What freelancers pay</h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between border-b border-gray-100 pb-2">
+                    <span className="text-sm text-slate-600">Platform fee</span>
+                    <span className="text-sm font-mono tabular-nums text-green-600 font-semibold">$0 — always</span>
+                  </div>
+                  <div className="flex justify-between border-b border-gray-100 pb-2">
+                    <span className="text-sm text-slate-600">Standard payout (2 days)</span>
+                    <span className="text-sm font-mono tabular-nums text-green-600 font-semibold">Free</span>
+                  </div>
+                  <div className="flex justify-between border-b border-gray-100 pb-2">
+                    <span className="text-sm text-slate-600">Instant payout (30 min)</span>
+                    <span className="text-sm font-mono tabular-nums text-slate-900">1% (min $0.50)</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-slate-600">Dispute fee (if you lose)</span>
+                    <span className="text-sm font-mono tabular-nums text-slate-600">5% of disputed amount</span>
+                  </div>
+                </div>
+                <p className="mt-3 text-xs text-slate-600">
+                  Freelancers receive exactly the posted gig amount. Instant payout is optional.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Payout Options */}
+        <section className="px-6 py-16 border-t border-gray-100">
+          <div className="mx-auto max-w-4xl">
+            <h2 className="mb-8 text-center font-display text-2xl font-bold text-slate-900">
+              How freelancers get paid
+            </h2>
+            <WaysToGetPaid />
+            <div className="mt-8 mx-auto max-w-md">
+              <PayoutSpeedComparison />
+            </div>
+          </div>
+        </section>
+
+        {/* What Stripe Needs */}
+        <section className="px-6 py-10">
+          <div className="mx-auto max-w-4xl">
+            <StripeOnboardingExplainer />
           </div>
         </section>
 
@@ -169,7 +270,7 @@ export default function HowItWorksPage() {
               What does it cost?
             </h2>
             <p className="mx-auto mb-8 max-w-xl text-center text-sm text-slate-600">
-              5% client fee. 0% freelancer fee. Cheaper than any marketplace.
+              5% platform fee + Stripe processing. 0% freelancer fee. Full transparency.
             </p>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -183,6 +284,9 @@ export default function HowItWorksPage() {
                     </th>
                     <th className="pb-3 text-left font-semibold text-slate-900">
                       Client Fee
+                    </th>
+                    <th className="pb-3 text-left font-semibold text-slate-900">
+                      Payout Speed
                     </th>
                   </tr>
                 </thead>
@@ -207,6 +311,7 @@ export default function HowItWorksPage() {
                         {row.freelancerFee}
                       </td>
                       <td className="py-3 text-slate-600">{row.clientFee}</td>
+                      <td className="py-3 text-slate-600">{row.payoutSpeed}</td>
                     </tr>
                   ))}
                 </tbody>

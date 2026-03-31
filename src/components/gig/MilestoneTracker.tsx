@@ -180,8 +180,7 @@ export function MilestoneTracker({ milestones, dealId, role, onAction }: Props) 
               : `Fund All Milestones — $${(unfundedTotal / 100).toFixed(2)}`}
           </Button>
           <p className="mt-1 text-xs text-slate-600">
-            Includes 5% platform fee ($
-            {(Math.round(unfundedTotal * 0.05) / 100).toFixed(2)})
+            Includes 5% platform fee + Stripe processing
           </p>
         </div>
       )}

@@ -21,7 +21,16 @@ export async function sendEmail({ to, subject, html }: SendEmailParams): Promise
 
   try {
     const resend = new Resend(apiKey);
-    await resend.emails.send({ from: FROM, to: [to], subject, html });
+    await resend.emails.send({
+      from: FROM,
+      to: [to],
+      subject,
+      html,
+      headers: {
+        'List-Unsubscribe': `<${process.env.NEXT_PUBLIC_APP_URL || 'https://checkhire.com'}/settings>`,
+        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+      },
+    });
     return true;
   } catch (err) {
     console.error(`[sendEmail] Failed to send "${subject}" to ${to}:`, err);

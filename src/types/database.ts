@@ -351,6 +351,29 @@ export type EmailNotification = {
   created_at: string;
 };
 
+export type NotificationData = {
+  dealTitle: string;
+  dealSlug: string;
+  amount?: number;            // cents — display by dividing by 100
+  otherPartyName?: string;
+  notes?: string;
+  milestoneTitle?: string;
+  role?: "client" | "freelancer";
+  revisionNumber?: number;
+  initials?: string;
+  guestName?: string;
+  refundAmount?: number;      // cents
+  proposedPercentage?: number;
+  hoursRemaining?: number;
+  verificationCode?: string;
+  code?: string;              // legacy alias for verificationCode
+  escrowFunded?: boolean;
+  isNonResponse?: boolean;
+  isGuestFreelancer?: boolean;
+  category?: string;
+  percentage?: number;
+};
+
 // ─── Dispute with Deal Info (Admin Views) ───
 
 export type DisputeWithDealInfo = Dispute & {

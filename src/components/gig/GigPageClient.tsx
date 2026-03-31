@@ -43,6 +43,7 @@ import { InterestForm } from "@/components/gig/InterestForm";
 import { InterestList } from "@/components/gig/InterestList";
 import { RepeatDealButton } from "@/components/gig/RepeatDealButton";
 import { DisputeButton } from "@/components/gig/DisputeButton";
+import { ProposalReveal } from "@/components/gig/ProposalReveal";
 import { useToast } from "@/components/ui/toast";
 import type {
   DealWithParticipants,

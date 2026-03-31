@@ -151,7 +151,7 @@ export function Navbar() {
                 href="/login?mode=signup"
                 className="cursor-pointer rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-brand-hover"
               >
-                Get Started
+                Create Payment Link
               </Link>
             </>
           )}
@@ -162,7 +162,7 @@ export function Navbar() {
                 prefetch={false}
                 className="cursor-pointer rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-brand-hover"
               >
-                Post a Gig
+                Create Link
               </Link>
 
               <DropdownMenu>
@@ -248,7 +248,7 @@ export function Navbar() {
                     onClick={closeMobile}
                     className="cursor-pointer rounded-lg bg-brand px-3 py-2.5 text-center text-sm font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-brand-hover"
                   >
-                    Post a Gig
+                    Create Link
                   </Link>
                 </>
               )}
@@ -329,7 +329,7 @@ export function Navbar() {
                     onClick={closeMobile}
                     className="cursor-pointer rounded-lg bg-brand px-3 py-2.5 text-center text-sm font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-brand-hover"
                   >
-                    Get Started
+                    Create Payment Link
                   </Link>
                 </>
               )}

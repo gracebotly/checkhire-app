@@ -13,7 +13,7 @@ const tabs: {
 }[] = [
   { label: "My Gigs", icon: Briefcase, href: "/dashboard" },
   { label: "Browse", icon: Search, href: "/gigs" },
-  { label: "Post", icon: PlusCircle, href: "/deal/new", prominent: true },
+  { label: "Create", icon: PlusCircle, href: "/deal/new", prominent: true },
   { label: "Profile", icon: User, href: "/profile" },
   { label: "Settings", icon: Settings, href: "/settings" },
 ];

@@ -26,9 +26,13 @@ import {
 import { EscrowStatusBar } from "@/components/gig/EscrowStatusBar";
 import { MilestoneTracker } from "@/components/gig/MilestoneTracker";
 import { TrustBadge } from "@/components/gig/TrustBadge";
-import { ActivityLog } from "@/components/gig/ActivityLog";
-import { ActivityInput } from "@/components/gig/ActivityInput";
-import { ShareButton } from "@/components/gig/ShareButton";
+import { EvidenceTimeline } from "@/components/gig/EvidenceTimeline";
+import { EvidenceUploadCard } from "@/components/gig/EvidenceUploadCard";
+import { GuestAcceptCard } from "@/components/gig/GuestAcceptCard";
+import { AccountNudgeBanner } from "@/components/gig/AccountNudgeBanner";
+import { CancelRefundDialog } from "@/components/gig/CancelRefundDialog";
+import { ProposalReveal } from "@/components/gig/ProposalReveal";
+import { DisputeSubmissionFlow } from "@/components/gig/DisputeSubmissionFlow";
 import { CountdownTimer } from "@/components/gig/CountdownTimer";
 import { StripeConnectPrompt } from "@/components/gig/StripeConnectPrompt";
 import { InstantPayoutCard } from "@/components/gig/InstantPayoutCard";
@@ -62,6 +66,8 @@ type Props = {
   interests: DealInterestWithUser[];
   userInterest: DealInterest | null;
   disputeId: string | null;
+  guestFreelancerName?: string | null;
+  guestToken?: string | null;
 };
 
 const statusMap: Record<
@@ -111,6 +117,8 @@ export function GigPageClient({
   interests,
   userInterest,
   disputeId,
+  guestFreelancerName = null,
+  guestToken: initialGuestToken = null,
 }: Props) {
   const router = useRouter();
   const { toast } = useToast();
@@ -121,6 +129,9 @@ export function GigPageClient({
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const [guestToken, setGuestToken] = useState(initialGuestToken);
+  const [termsExpanded, setTermsExpanded] = useState(role === "visitor");
+
   // Dialog states
   const [revisionNotes, setRevisionNotes] = useState("");
   const [revisionDialogOpen, setRevisionDialogOpen] = useState(false);
@@ -130,6 +141,8 @@ export function GigPageClient({
   const status = statusMap[deal.status] || statusMap.pending_acceptance;
   const dealUrl = typeof window !== "undefined" ? window.location.href : "";
   const isParticipant = role === "client" || role === "freelancer";
+  const isGuestFreelancer = !!guestToken && role === "freelancer";
+  const hasFreelancer = !!deal.freelancer_user_id || !!deal.guest_freelancer_email;
 
   const platformFee = Math.round(deal.total_amount * 0.05);
   const totalCharge = deal.total_amount + platformFee;
@@ -147,7 +160,10 @@ export function GigPageClient({
 
   const refreshActivity = useCallback(async () => {
     try {
-      const res = await fetch(`/api/deals/by-slug/${deal.deal_link_slug}`);
+      const url = guestToken
+        ? `/api/deals/by-slug/${deal.deal_link_slug}?guest_token=${encodeURIComponent(guestToken)}`
+        : `/api/deals/by-slug/${deal.deal_link_slug}`;
+      const res = await fetch(url);
       const data = await res.json();
       if (data.ok && data.activity) {
         setActivityEntries(data.activity);
@@ -155,7 +171,7 @@ export function GigPageClient({
     } catch {
       // silent
     }
-  }, [deal.deal_link_slug]);
+  }, [deal.deal_link_slug, guestToken]);
 
   // ── Existing handlers ──
 
@@ -389,39 +405,57 @@ export function GigPageClient({
           </div>
         )}
 
-      {/* 3. Deal Terms Card */}
-      <div className="mb-6 rounded-xl border border-gray-200 bg-white p-5 space-y-4">
-        <div>
-          <h3 className="text-sm font-semibold text-slate-900">Description</h3>
-          <p className="mt-1 text-sm text-slate-600 whitespace-pre-wrap">
-            {deal.description}
-          </p>
-        </div>
-        <Separator />
-        {deal.deliverables && (
-          <>
+      {/* 3. Deal Terms Card — collapsible */}
+      <div className="mb-6 rounded-xl border border-gray-200 bg-white">
+        <button
+          type="button"
+          onClick={() => setTermsExpanded(!termsExpanded)}
+          className="flex w-full cursor-pointer items-center justify-between p-5 text-left transition-colors duration-200 hover:bg-gray-50/50"
+        >
+          <span className="text-sm font-semibold text-slate-900">
+            Deal Terms
+          </span>
+          {termsExpanded ? (
+            <ChevronUp className="h-4 w-4 text-slate-600" />
+          ) : (
+            <ChevronDown className="h-4 w-4 text-slate-600" />
+          )}
+        </button>
+        {termsExpanded && (
+          <div className="border-t border-gray-100 p-5 space-y-4">
             <div>
-              <h3 className="text-sm font-semibold text-slate-900">
-                Deliverables
-              </h3>
+              <h3 className="text-sm font-semibold text-slate-900">Description</h3>
               <p className="mt-1 text-sm text-slate-600 whitespace-pre-wrap">
-                {deal.deliverables}
+                {deal.description}
               </p>
             </div>
             <Separator />
-          </>
-        )}
-        {deal.has_milestones && initialMilestones.length > 0 && (
-          <div>
-            <h3 className="mb-2 text-sm font-semibold text-slate-900">
-              Milestones
-            </h3>
-            <MilestoneTracker
-              milestones={initialMilestones}
-              dealId={deal.id}
-              role={role}
-              onAction={() => router.refresh()}
-            />
+            {deal.deliverables && (
+              <>
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-900">
+                    Deliverables
+                  </h3>
+                  <p className="mt-1 text-sm text-slate-600 whitespace-pre-wrap">
+                    {deal.deliverables}
+                  </p>
+                </div>
+                <Separator />
+              </>
+            )}
+            {deal.has_milestones && initialMilestones.length > 0 && (
+              <div>
+                <h3 className="mb-2 text-sm font-semibold text-slate-900">
+                  Milestones
+                </h3>
+                <MilestoneTracker
+                  milestones={initialMilestones}
+                  dealId={deal.id}
+                  role={role}
+                  onAction={() => router.refresh()}
+                />
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -544,17 +578,79 @@ export function GigPageClient({
         </div>
       )}
 
-      {/* 5. Activity Log */}
-      {isParticipant && (
-        <div className="mb-6">
-          <h3 className="mb-3 text-sm font-semibold text-slate-900">
-            Activity
-          </h3>
-          <div className="rounded-xl border border-gray-200 bg-white p-5 space-y-4">
-            <ActivityLog entries={activityEntries} />
-            <Separator />
-            <ActivityInput dealId={deal.id} onNewEntry={refreshActivity} />
+      {/* 4b. Guest Accept Card */}
+      {role === "visitor" &&
+        !currentUserId &&
+        deal.status === "pending_acceptance" &&
+        !hasFreelancer && (
+          <div className="mb-6">
+            <GuestAcceptCard
+              dealId={deal.id}
+              dealSlug={deal.deal_link_slug}
+              escrowFunded={deal.escrow_status === "funded"}
+              amountCents={deal.total_amount}
+              onAccepted={(token) => {
+                setGuestToken(token);
+                refreshActivity();
+                router.refresh();
+              }}
+            />
           </div>
+        )}
+
+      {/* 5. Evidence Timeline */}
+      {(isParticipant || guestToken) && (
+        <div className="mb-6">
+          <EvidenceTimeline
+            entries={activityEntries}
+            deal={deal}
+            role={guestToken ? "freelancer" : role}
+            guestFreelancerName={guestFreelancerName || deal.guest_freelancer_name || null}
+            currentUserId={currentUserId}
+            onConfirmDelivery={() => setConfirmDialogOpen(true)}
+            onRequestRevision={() => {
+              setRevisionNotes("");
+              setRevisionDialogOpen(true);
+            }}
+            onOpenDispute={() => {}}
+          />
+        </div>
+      )}
+
+      {/* Dispute Proposals */}
+      {deal.status === "disputed" && disputeId && (
+        <div className="mb-6">
+          <ProposalReveal
+            totalAmountCents={deal.total_amount}
+            claimantPercentage={null}
+            respondentPercentage={null}
+            claimantName="Claimant"
+            respondentName="Respondent"
+            isResolved={false}
+            negotiationRound={0}
+          />
+        </div>
+      )}
+
+      {/* 6. Evidence Upload — for freelancers and guest freelancers */}
+      {(role === "freelancer" || guestToken) &&
+        deal.status !== "completed" &&
+        deal.status !== "cancelled" &&
+        deal.status !== "refunded" && (
+        <div className="mb-6">
+          <EvidenceUploadCard
+            dealId={deal.id}
+            guestToken={guestToken}
+            onUploaded={refreshActivity}
+            dealStatus={deal.status}
+          />
+        </div>
+      )}
+
+      {/* 5c. Account Nudge Banner — for guest freelancers */}
+      {isGuestFreelancer && (
+        <div className="mb-6">
+          <AccountNudgeBanner />
         </div>
       )}
 
@@ -686,7 +782,17 @@ export function GigPageClient({
         <div className="flex flex-wrap items-center gap-3">
           {/* Always show Copy Link for participants */}
           {isParticipant && (
-            <ShareButton url={dealUrl} title={deal.title} />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                navigator.clipboard.writeText(dealUrl);
+                toast("Link copied!", "success");
+              }}
+              className="cursor-pointer"
+            >
+              Copy Link
+            </Button>
           )}
 
           {/* ── Visitor actions ── */}
@@ -739,14 +845,23 @@ export function GigPageClient({
               {/* Funded but no work started — cancel & refund */}
               {deal.status === "funded" &&
                 deal.escrow_status === "funded" && (
-                  <Button
-                    variant="ghost"
-                    onClick={handleCancelWithRefund}
-                    disabled={actionLoading}
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  <CancelRefundDialog
+                    dealId={deal.id}
+                    dealTitle={deal.title}
+                    refundAmountCents={deal.total_amount}
+                    hasFreelancer={hasFreelancer}
+                    onSuccess={() => {
+                      toast("Gig cancelled — refund issued", "info");
+                      router.refresh();
+                    }}
                   >
-                    Cancel & Refund
-                  </Button>
+                    <Button
+                      variant="ghost"
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      Cancel & Refund
+                    </Button>
+                  </CancelRefundDialog>
                 )}
 
               {/* Work submitted — confirm or revise */}
@@ -842,6 +957,8 @@ export function GigPageClient({
             dealId={deal.id}
             dealStatus={deal.status}
             completedAt={deal.completed_at}
+            totalAmountCents={deal.total_amount}
+            guestToken={guestToken}
           />
         )}
 

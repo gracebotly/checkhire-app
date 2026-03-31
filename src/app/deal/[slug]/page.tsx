@@ -1,14 +1,16 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { GigPageClient } from "@/components/gig/GigPageClient";
 import { Navbar } from "@/components/layout/Navbar";
 import { ToastProvider } from "@/components/ui/toast";
+import { verifyGuestToken } from "@/lib/deals/guestToken";
 import type { Metadata } from "next";
 import type { ActivityLogEntryWithUser, Milestone, Rating, DealInterest, DealInterestWithUser } from "@/types/database";
 
 type Props = {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ funded?: string }>;
+  searchParams: Promise<{ funded?: string; guest_token?: string; accept?: string }>;
 };
 
 async function fetchDealBySlug(slug: string) {
@@ -41,7 +43,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function DealPage({ params, searchParams }: Props) {
   const { slug } = await params;
-  const { funded } = await searchParams;
+  const { funded, guest_token, accept } = await searchParams;
   const supabase = await createClient();
 
   // Fetch deal
@@ -59,18 +61,46 @@ export default async function DealPage({ params, searchParams }: Props) {
     else if (deal.freelancer_user_id === user.id) role = "freelancer";
   }
 
+  // Guest token verification
+  let validGuestToken: string | null = null;
+  let guestFreelancerName: string | null = null;
+  if (guest_token && deal.guest_freelancer_email) {
+    if (verifyGuestToken(guest_token, deal.id, deal.guest_freelancer_email)) {
+      validGuestToken = guest_token;
+      guestFreelancerName = deal.guest_freelancer_name || null;
+      if (role === "visitor") role = "freelancer";
+    }
+  }
+
+  // Handle ?accept=true for OAuth return flow
+  if (user && accept === "true" && role !== "client") {
+    if (
+      deal.status === "pending_acceptance" &&
+      !deal.freelancer_user_id &&
+      !deal.guest_freelancer_email &&
+      deal.client_user_id !== user.id
+    ) {
+      // Auto-accept is handled by the by-slug API route
+      // The server component just passes accept=true through
+      // which the API already handled. Refresh to get updated data.
+    }
+  }
+
   let milestones: Milestone[] = [];
   let activity: ActivityLogEntryWithUser[] = [];
 
   if (role !== "visitor") {
-    const { data: ms } = await supabase
+    // Use service client for guest freelancers (no auth session)
+    const queryClient = validGuestToken ? createServiceClient() : supabase;
+
+    const { data: ms } = await queryClient
       .from("milestones")
       .select("*")
       .eq("deal_id", deal.id)
       .order("position", { ascending: true });
     milestones = (ms || []) as Milestone[];
 
-    const { data: acts } = await supabase
+    const { data: acts } = await queryClient
       .from("deal_activity_log")
       .select(
         `*, user:user_profiles!deal_activity_log_user_id_fkey(display_name, avatar_url)`
@@ -83,8 +113,9 @@ export default async function DealPage({ params, searchParams }: Props) {
       (entry) => entry.entry_type === "file" && entry.file_url
     );
 
+    const signClient = validGuestToken ? createServiceClient() : supabase;
     for (const entry of fileEntries) {
-      const { data: signed } = await supabase.storage
+      const { data: signed } = await signClient.storage
         .from("deal-files")
         .createSignedUrl(entry.file_url as string, 60 * 15);
 
@@ -165,6 +196,8 @@ export default async function DealPage({ params, searchParams }: Props) {
             interests={interests}
             userInterest={userInterest}
             disputeId={disputeId}
+            guestFreelancerName={guestFreelancerName}
+            guestToken={validGuestToken}
           />
         </main>
       </div>

@@ -32,7 +32,22 @@ export async function GET(req: Request) {
       const freelancer = deal.freelancer as { stripe_connected_account_id: string | null; stripe_onboarding_complete: boolean; email: string | null } | null;
       const client = deal.client as { email: string | null } | null;
 
-      if (!freelancer?.stripe_connected_account_id || !freelancer.stripe_onboarding_complete) {
+      // Determine Stripe destination: registered freelancer or guest freelancer
+      let stripeAccountId: string | null = null;
+      let freelancerEmail: string | null = null;
+      let isGuestFreelancer = false;
+
+      if (freelancer?.stripe_connected_account_id && freelancer.stripe_onboarding_complete) {
+        stripeAccountId = freelancer.stripe_connected_account_id;
+        freelancerEmail = freelancer.email;
+      } else if (!deal.freelancer_user_id && deal.guest_freelancer_email && deal.guest_freelancer_stripe_account_id) {
+        // Guest freelancer with Stripe connected
+        stripeAccountId = deal.guest_freelancer_stripe_account_id;
+        freelancerEmail = deal.guest_freelancer_email;
+        isGuestFreelancer = true;
+      }
+
+      if (!stripeAccountId) {
         // Can't release — notify freelancer to connect Stripe
         console.warn(`[auto-release] Deal ${deal.id}: freelancer not connected to Stripe`);
         continue;
@@ -54,7 +69,7 @@ export async function GET(req: Request) {
         await stripe.transfers.create({
           amount: deal.total_amount,
           currency: "usd",
-          destination: freelancer.stripe_connected_account_id,
+          destination: stripeAccountId,
           metadata: { deal_id: deal.id, reason: "auto_release" },
         });
       } catch (transferErr) {
@@ -66,20 +81,22 @@ export async function GET(req: Request) {
 
       await supabase.from("deal_activity_log").insert({ deal_id: deal.id, user_id: null, entry_type: "system", content: "72-hour review period expired — funds auto-released to freelancer" });
 
-      // Increment completed_deals_count for both
+      // Increment completed_deals_count for both (only for registered users)
       const { data: cd } = await supabase.from("user_profiles").select("completed_deals_count").eq("id", deal.client_user_id).maybeSingle();
-      const { data: fd } = await supabase.from("user_profiles").select("completed_deals_count").eq("id", deal.freelancer_user_id).maybeSingle();
       if (cd) await supabase.from("user_profiles").update({ completed_deals_count: (cd.completed_deals_count || 0) + 1 }).eq("id", deal.client_user_id);
-      if (fd) await supabase.from("user_profiles").update({ completed_deals_count: (fd.completed_deals_count || 0) + 1 }).eq("id", deal.freelancer_user_id);
+      if (deal.freelancer_user_id) {
+        const { data: fd } = await supabase.from("user_profiles").select("completed_deals_count").eq("id", deal.freelancer_user_id).maybeSingle();
+        if (fd) await supabase.from("user_profiles").update({ completed_deals_count: (fd.completed_deals_count || 0) + 1 }).eq("id", deal.freelancer_user_id);
+      }
 
       // Emails
-      if (freelancer.email) {
+      if (freelancerEmail) {
         await sendAndLogNotification({
           supabase,
           type: "auto_release_completed",
-          userId: deal.freelancer_user_id,
+          userId: deal.freelancer_user_id || "guest",
           dealId: deal.id,
-          email: freelancer.email,
+          email: freelancerEmail,
           data: {
             dealTitle: deal.title,
             dealSlug: deal.deal_link_slug,

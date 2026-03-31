@@ -35,6 +35,9 @@ export type NotificationData = {
   milestoneTitle?: string;
   role?: "client" | "freelancer";
   revisionNumber?: number;
+  code?: string;
+  category?: string;
+  percentage?: number;
 };
 
 type NotificationConfig = {
@@ -197,6 +200,113 @@ const NOTIFICATION_CONFIG: Record<NotificationType, NotificationConfig> = {
       `<h2 style="color: #0f172a; font-size: 20px;">Gig Cancelled</h2>` +
       `<p style="color: #475569; font-size: 14px;">The gig <strong>${d.dealTitle}</strong> has been cancelled.</p>`,
     cta: (d) => ({ label: "View Details", href: dealUrl(d.dealSlug) }),
+  },
+  guest_verification_code: {
+    subject: (d) => `Your verification code for ${d.dealTitle}`,
+    body: (d) =>
+      `<h2 style="color: #0f172a; font-size: 20px;">Verification Code</h2>` +
+      `<p style="color: #475569; font-size: 14px;">Your code to accept <strong>${d.dealTitle}</strong> is:</p>` +
+      `<p style="font-size: 32px; font-weight: 700; letter-spacing: 6px; text-align: center; color: #0d9488;">${d.code || "------"}</p>` +
+      `<p style="color: #475569; font-size: 14px;">This code expires in 15 minutes.</p>`,
+    cta: () => null,
+  },
+  deal_accepted_escrow_pending: {
+    subject: (d) => `You accepted ${d.dealTitle} — waiting for escrow`,
+    body: (d) =>
+      `<h2 style="color: #0f172a; font-size: 20px;">Gig Accepted</h2>` +
+      `<p style="color: #475569; font-size: 14px;">You accepted <strong>${d.dealTitle}</strong>. The client hasn't funded escrow yet — you'll be notified when payment is secured.</p>`,
+    cta: (d) => ({ label: "View Gig", href: dealUrl(d.dealSlug) }),
+  },
+  escrow_funded_after_accept: {
+    subject: (d) => `Escrow funded — ${d.dealTitle} is ready to start`,
+    body: (d) =>
+      `<h2 style="color: #0d9488; font-size: 20px;">Payment Secured</h2>` +
+      `<p style="color: #475569; font-size: 14px;">${formatAmount(d.amount!)} has been secured in escrow for <strong>${d.dealTitle}</strong>. You're clear to start work.</p>`,
+    cta: (d) => ({ label: "View Gig", href: dealUrl(d.dealSlug) }),
+  },
+  funds_released: {
+    subject: (d) => `Funds released — ${d.dealTitle}`,
+    body: (d) =>
+      `<h2 style="color: #0d9488; font-size: 20px;">Funds Released</h2>` +
+      `<p style="color: #475569; font-size: 14px;">${formatAmount(d.amount!)} has been released for <strong>${d.dealTitle}</strong>.</p>`,
+    cta: (d) => ({ label: "View Gig", href: dealUrl(d.dealSlug) }),
+  },
+  deal_cancelled_to_freelancer: {
+    subject: (d) => `Gig cancelled — ${d.dealTitle}`,
+    body: (d) =>
+      `<h2 style="color: #0f172a; font-size: 20px;">Gig Cancelled</h2>` +
+      `<p style="color: #475569; font-size: 14px;">The client cancelled <strong>${d.dealTitle}</strong>. No further action is needed.</p>`,
+    cta: () => null,
+  },
+  auto_expire_warning_14d: {
+    subject: (d) => `Action needed — ${d.dealTitle} expires in 16 days`,
+    body: (d) =>
+      `<h2 style="color: #d97706; font-size: 20px;">Gig Expiring Soon</h2>` +
+      `<p style="color: #475569; font-size: 14px;">Your funded gig <strong>${d.dealTitle}</strong> has no freelancer yet. If nobody accepts within 30 days of funding, the escrow will be automatically refunded.</p>`,
+    cta: (d) => ({ label: "View Gig", href: dealUrl(d.dealSlug) }),
+  },
+  auto_expire_warning_27d: {
+    subject: (d) => `Final warning — ${d.dealTitle} expires in 3 days`,
+    body: (d) =>
+      `<h2 style="color: #dc2626; font-size: 20px;">Final Warning</h2>` +
+      `<p style="color: #475569; font-size: 14px;">Your gig <strong>${d.dealTitle}</strong> will be auto-refunded in 3 days if no freelancer accepts. Share the gig link to find someone.</p>`,
+    cta: (d) => ({ label: "View Gig", href: dealUrl(d.dealSlug) }),
+  },
+  auto_expire_completed: {
+    subject: (d) => `Gig expired — ${d.dealTitle} refunded`,
+    body: (d) =>
+      `<h2 style="color: #0f172a; font-size: 20px;">Gig Expired & Refunded</h2>` +
+      `<p style="color: #475569; font-size: 14px;">Your gig <strong>${d.dealTitle}</strong> expired without a freelancer. ${formatAmount(d.amount!)} has been refunded to your original payment method.</p>`,
+    cta: () => null,
+  },
+  freelancer_ghost_nudge_7d: {
+    subject: (d) => `Reminder — ${d.dealTitle} is waiting for you`,
+    body: (d) =>
+      `<h2 style="color: #0f172a; font-size: 20px;">Time to Get Started</h2>` +
+      `<p style="color: #475569; font-size: 14px;">It's been 7 days since you accepted <strong>${d.dealTitle}</strong> and no work evidence has been uploaded. The client is waiting — upload your progress to keep things moving.</p>`,
+    cta: (d) => ({ label: "View Gig", href: dealUrl(d.dealSlug) }),
+  },
+  freelancer_ghost_warning_14d: {
+    subject: (d) => `No activity on ${d.dealTitle} — 14 days`,
+    body: (d) =>
+      `<h2 style="color: #d97706; font-size: 20px;">No Freelancer Activity</h2>` +
+      `<p style="color: #475569; font-size: 14px;">It's been 14 days since the freelancer accepted <strong>${d.dealTitle}</strong> with no evidence uploaded. If no progress is made within 21 days, the gig will be auto-refunded. You can also cancel or open a dispute.</p>`,
+    cta: (d) => ({ label: "View Gig", href: dealUrl(d.dealSlug) }),
+  },
+  guest_deal_invite: {
+    subject: (d) => `You've been invited to a gig — ${d.dealTitle}`,
+    body: (d) =>
+      `<h2 style="color: #0f172a; font-size: 20px;">Gig Invitation</h2>` +
+      `<p style="color: #475569; font-size: 14px;">You've been invited to work on <strong>${d.dealTitle}</strong>. Click below to review the details and accept.</p>`,
+    cta: (d) => ({ label: "View Gig", href: dealUrl(d.dealSlug) }),
+  },
+  dispute_proposal_received: {
+    subject: (d) => `Counter-proposal on ${d.dealTitle}`,
+    body: (d) =>
+      `<h2 style="color: #0f172a; font-size: 20px;">Counter-Proposal Received</h2>` +
+      `<p style="color: #475569; font-size: 14px;">The other party has submitted a counter-proposal on the dispute for <strong>${d.dealTitle}</strong>. Review their proposal and respond.</p>`,
+    cta: (d) => ({ label: "View Dispute", href: dealUrl(d.dealSlug) }),
+  },
+  dispute_auto_resolved: {
+    subject: (d) => `Dispute auto-resolved — ${d.dealTitle}`,
+    body: (d) =>
+      `<h2 style="color: #0d9488; font-size: 20px;">Dispute Resolved</h2>` +
+      `<p style="color: #475569; font-size: 14px;">The dispute on <strong>${d.dealTitle}</strong> has been automatically resolved based on the proposals submitted by both parties.</p>`,
+    cta: (d) => ({ label: "View Resolution", href: dealUrl(d.dealSlug) }),
+  },
+  dispute_negotiation_round: {
+    subject: (d) => `Negotiation round on ${d.dealTitle}`,
+    body: (d) =>
+      `<h2 style="color: #0f172a; font-size: 20px;">Negotiation Round</h2>` +
+      `<p style="color: #475569; font-size: 14px;">Both proposals for <strong>${d.dealTitle}</strong> don't overlap. You have one more chance to adjust your proposal before the dispute is escalated for review.</p>`,
+    cta: (d) => ({ label: "Adjust Proposal", href: dealUrl(d.dealSlug) }),
+  },
+  dispute_escalated: {
+    subject: (d) => `Dispute escalated — ${d.dealTitle}`,
+    body: (d) =>
+      `<h2 style="color: #dc2626; font-size: 20px;">Dispute Escalated</h2>` +
+      `<p style="color: #475569; font-size: 14px;">The dispute on <strong>${d.dealTitle}</strong> could not be resolved through negotiation and has been escalated for admin review.</p>`,
+    cta: (d) => ({ label: "View Dispute", href: dealUrl(d.dealSlug) }),
   },
 };
 

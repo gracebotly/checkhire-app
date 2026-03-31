@@ -22,6 +22,21 @@ export const POST = withApiHandler(
     if (!deal) return NextResponse.json({ ok: false, code: "NOT_FOUND", message: "Deal not found" }, { status: 404 });
     if (deal.freelancer_user_id !== user.id) return NextResponse.json({ ok: false, code: "FORBIDDEN", message: "Only the freelancer can submit work" }, { status: 403 });
 
+    // Evidence requirement: at least one evidence entry must exist
+    const { data: evidenceEntries } = await supabase
+      .from("deal_activity_log")
+      .select("id")
+      .eq("deal_id", id)
+      .eq("is_submission_evidence", true)
+      .limit(1);
+
+    if (!evidenceEntries || evidenceEntries.length === 0) {
+      return NextResponse.json(
+        { ok: false, code: "NO_EVIDENCE", message: "Upload at least one piece of evidence before submitting. This protects you in disputes." },
+        { status: 400 }
+      );
+    }
+
     const { data: profile } = await supabase.from("user_profiles").select("display_name").eq("id", user.id).maybeSingle();
     const displayName = profile?.display_name || "Freelancer";
 

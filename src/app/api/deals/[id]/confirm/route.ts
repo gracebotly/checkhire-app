@@ -144,22 +144,6 @@ export const POST = withApiHandler(
           },
         });
       }
-
-      // Send deal_completed (rating prompt) to freelancer
-      if (freelancerProfile.email) {
-        await sendAndLogNotification({
-          supabase: serviceClient,
-          type: "deal_completed",
-          userId: deal.freelancer_user_id!,
-          dealId: id,
-          email: freelancerProfile.email,
-          data: {
-            dealTitle: deal.title,
-            dealSlug: deal.deal_link_slug,
-            otherPartyName: clientData?.display_name || "the client",
-          },
-        });
-      }
     }
 
     return NextResponse.json({ ok: true });

@@ -31,8 +31,8 @@ import { EvidenceUploadCard } from "@/components/gig/EvidenceUploadCard";
 import { GuestAcceptCard } from "@/components/gig/GuestAcceptCard";
 import { AccountNudgeBanner } from "@/components/gig/AccountNudgeBanner";
 import { CancelRefundDialog } from "@/components/gig/CancelRefundDialog";
-import { ProposalReveal } from "@/components/gig/ProposalReveal";
-import { DisputeSubmissionFlow } from "@/components/gig/DisputeSubmissionFlow";
+import { ShareButton } from "@/components/gig/ShareButton";
+import { ShareHub } from "@/components/gig/ShareHub";
 import { CountdownTimer } from "@/components/gig/CountdownTimer";
 import { StripeConnectPrompt } from "@/components/gig/StripeConnectPrompt";
 import { InstantPayoutCard } from "@/components/gig/InstantPayoutCard";
@@ -43,6 +43,7 @@ import { InterestForm } from "@/components/gig/InterestForm";
 import { InterestList } from "@/components/gig/InterestList";
 import { RepeatDealButton } from "@/components/gig/RepeatDealButton";
 import { DisputeButton } from "@/components/gig/DisputeButton";
+import { ProposalReveal } from "@/components/gig/ProposalReveal";
 import { useToast } from "@/components/ui/toast";
 import type {
   DealWithParticipants,
@@ -595,6 +596,35 @@ export function GigPageClient({
                 router.refresh();
               }}
             />
+          </div>
+        )}
+
+      {/* ShareHub — for client on pending/funded deals */}
+      {role === "client" &&
+        (deal.status === "pending_acceptance" || deal.status === "funded") && (
+          <div className="mb-6">
+            <ShareHub
+              dealSlug={deal.deal_link_slug}
+              dealTitle={deal.title}
+              amountCents={deal.total_amount}
+              deadline={deal.deadline}
+              category={deal.category}
+              description={deal.description}
+              clientName={deal.client.display_name || "Client"}
+              escrowFunded={deal.escrow_status === "funded"}
+            />
+          </div>
+        )}
+
+      {/* Collapsed share link for active deals with freelancer */}
+      {role === "client" &&
+        hasFreelancer &&
+        !["pending_acceptance", "funded", "cancelled", "refunded", "completed"].includes(deal.status) && (
+          <div className="mb-6 flex items-center gap-2 rounded-xl border border-gray-200 bg-white p-4">
+            <div className="flex-1 select-all font-mono text-sm text-slate-600">
+              checkhire.com/deal/{deal.deal_link_slug}
+            </div>
+            <ShareButton url={dealUrl} title={deal.title} />
           </div>
         )}
 

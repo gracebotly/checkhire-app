@@ -570,12 +570,317 @@ const NOTIFICATION_CONFIG: Record<string, NotificationConfig> = {
     },
   },
 
-  // === TEMPLATES 19-35 ADDED IN PROMPT 2 ===
-  // dispute_escalated, dispute_resolved, interest_received, interest_accepted,
-  // deal_filled, milestone_funded, milestone_approved, milestone_proposed,
-  // milestone_change_approved, deal_cancelled, deal_cancelled_to_freelancer,
-  // auto_expire_warning_14d, auto_expire_warning_27d, auto_expire_completed,
-  // freelancer_ghost_nudge_7d, freelancer_ghost_warning_14d, guest_deal_invite
+  // ── Template 19: dispute_escalated ──
+  dispute_escalated: {
+    accent: "#dc2626",
+    subject: (data) =>
+      `Dispute escalated to review — ${escapeHtml(data.dealTitle)}`,
+    body: (data) => {
+      const title = escapeHtml(data.dealTitle);
+      const link = dealUrl(data.dealSlug);
+      return (
+        `<p style="margin: 0 0 12px 0; font-size: 14px; color: #475569;">Proposals on <strong>${title}</strong> couldn't reach agreement after two rounds. A real human will review your case and all evidence within 48 hours.</p>` +
+        `<p style="margin: 0; font-size: 14px; color: #475569;">Both parties' evidence and proposals have been submitted. No further action is needed from you unless the reviewer requests additional information.</p>` +
+        buildCtaButton(link, "View Dispute", "primary")
+      );
+    },
+  },
+
+  // ── Template 20: dispute_resolved ──
+  dispute_resolved: {
+    accent: "#0d9488",
+    subject: (data) =>
+      `Dispute resolved — ${escapeHtml(data.dealTitle)}`,
+    body: (data) => {
+      const title = escapeHtml(data.dealTitle);
+      const link = dealUrl(data.dealSlug);
+      return (
+        `<h2 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 700; color: #0f172a;">Dispute Resolved</h2>` +
+        `<p style="margin: 0; font-size: 14px; color: #475569;">The dispute on <strong>${title}</strong> has been resolved. Check the deal page for the decision, amounts, and next steps.</p>` +
+        buildCtaButton(link, "View Resolution", "primary")
+      );
+    },
+  },
+
+  // ── Template 21: interest_received ──
+  interest_received: {
+    accent: "#0d9488",
+    subject: (data) =>
+      `${escapeHtml(data.otherPartyName || "Someone")} is interested in ${escapeHtml(data.dealTitle)}`,
+    body: (data) => {
+      const title = escapeHtml(data.dealTitle);
+      const name = escapeHtml(data.otherPartyName || "Someone");
+      const link = dealUrl(data.dealSlug);
+      const initialsHtml = data.initials
+        ? `<div style="display: inline-block; width: 40px; height: 40px; background-color: #f0fdfa; color: #0d9488; font-weight: 600; text-align: center; line-height: 40px; border-radius: 50%; font-size: 16px; margin-bottom: 8px;">${escapeHtml(data.initials)}</div><br>`
+        : "";
+      return (
+        initialsHtml +
+        `<p style="margin: 0 0 12px 0; font-size: 14px; color: #475569;"><strong>${name}</strong> wants to work on <strong>${title}</strong>. Review their pitch and decide if they're a good fit.</p>` +
+        buildCtaButton(link, "Review Pitches", "primary")
+      );
+    },
+  },
+
+  // ── Template 22: interest_accepted ──
+  interest_accepted: {
+    accent: "#16a34a",
+    subject: (data) =>
+      `You've been selected for ${escapeHtml(data.dealTitle)}!`,
+    body: (data) => {
+      const title = escapeHtml(data.dealTitle);
+      const link = dealUrl(data.dealSlug);
+      const heroHtml = data.amount
+        ? buildHeroAmount(data.amount, "secured")
+        : "";
+      return (
+        `<h2 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 700; color: #0f172a;">You're Selected! 🎉</h2>` +
+        heroHtml +
+        `<p style="margin: 20px 0 0 0; font-size: 14px; color: #475569;">Great news — the client chose you for <strong>${title}</strong>. Review the deal terms and get started.</p>` +
+        buildCtaButton(link, "View Gig", "success")
+      );
+    },
+  },
+
+  // ── Template 23: deal_filled ──
+  deal_filled: {
+    accent: "#64748b",
+    subject: (data) =>
+      `${escapeHtml(data.dealTitle)} has been filled`,
+    body: (data) => {
+      const title = escapeHtml(data.dealTitle);
+      return (
+        `<h2 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 700; color: #0f172a;">Gig Filled</h2>` +
+        `<p style="margin: 0; font-size: 14px; color: #475569;">The client selected someone else for <strong>${title}</strong>. Keep browsing for other opportunities.</p>` +
+        buildCtaButton(`${APP_URL}/gigs`, "Browse Gigs", "neutral")
+      );
+    },
+  },
+
+  // ── Template 24: milestone_funded ──
+  milestone_funded: {
+    accent: "#16a34a",
+    subject: (data) =>
+      `Milestone funded — ${escapeHtml(data.milestoneTitle || "Milestone")} (${formatAmount(data.amount!)})`,
+    body: (data) => {
+      const title = escapeHtml(data.dealTitle);
+      const msTitle = escapeHtml(data.milestoneTitle || "Milestone");
+      const amount = formatAmount(data.amount!);
+      const link = dealUrl(data.dealSlug);
+      return (
+        buildHeroAmount(data.amount!, "secured") +
+        `<p style="margin: 20px 0 0 0; font-size: 14px; color: #475569;">${amount} has been secured for milestone <strong>${msTitle}</strong> on <strong>${title}</strong>.</p>` +
+        buildCtaButton(link, "View Milestone", "primary")
+      );
+    },
+  },
+
+  // ── Template 25: milestone_approved ──
+  milestone_approved: {
+    accent: "#16a34a",
+    subject: (data) =>
+      `✅ ${formatAmount(data.amount!)} released — ${escapeHtml(data.milestoneTitle || "Milestone")} approved`,
+    body: (data) => {
+      const title = escapeHtml(data.dealTitle);
+      const msTitle = escapeHtml(data.milestoneTitle || "Milestone");
+      const amount = formatAmount(data.amount!);
+      const link = dealUrl(data.dealSlug);
+      return (
+        buildHeroAmount(data.amount!, "milestone") +
+        `<p style="margin: 20px 0 0 0; font-size: 14px; color: #475569;">The client approved <strong>${msTitle}</strong> on <strong>${title}</strong>. ${amount} has been released.</p>` +
+        buildCtaButton(link, "View Gig", "success")
+      );
+    },
+  },
+
+  // ── Template 26: milestone_proposed ──
+  milestone_proposed: {
+    accent: "#0d9488",
+    subject: (data) =>
+      `Milestone change proposed — ${escapeHtml(data.dealTitle)}`,
+    body: (data) => {
+      const title = escapeHtml(data.dealTitle);
+      const link = dealUrl(data.dealSlug);
+      return (
+        `<p style="margin: 0; font-size: 14px; color: #475569;">A milestone change has been proposed on <strong>${title}</strong>. Review the details and approve or discuss.</p>` +
+        buildCtaButton(link, "Review Proposal", "primary")
+      );
+    },
+  },
+
+  // ── Template 27: milestone_change_approved ──
+  milestone_change_approved: {
+    accent: "#0d9488",
+    subject: (data) =>
+      `Milestone change approved — ${escapeHtml(data.dealTitle)}`,
+    body: (data) => {
+      const title = escapeHtml(data.dealTitle);
+      const link = dealUrl(data.dealSlug);
+      return (
+        `<p style="margin: 0; font-size: 14px; color: #475569;">The milestone change on <strong>${title}</strong> has been approved. Check the updated terms.</p>` +
+        buildCtaButton(link, "View Gig", "primary")
+      );
+    },
+  },
+
+  // ── Template 28: deal_cancelled ──
+  deal_cancelled: {
+    accent: "#64748b",
+    subject: (data) =>
+      `Gig cancelled — ${escapeHtml(data.dealTitle)}`,
+    body: (data) => {
+      const title = escapeHtml(data.dealTitle);
+      const refundCents = data.refundAmount || data.amount;
+      const heroHtml = refundCents
+        ? buildHeroAmount(refundCents, "refund")
+        : "";
+      const refundNote = refundCents
+        ? `<p style="margin: 12px 0 0 0; font-size: 14px; color: #475569;">Your refund typically takes 5-10 business days to process.</p>`
+        : "";
+      return (
+        `<h2 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 700; color: #0f172a;">Gig Cancelled</h2>` +
+        heroHtml +
+        `<p style="margin: 20px 0 0 0; font-size: 14px; color: #475569;">The gig <strong>${title}</strong> has been cancelled.</p>` +
+        refundNote +
+        buildCtaButton(`${APP_URL}/deal/new`, "Post a New Gig", "neutral")
+      );
+    },
+  },
+
+  // ── Template 29: deal_cancelled_to_freelancer ──
+  deal_cancelled_to_freelancer: {
+    accent: "#64748b",
+    subject: (data) =>
+      `Gig cancelled — ${escapeHtml(data.dealTitle)}`,
+    body: (data) => {
+      const title = escapeHtml(data.dealTitle);
+      return (
+        `<h2 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 700; color: #0f172a;">Gig Cancelled</h2>` +
+        `<p style="margin: 0 0 12px 0; font-size: 14px; color: #475569;">The client cancelled <strong>${title}</strong>. No work evidence was submitted, so a full refund was processed to the client.</p>` +
+        `<p style="margin: 0; font-size: 14px; color: #475569;">This doesn't affect your reputation. Browse other gigs to find your next opportunity.</p>` +
+        buildCtaButton(`${APP_URL}/gigs`, "Browse Gigs", "neutral")
+      );
+    },
+  },
+
+  // ── Template 30: auto_expire_warning_14d ──
+  auto_expire_warning_14d: {
+    accent: "#d97706",
+    subject: (data) =>
+      `Your gig has been waiting 2 weeks — ${escapeHtml(data.dealTitle)}`,
+    body: (data) => {
+      const title = escapeHtml(data.dealTitle);
+      const link = dealUrl(data.dealSlug);
+      return (
+        `<p style="margin: 0; font-size: 14px; color: #475569;">Your gig <strong>${title}</strong> has been funded for 2 weeks and nobody has accepted it yet. Your escrow will auto-refund in 16 days if no one accepts.</p>` +
+        buildCtaButton(link, "View Gig", "primary") +
+        `<p style="margin: 12px 0 0 0; font-size: 13px; text-align: center;"><a href="${link}" style="color: #64748b; text-decoration: underline;">Cancel &amp; Refund Now</a></p>`
+      );
+    },
+  },
+
+  // ── Template 31: auto_expire_warning_27d ──
+  auto_expire_warning_27d: {
+    accent: "#dc2626",
+    subject: (data) =>
+      `Final notice — ${escapeHtml(data.dealTitle)} auto-refunds in 3 days`,
+    body: (data) => {
+      const title = escapeHtml(data.dealTitle);
+      const amount = data.amount ? formatAmount(data.amount) : "";
+      const link = dealUrl(data.dealSlug);
+      return (
+        buildCountdownBlock(72) +
+        `<p style="margin: 20px 0 0 0; font-size: 14px; color: #475569;"><strong>Final notice.</strong> Nobody has accepted <strong>${title}</strong>. Your ${amount} will be automatically refunded in 3 days.</p>` +
+        buildCtaButton(link, "Cancel & Refund Now", "urgent") +
+        `<p style="margin: 12px 0 0 0; font-size: 13px; text-align: center;"><a href="${link}" style="color: #64748b; text-decoration: underline;">Keep Active</a></p>`
+      );
+    },
+  },
+
+  // ── Template 32: auto_expire_completed ──
+  auto_expire_completed: {
+    accent: "#64748b",
+    subject: (data) =>
+      `Auto-refund processed — ${formatAmount(data.amount!)} for ${escapeHtml(data.dealTitle)}`,
+    body: (data) => {
+      const title = escapeHtml(data.dealTitle);
+      const amount = formatAmount(data.amount!);
+      return (
+        buildHeroAmount(data.amount!, "refund") +
+        `<p style="margin: 20px 0 0 0; font-size: 14px; color: #475569;">Nobody accepted your gig <strong>${title}</strong> within 30 days. ${amount} has been automatically refunded to your original payment method. Refunds typically take 5-10 business days.</p>` +
+        buildCtaButton(`${APP_URL}/deal/new`, "Post a New Gig", "neutral")
+      );
+    },
+  },
+
+  // ── Template 33: freelancer_ghost_nudge_7d ──
+  freelancer_ghost_nudge_7d: {
+    accent: "#d97706",
+    subject: (data) =>
+      `Reminder: upload your progress on ${escapeHtml(data.dealTitle)}`,
+    body: (data) => {
+      const title = escapeHtml(data.dealTitle);
+      const link = dealUrl(data.dealSlug);
+      return (
+        `<p style="margin: 0 0 12px 0; font-size: 14px; color: #475569;">You accepted <strong>${title}</strong> 7 days ago. Please upload evidence of your work progress. This protects you in case of disputes, and keeps the client informed.</p>` +
+        `<p style="margin: 0; font-size: 14px; color: #475569;">The client may cancel for a full refund if no work evidence is submitted.</p>` +
+        buildCtaButton(link, "Upload Evidence", "primary")
+      );
+    },
+  },
+
+  // ── Template 34: freelancer_ghost_warning_14d ──
+  freelancer_ghost_warning_14d: {
+    accent: "#d97706",
+    subject: (data) =>
+      `No progress on ${escapeHtml(data.dealTitle)} — you can cancel for a full refund`,
+    body: (data) => {
+      const title = escapeHtml(data.dealTitle);
+      const link = dealUrl(data.dealSlug);
+      return (
+        `<p style="margin: 0; font-size: 14px; color: #475569;">Your freelancer hasn't submitted any work evidence on <strong>${title}</strong> in 14 days. You have the option to cancel for a full refund.</p>` +
+        buildCtaButton(link, "Cancel & Refund", "urgent") +
+        `<p style="margin: 12px 0 0 0; font-size: 13px; text-align: center;"><a href="${link}" style="color: #64748b; text-decoration: underline;">View Gig</a></p>`
+      );
+    },
+  },
+
+  // ── Template 35: guest_deal_invite ──
+  guest_deal_invite: {
+    accent: "#16a34a",
+    subject: (data) =>
+      `You've been invited to a gig — ${formatAmount(data.amount!)}`,
+    body: (data) => {
+      const title = escapeHtml(data.dealTitle);
+      const amount = formatAmount(data.amount!);
+      const link = dealUrl(data.dealSlug);
+      return (
+        buildHeroAmount(data.amount!, "secured") +
+        `<p style="margin: 20px 0 0 0; font-size: 14px; color: #475569;">Someone wants to hire you for <strong>${title}</strong>. ${amount} is secured in escrow — the money is real and waiting for you. No account needed to get started.</p>` +
+        `<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; text-align: center; margin: 16px 0;">` +
+        `<div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; font-weight: 600; margin-bottom: 4px;">YOUR GIG LINK</div>` +
+        `<a href="${link}" style="font-size: 14px; color: #0d9488; text-decoration: none; word-break: break-all;">${link}</a>` +
+        `</div>` +
+        buildCtaButton(link, "View & Accept", "success")
+      );
+    },
+  },
+
+  // ── Template (stub): milestone_submitted ──
+  milestone_submitted: {
+    accent: "#d97706",
+    subject: (data) =>
+      `Milestone submitted — ${escapeHtml(data.milestoneTitle || "Milestone")}`,
+    body: (data) => {
+      const title = escapeHtml(data.dealTitle);
+      const msTitle = escapeHtml(data.milestoneTitle || "Milestone");
+      const link = dealUrl(data.dealSlug);
+      return (
+        `<p style="margin: 0; font-size: 14px; color: #475569;">Milestone <strong>${msTitle}</strong> on <strong>${title}</strong> has been submitted for review. You have 72 hours to approve.</p>` +
+        buildCtaButton(link, "Review Now", "urgent")
+      );
+    },
+  },
 };
 
 // ══════════════════════════════════════════════════════════════════════════════

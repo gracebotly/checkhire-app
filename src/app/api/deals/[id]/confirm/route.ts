@@ -87,7 +87,7 @@ export const POST = withApiHandler(
     if (freelancerProfile.email) {
       await sendAndLogNotification({
         supabase: serviceClient,
-        type: milestone_id ? "milestone_approved" : "deal_completed",
+        type: milestone_id ? "milestone_approved" : "funds_released",
         userId: deal.freelancer_user_id!,
         dealId: id,
         email: freelancerProfile.email,
@@ -96,6 +96,7 @@ export const POST = withApiHandler(
           dealSlug: deal.deal_link_slug,
           amount: releaseAmount,
           milestoneTitle,
+          isGuestFreelancer: !!deal.guest_freelancer_email,
         },
       });
     }
@@ -144,7 +145,7 @@ export const POST = withApiHandler(
         });
       }
 
-      // Send deal_completed to freelancer
+      // Send deal_completed (rating prompt) to freelancer
       if (freelancerProfile.email) {
         await sendAndLogNotification({
           supabase: serviceClient,

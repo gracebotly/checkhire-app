@@ -18,6 +18,7 @@ const PUBLIC_PATHS = [
   "/blog",
   "/how-it-works",
   "/create",
+  "/faq",
   "/for-freelancers",
   "/for-clients",
 ];

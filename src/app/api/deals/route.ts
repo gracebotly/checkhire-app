@@ -38,7 +38,7 @@ export const POST = withApiHandler(async (req: Request) => {
   const blockedTerm = checkBlocklist(contentToCheck);
   if (blockedTerm) {
     return NextResponse.json(
-      { ok: false, code: "BLOCKED_CONTENT", message: "This gig may not comply with our Acceptable Use Policy. Please review your description or contact support." },
+      { ok: false, code: "BLOCKED_CONTENT", message: "This gig may not comply with our Acceptable Use Policy. Please review your description or contact support.", link: "/faq#acceptable-use" },
       { status: 400 }
     );
   }

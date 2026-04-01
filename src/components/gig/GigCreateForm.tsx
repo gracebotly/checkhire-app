@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Lock, Globe, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -121,6 +122,7 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
   const [step, setStep] = useState(0);
   const [direction, setDirection] = useState(1);
   const [error, setError] = useState("");
+  const [errorLink, setErrorLink] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
   const [templateName, setTemplateName] = useState("");
@@ -227,10 +229,16 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
         body: JSON.stringify(body),
       });
       const data = await res.json();
-      if (!data.ok) throw new Error(data.message);
+      if (!data.ok) {
+        setError(data.message || "Failed to create gig");
+        setErrorLink(data.link || "");
+        setSubmitting(false);
+        return;
+      }
       router.push(`/deal/${data.slug}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create gig");
+      setErrorLink("");
     } finally {
       setSubmitting(false);
     }
@@ -301,7 +309,15 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
 
       {error && (
         <Alert variant="danger" className="mb-4">
-          {error}
+          <p>{error}</p>
+          {errorLink && (
+            <Link
+              href={errorLink}
+              className="mt-1 inline-block cursor-pointer text-xs font-semibold text-red-700 underline transition-colors duration-200 hover:text-red-900"
+            >
+              Review our guidelines
+            </Link>
+          )}
         </Alert>
       )}
 

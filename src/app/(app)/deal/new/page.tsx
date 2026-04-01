@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { GigCreateForm } from "@/components/gig/GigCreateForm";
 import type { DealTemplate } from "@/types/database";
+import { redirect } from "next/navigation";
 
 type RepeatDealData = {
   title: string;
@@ -19,14 +20,8 @@ export default async function NewDealPage({
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  // Auth redirect is handled by middleware — if we got here, user is authenticated
-  if (!user) {
-    return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <p className="text-sm text-slate-600">Please sign in to create a gig.</p>
-      </div>
-    );
-  }
+  // Auth redirect is handled by middleware, but keep a server-side fallback
+  if (!user) redirect("/login?next=/deal/new");
 
   const { template: templateId, repeat_from: repeatFromId } =
     await searchParams;

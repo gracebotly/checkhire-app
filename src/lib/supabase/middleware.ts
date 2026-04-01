@@ -62,12 +62,21 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  // These paths live under public prefixes but require authentication
+  const PROTECTED_UNDER_PUBLIC = [
+    "/deal/new",
+  ];
+
   const isPublic = PUBLIC_PATHS.some(
     (p) => pathname === p || pathname.startsWith(p + "/")
   );
 
+  const isProtectedOverride = PROTECTED_UNDER_PUBLIC.some(
+    (p) => pathname === p || pathname.startsWith(p + "/")
+  );
+
   // Unauthenticated user on a protected page → redirect to login
-  if (!user && !isPublic) {
+  if (!user && (!isPublic || isProtectedOverride)) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("next", pathname);

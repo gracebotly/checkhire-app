@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Shield, ArrowLeft } from "lucide-react";
 import { AdminNav } from "./AdminNav";
+import { ToastProvider } from "@/components/ui/toast";
 
 export default async function AdminLayout({
   children,
@@ -11,6 +12,7 @@ export default async function AdminLayout({
   // If we got here, the user is authenticated and is an admin
 
   return (
+    <ToastProvider>
     <div className="min-h-screen bg-gray-50">
       <header className="sticky top-0 z-50 border-b border-gray-200 bg-white">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
@@ -32,5 +34,6 @@ export default async function AdminLayout({
       </header>
       <main className="mx-auto max-w-6xl px-6 py-8">{children}</main>
     </div>
+    </ToastProvider>
   );
 }

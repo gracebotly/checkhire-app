@@ -394,46 +394,6 @@ export async function POST(req: Request) {
         break;
       }
 
-      // ════════════════════════════════════════════════════════════════
-      // 8. TRANSFER FAILED — Platform → freelancer transfer failed
-      // ════════════════════════════════════════════════════════════════
-      case "transfer.failed": {
-        const transfer = event.data.object;
-        const dealId = transfer.metadata?.deal_id;
-
-        console.error("[webhook] Transfer failed:", transfer.id, transfer.destination);
-
-        if (dealId) {
-          const { data: deal } = await supabase.from("deals").select("*").eq("id", dealId).maybeSingle();
-          if (deal) {
-            await supabase.from("deal_activity_log").insert({
-              deal_id: dealId, user_id: null, entry_type: "system",
-              content: `Transfer to freelancer failed — payout delayed`,
-            });
-
-            // Notify freelancer
-            const freelancer = await getDealPartyEmail(supabase, deal, "freelancer");
-            if (freelancer.email) {
-              await sendAndLogNotification({
-                supabase, type: "transfer_failed", userId: freelancer.userId, dealId,
-                email: freelancer.email,
-                data: { dealTitle: deal.title, dealSlug: deal.deal_link_slug, failureReason: "transfer to your account could not be completed", transferId: transfer.id },
-              });
-            }
-          }
-        }
-
-        // Always alert admins on transfer failure
-        const admins = await getAdminEmails(supabase);
-        for (const adminEmail of admins) {
-          await sendAndLogNotification({
-            supabase, type: "transfer_failed", userId: "admin", dealId: dealId || "unknown",
-            email: adminEmail,
-            data: { dealTitle: dealId ? "See deal" : "Unknown deal", dealSlug: "", failureReason: `Transfer ${transfer.id} failed to ${transfer.destination}`, transferId: transfer.id },
-          });
-        }
-        break;
-      }
 
       // ════════════════════════════════════════════════════════════════
       // 9. PAYOUT FAILED — Freelancer's bank rejected payout
@@ -451,7 +411,7 @@ export async function POST(req: Request) {
           if (profile?.email) {
             // We don't have a specific deal ID from payout events, so use a general notification
             await sendAndLogNotification({
-              supabase, type: "transfer_failed", userId: profile.id, dealId: "payout",
+              supabase, type: "payout_delayed", userId: profile.id, dealId: "payout",
               email: profile.email,
               data: { dealTitle: "your recent gig", dealSlug: "", failureReason: failureMessage, payoutId: payout.id },
             });
@@ -462,7 +422,7 @@ export async function POST(req: Request) {
         const admins = await getAdminEmails(supabase);
         for (const adminEmail of admins) {
           await sendAndLogNotification({
-            supabase, type: "transfer_failed", userId: "admin", dealId: "payout",
+            supabase, type: "payout_delayed", userId: "admin", dealId: "payout",
             email: adminEmail,
             data: { dealTitle: "Payout failure", dealSlug: "", failureReason: `Payout ${payout.id} failed: ${failureMessage}`, payoutId: payout.id },
           });

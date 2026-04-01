@@ -356,7 +356,7 @@ export type NotificationType =
   | 'payment_failed_async'
   | 'chargeback_opened'
   | 'chargeback_closed'
-  | 'transfer_failed'
+  | 'payout_delayed'
   | 'payout_landed';
 
 export type EmailNotification = {
@@ -393,7 +393,6 @@ export type NotificationData = {
   failureReason?: string;
   chargebackStatus?: string;
   chargebackAmount?: number;
-  transferId?: string;
   payoutId?: string;
 };
 

@@ -951,7 +951,7 @@ const NOTIFICATION_CONFIG: Record<string, NotificationConfig> = {
   },
 
   // ── Template 40: transfer_failed ──
-  transfer_failed: {
+  payout_delayed: {
     accent: "#dc2626",
     subject: (data) =>
       `⚠️ Payout delayed — ${escapeHtml(data.dealTitle)}`,

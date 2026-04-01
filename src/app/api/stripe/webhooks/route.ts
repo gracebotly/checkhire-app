@@ -31,9 +31,10 @@ async function getAdminEmails(supabase: ReturnType<typeof createServiceClient>):
 
 export async function POST(req: Request) {
   const stripe = getStripe();
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-  if (!webhookSecret) {
-    console.error("[webhook] STRIPE_WEBHOOK_SECRET not set");
+  const accountSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  const connectSecret = process.env.STRIPE_CONNECT_WEBHOOK_SECRET;
+  if (!accountSecret && !connectSecret) {
+    console.error("[webhook] No webhook secrets configured — set STRIPE_WEBHOOK_SECRET and/or STRIPE_CONNECT_WEBHOOK_SECRET");
     return NextResponse.json({ error: "Webhook secret not configured" }, { status: 500 });
   }
 
@@ -42,7 +43,22 @@ export async function POST(req: Request) {
     const body = await req.text();
     const sig = req.headers.get("stripe-signature");
     if (!sig) return NextResponse.json({ error: "Missing stripe-signature header" }, { status: 400 });
-    event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
+
+    // Try account secret first, then connect secret
+    // Each Stripe webhook endpoint has its own signing secret
+    if (accountSecret) {
+      try {
+        event = stripe.webhooks.constructEvent(body, sig, accountSecret);
+      } catch {
+        if (connectSecret) {
+          event = stripe.webhooks.constructEvent(body, sig, connectSecret);
+        } else {
+          throw new Error("Signature verification failed with account secret and no connect secret configured");
+        }
+      }
+    } else {
+      event = stripe.webhooks.constructEvent(body, sig, connectSecret!);
+    }
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     console.error("[webhook] Signature verification failed:", message);
@@ -184,6 +200,62 @@ export async function POST(req: Request) {
       // ════════════════════════════════════════════════════════════════
       // 2. CHECKOUT EXPIRED — Client abandoned payment
       // ════════════════════════════════════════════════════════════════
+      // ════════════════════════════════════════════════════════════════
+      // ASYNC PAYMENT SUCCEEDED — Delayed payment method (ACH) confirmed
+      // ════════════════════════════════════════════════════════════════
+      case "checkout.session.async_payment_succeeded": {
+        const session = event.data.object;
+        const dealId = session.metadata?.deal_id;
+        if (!dealId) break;
+
+        const { data: deal } = await supabase.from("deals").select("*").eq("id", dealId).maybeSingle();
+        if (!deal) break;
+
+        // If the deal was already marked funded by checkout.session.completed, this is a no-op
+        // But if it was in a "processing" state from a delayed payment, now we confirm it
+        if (deal.escrow_status === "unfunded") {
+          const escrowAmount = parseInt(session.metadata?.escrow_amount || "0", 10);
+          const paymentIntentId = typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id || null;
+
+          await supabase
+            .from("deals")
+            .update({
+              escrow_status: "funded",
+              status: deal.freelancer_user_id ? "in_progress" : deal.status,
+              funded_at: new Date().toISOString(),
+              stripe_payment_intent_id: paymentIntentId,
+            })
+            .eq("id", dealId);
+
+          await supabase.from("deal_activity_log").insert({
+            deal_id: dealId, user_id: null, entry_type: "system",
+            content: `Bank transfer confirmed — $${(escrowAmount / 100).toFixed(2)} secured in escrow`,
+          });
+
+          // Notify freelancer
+          const hasFreelancer = deal.freelancer_user_id || deal.guest_freelancer_email;
+          if (hasFreelancer) {
+            if (deal.freelancer_user_id) {
+              const { data: freelancer } = await supabase.from("user_profiles").select("email").eq("id", deal.freelancer_user_id).maybeSingle();
+              if (freelancer?.email) {
+                await sendAndLogNotification({
+                  supabase, type: "escrow_funded_after_accept", userId: deal.freelancer_user_id, dealId,
+                  email: freelancer.email,
+                  data: { dealTitle: deal.title, dealSlug: deal.deal_link_slug, amount: escrowAmount },
+                });
+              }
+            } else if (deal.guest_freelancer_email) {
+              await sendAndLogNotification({
+                supabase, type: "escrow_funded_after_accept", userId: "guest", dealId,
+                email: deal.guest_freelancer_email,
+                data: { dealTitle: deal.title, dealSlug: deal.deal_link_slug, amount: escrowAmount },
+              });
+            }
+          }
+        }
+        break;
+      }
+
       case "checkout.session.expired": {
         const session = event.data.object;
         const dealId = session.metadata?.deal_id;

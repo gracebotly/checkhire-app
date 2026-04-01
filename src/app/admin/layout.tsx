@@ -1,7 +1,4 @@
-import { redirect } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
-import { createServiceClient } from "@/lib/supabase/service";
 import { Shield, ArrowLeft } from "lucide-react";
 import { AdminNav } from "./AdminNav";
 
@@ -10,21 +7,8 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) redirect("/login");
-
-  const serviceClient = createServiceClient();
-  const { data: profile } = await serviceClient
-    .from("user_profiles")
-    .select("is_platform_admin")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (!profile?.is_platform_admin) redirect("/dashboard");
+  // Auth and admin checks are handled by middleware
+  // If we got here, the user is authenticated and is an admin
 
   return (
     <div className="min-h-screen bg-gray-50">

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { Gift, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 

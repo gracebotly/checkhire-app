@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { Bot, FileText, Image } from "lucide-react";
 import type { ActivityLogEntryWithUser } from "@/types/database";
 

@@ -12,6 +12,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { NewsletterSignup } from "@/components/newsletter/NewsletterSignup";
+import { PayoutSpeedComparison } from "@/components/gig/PayoutSpeedComparison";
 
 export const metadata: Metadata = {
   title: "For Freelancers — Keep 100% of What You Earn | CheckHire",
@@ -25,7 +26,13 @@ const benefits = [
     icon: DollarSign,
     title: "Zero fees — ever",
     description:
-      "You receive exactly the posted amount. The client pays the 5% platform fee. You keep 100% of what you earn.",
+      "You receive exactly the posted amount. The client covers all platform and processing fees. You keep 100%.",
+  },
+  {
+    icon: Zap,
+    title: "Instant payouts — under 30 minutes",
+    description:
+      "Get paid to your debit card in under 30 minutes, 24/7 — including weekends and holidays. Other platforms make you wait 7-14 days. Optional 1% fee (min $0.50).",
   },
   {
     icon: Lock,
@@ -44,12 +51,6 @@ const benefits = [
     title: "Build your reputation",
     description:
       "Completed gigs earn you trust badges: Trusted, Established, Verified. Clients can see your track record.",
-  },
-  {
-    icon: Zap,
-    title: "Instant payouts",
-    description:
-      "Get paid in minutes to your debit card, not weeks to your bank. Available as soon as funds release.",
   },
 ];
 
@@ -113,6 +114,9 @@ export default function ForFreelancersPage() {
                   </div>
                 );
               })}
+            </div>
+            <div className="mt-10 mx-auto max-w-md">
+              <PayoutSpeedComparison />
             </div>
           </div>
         </section>

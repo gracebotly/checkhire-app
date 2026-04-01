@@ -32,7 +32,7 @@ export const GET = withApiHandler(async (req: Request) => {
     .from("deals")
     .select(
       `id, title, description, total_amount, currency, deadline, deal_link_slug, category, created_at,
-       client:user_profiles!deals_client_user_id_fkey(display_name, avatar_url, trust_badge, completed_deals_count, average_rating, profile_slug)`,
+       client:user_profiles!deals_client_user_id_profile_fkey(display_name, avatar_url, trust_badge, completed_deals_count, average_rating, profile_slug)`,
       { count: "exact" }
     )
     .eq("deal_type", "public")

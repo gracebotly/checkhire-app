@@ -48,9 +48,9 @@ const benefits = [
   },
   {
     icon: DollarSign,
-    title: "Only 5% — cheaper than any marketplace",
+    title: "~7.9% total — still cheaper than any marketplace",
     description:
-      "A flat 5% platform fee on escrow funding. No hidden costs, no subscription fees, no per-message charges.",
+      "5% CheckHire fee + 2.9% + $0.30 Stripe processing. No hidden costs, no subscriptions. Full transparency — you see every fee before you pay.",
   },
 ];
 

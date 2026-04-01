@@ -109,7 +109,7 @@ export const GET = withApiHandler(
     const { data: activity } = await serviceClient
       .from("deal_activity_log")
       .select(
-        `*, user:user_profiles!deal_activity_log_user_id_fkey(display_name, avatar_url)`
+        `*, user:user_profiles!deal_activity_log_user_id_profile_fkey(display_name, avatar_url)`
       )
       .eq("deal_id", deal.id)
       .order("created_at", { ascending: true });

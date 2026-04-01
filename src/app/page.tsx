@@ -7,8 +7,7 @@ import { Footer } from "@/components/layout/Footer";
 import { NewsletterSignup } from "@/components/newsletter/NewsletterSignup";
 import { FeeCalculator } from "@/components/gig/FeeCalculator";
 import { PaymentMethodsBar } from "@/components/gig/PaymentMethodsBar";
-import { WaysToGetPaid } from "@/components/gig/WaysToGetPaid";
-import { StripeOnboardingExplainer } from "@/components/gig/StripeOnboardingExplainer";
+import { PayoutSpeedComparison } from "@/components/gig/PayoutSpeedComparison";
 import {
   RedditIcon,
   WhatsAppIcon,
@@ -25,6 +24,7 @@ import {
   FileText,
   Share2,
   Zap,
+  Building2,
 } from "lucide-react";
 
 const section = (delay: number) => ({
@@ -175,8 +175,55 @@ export default function HomePage() {
           </div>
         </motion.section>
 
+        {/* 3.5. Instant Payout Callout */}
+        <motion.section className="px-6 py-16" {...section(0.10)}>
+          <div className="mx-auto max-w-6xl grid gap-8 md:grid-cols-2 items-center">
+            <div>
+              <span className="inline-block rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700 mb-4">
+                FAST PAYOUTS
+              </span>
+              <h2 className="font-display text-2xl font-bold text-slate-900">
+                Get paid in minutes, not weeks.
+              </h2>
+              <p className="mt-3 text-sm text-slate-600">
+                Other platforms make you wait 7–14 days for your money. CheckHire
+                freelancers get paid the moment work is approved.
+              </p>
+              <div className="mt-6 space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-muted">
+                    <Zap className="h-4 w-4 text-brand" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">
+                      Instant payout
+                    </p>
+                    <p className="text-xs text-slate-600">
+                      Under 30 minutes to your debit card — 1% fee
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-muted">
+                    <Building2 className="h-4 w-4 text-brand" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">
+                      Standard payout
+                    </p>
+                    <p className="text-xs text-slate-600">
+                      2 business days to your bank — free
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <PayoutSpeedComparison />
+          </div>
+        </motion.section>
+
         {/* 4. Payment Methods */}
-        <motion.section className="px-6 py-10" {...section(0.12)}>
+        <motion.section className="px-6 py-10" {...section(0.14)}>
           <div className="mx-auto max-w-6xl">
             <p className="mb-6 text-center text-xs font-semibold uppercase tracking-wide text-slate-600">
               We accept
@@ -185,27 +232,10 @@ export default function HomePage() {
           </div>
         </motion.section>
 
-        {/* 5. Ways to Get Paid */}
-        <motion.section className="px-6 py-16" {...section(0.16)}>
-          <div className="mx-auto max-w-6xl">
-            <h2 className="mb-8 text-center font-display text-2xl font-bold text-slate-900">
-              How freelancers get paid
-            </h2>
-            <WaysToGetPaid />
-          </div>
-        </motion.section>
-
-        {/* 6. Stripe Transparency */}
-        <motion.section className="px-6 py-10" {...section(0.2)}>
-          <div className="mx-auto max-w-6xl">
-            <StripeOnboardingExplainer />
-          </div>
-        </motion.section>
-
-        {/* 7. Value Props */}
+        {/* 5. Value Props */}
         <motion.section
           className="border-t border-gray-100 bg-gray-50 px-6 py-16"
-          {...section(0.24)}
+          {...section(0.18)}
         >
           <div className="mx-auto grid max-w-6xl gap-8 md:grid-cols-3">
             <div className="text-center">
@@ -240,15 +270,15 @@ export default function HomePage() {
                 Freelancer keeps 100%
               </h3>
               <p className="mt-2 text-sm text-slate-600">
-                Zero freelancer fees. The client pays a 5% platform fee.
+                Zero freelancer fees. The client covers all fees.
                 Freelancer receives exactly the posted amount.
               </p>
             </div>
           </div>
         </motion.section>
 
-        {/* 8. Final CTA + Newsletter */}
-        <motion.section className="px-6 py-16" {...section(0.28)}>
+        {/* 6. Final CTA + Newsletter */}
+        <motion.section className="px-6 py-16" {...section(0.22)}>
           <div className="mx-auto max-w-6xl">
             <div className="grid items-start gap-8 md:grid-cols-2">
               <div className="text-center md:text-left">

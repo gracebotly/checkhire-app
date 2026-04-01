@@ -65,7 +65,7 @@ export const POST = withApiHandler(async (req: Request) => {
       : "First-time user";
   }
 
-  const slug = await generateSlug(supabase);
+  const slug = await generateSlug(supabase, data.title);
 
   const { data: deal, error: dealError } = await supabase
     .from("deals")

@@ -27,6 +27,7 @@ import {
   type MilestoneFormItem,
 } from "@/components/gig/MilestoneBuilder";
 import { useToast } from "@/components/ui/toast";
+import { DEAL_CATEGORIES } from "@/lib/categories";
 import type { DealTemplate, DealCategory } from "@/types/database";
 
 type RepeatDealData = {
@@ -40,16 +41,12 @@ type RepeatDealData = {
 type Props = {
   initialTemplate?: DealTemplate | null;
   initialRepeatData?: RepeatDealData | null;
+  wizardData?: {
+    category: string | null;
+    title: string | null;
+    amount: string | null;
+  } | null;
 };
-
-const CATEGORIES: { value: DealCategory; label: string }[] = [
-  { value: "design", label: "Design" },
-  { value: "development", label: "Development" },
-  { value: "writing", label: "Writing" },
-  { value: "marketing", label: "Marketing" },
-  { value: "virtual_assistant", label: "Virtual Assistant" },
-  { value: "other", label: "Other" },
-];
 
 const STEP_TITLES = [
   "What's the gig?",
@@ -59,13 +56,13 @@ const STEP_TITLES = [
   "Review & Post",
 ];
 
-export function GigCreateForm({ initialTemplate, initialRepeatData }: Props) {
+export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }: Props) {
   const router = useRouter();
   const { toast } = useToast();
 
   // Form state
   const [title, setTitle] = useState(
-    initialRepeatData?.title || initialTemplate?.title || ""
+    initialRepeatData?.title || initialTemplate?.title || wizardData?.title || ""
   );
   const [description, setDescription] = useState(
     initialRepeatData?.description || initialTemplate?.description || ""
@@ -74,14 +71,16 @@ export function GigCreateForm({ initialTemplate, initialRepeatData }: Props) {
     initialRepeatData?.deliverables || initialTemplate?.deliverables || ""
   );
   const [category, setCategory] = useState<DealCategory | "">(
-    (initialRepeatData?.category as DealCategory) || ""
+    (initialRepeatData?.category as DealCategory) ||
+    (wizardData?.category as DealCategory) ||
+    ""
   );
   const [amount, setAmount] = useState(
     initialRepeatData?.total_amount
       ? (initialRepeatData.total_amount / 100).toString()
       : initialTemplate?.default_amount
         ? (initialTemplate.default_amount / 100).toString()
-        : ""
+        : wizardData?.amount || ""
   );
   const [hasMilestones, setHasMilestones] = useState(
     initialTemplate?.has_milestones || false
@@ -357,7 +356,7 @@ export function GigCreateForm({ initialTemplate, initialRepeatData }: Props) {
                     <SelectValue placeholder="Select a category" />
                   </SelectTrigger>
                   <SelectContent>
-                    {CATEGORIES.map((c) => (
+                    {DEAL_CATEGORIES.map((c) => (
                       <SelectItem key={c.value} value={c.value}>
                         {c.label}
                       </SelectItem>
@@ -563,7 +562,7 @@ export function GigCreateForm({ initialTemplate, initialRepeatData }: Props) {
                   <div>
                     <p className="text-xs text-slate-600">Category</p>
                     <Badge variant="outline">
-                      {CATEGORIES.find((c) => c.value === category)?.label}
+                      {DEAL_CATEGORIES.find((c) => c.value === category)?.label}
                     </Badge>
                   </div>
                 )}

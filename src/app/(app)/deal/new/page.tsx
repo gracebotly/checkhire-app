@@ -14,7 +14,14 @@ type RepeatDealData = {
 export default async function NewDealPage({
   searchParams,
 }: {
-  searchParams: Promise<{ template?: string; repeat_from?: string }>;
+  searchParams: Promise<{
+    template?: string;
+    repeat_from?: string;
+    category?: string;
+    title?: string;
+    amount?: string;
+    from_wizard?: string;
+  }>;
 }) {
   const supabase = await createClient();
   const {
@@ -23,8 +30,14 @@ export default async function NewDealPage({
   // Auth redirect is handled by middleware, but keep a server-side fallback
   if (!user) redirect("/login?next=/deal/new");
 
-  const { template: templateId, repeat_from: repeatFromId } =
-    await searchParams;
+  const {
+    template: templateId,
+    repeat_from: repeatFromId,
+    category: wizardCategory,
+    title: wizardTitle,
+    amount: wizardAmount,
+    from_wizard: fromWizard,
+  } = await searchParams;
 
   let initialTemplate: DealTemplate | null = null;
   let initialRepeatData: RepeatDealData | null = null;
@@ -63,11 +76,20 @@ export default async function NewDealPage({
   return (
     <div className="mx-auto max-w-4xl px-6 py-10">
       <h1 className="mb-8 text-center font-display text-2xl font-bold text-slate-900">
-        Post a Gig
+        {fromWizard ? "Finish Your Payment Link" : "Post a Gig"}
       </h1>
       <GigCreateForm
         initialTemplate={initialTemplate}
         initialRepeatData={initialRepeatData}
+        wizardData={
+          fromWizard
+            ? {
+                category: wizardCategory || null,
+                title: wizardTitle || null,
+                amount: wizardAmount || null,
+              }
+            : null
+        }
       />
     </div>
   );

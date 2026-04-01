@@ -4,6 +4,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { withApiHandler } from "@/lib/api/withApiHandler";
 import { createDealSchema } from "@/lib/validation/deals";
 import { generateSlug } from "@/lib/deals/generateSlug";
+import { checkBlocklist } from "@/lib/validation/blocklist";
 import { sendAndLogNotification } from "@/lib/email/logNotification";
 
 export const POST = withApiHandler(async (req: Request) => {
@@ -31,6 +32,17 @@ export const POST = withApiHandler(async (req: Request) => {
   }
 
   const data = parsed.data;
+
+  // Compliance check — block prohibited gig content
+  const contentToCheck = `${data.title} ${data.description} ${data.deliverables}`;
+  const blockedTerm = checkBlocklist(contentToCheck);
+  if (blockedTerm) {
+    return NextResponse.json(
+      { ok: false, code: "BLOCKED_CONTENT", message: "This gig may not comply with our Acceptable Use Policy. Please review your description or contact support." },
+      { status: 400 }
+    );
+  }
+
   const slug = await generateSlug(supabase);
 
   const { data: deal, error: dealError } = await supabase

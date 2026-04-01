@@ -6,16 +6,8 @@ import { Calendar, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { TrustBadge } from "@/components/gig/TrustBadge";
+import { categoryLabels } from "@/lib/categories";
 import type { TrustBadge as TrustBadgeType } from "@/types/database";
-
-const categoryLabels: Record<string, string> = {
-  design: "Design",
-  development: "Development",
-  writing: "Writing",
-  marketing: "Marketing",
-  virtual_assistant: "Virtual Assistant",
-  other: "Other",
-};
 
 function getInitials(name: string | null): string {
   if (!name) return "?";

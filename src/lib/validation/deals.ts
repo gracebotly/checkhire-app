@@ -18,11 +18,14 @@ export const createDealSchema = z
       .max(1000000, "Maximum $10,000"),
     category: z
       .enum([
+        "web_dev",
         "design",
-        "development",
         "writing",
+        "video",
         "marketing",
         "virtual_assistant",
+        "audio",
+        "translation",
         "other",
       ])
       .nullable(),

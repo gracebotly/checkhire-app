@@ -30,11 +30,14 @@ export type UserProfile = {
 export type DealType = 'private' | 'public';
 
 export type DealCategory =
+  | 'web_dev'
   | 'design'
-  | 'development'
   | 'writing'
+  | 'video'
   | 'marketing'
   | 'virtual_assistant'
+  | 'audio'
+  | 'translation'
   | 'other';
 
 export type DealStatus =

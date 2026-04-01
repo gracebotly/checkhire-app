@@ -165,6 +165,35 @@ export default function AuthShell() {
   const [suPasswordError, setSuPasswordError] = useState<string | null>(null);
   const [siEmailError, setSiEmailError] = useState<string | null>(null);
 
+  // Reset loading states when page is restored from bfcache (browser back button)
+  // This prevents the Google OAuth "Redirecting..." button from getting stuck
+  useEffect(() => {
+    const handlePageShow = (e: PageTransitionEvent) => {
+      if (e.persisted) {
+        setGoogleLoading(false);
+        setSiLoading(false);
+        setSuLoading(false);
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        // Small delay to let bfcache restoration settle
+        setTimeout(() => {
+          setGoogleLoading(false);
+        }, 100);
+      }
+    };
+
+    window.addEventListener("pageshow", handlePageShow);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener("pageshow", handlePageShow);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
+
   const urlError = searchParams.get("error");
   const urlErrorMessage =
     urlError === "not_registered"

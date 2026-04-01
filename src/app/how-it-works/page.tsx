@@ -19,7 +19,7 @@ import { FeeCalculator } from "@/components/gig/FeeCalculator";
 import { WaysToGetPaid } from "@/components/gig/WaysToGetPaid";
 import { StripeOnboardingExplainer } from "@/components/gig/StripeOnboardingExplainer";
 import { PayoutSpeedComparison } from "@/components/gig/PayoutSpeedComparison";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 
 const steps = [
   {

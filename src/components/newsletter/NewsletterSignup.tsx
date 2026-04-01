@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, FormEvent } from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { ArrowRight, CheckCircle, Loader2, Mail } from "lucide-react";
 
 interface NewsletterSignupProps {

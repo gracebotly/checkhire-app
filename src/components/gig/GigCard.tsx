@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { Calendar } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { TrustBadge } from "@/components/gig/TrustBadge";

@@ -102,6 +102,13 @@ function buildCtaButtonRaw(
 </div>`;
 }
 
+function buildReferralNudge(): string {
+  return `<div style="background: #f0fdfa; border: 1px solid #ccfbf1; border-radius: 8px; padding: 14px 18px; margin: 20px 0;">
+<p style="margin: 0; font-size: 14px; color: #0f172a; font-weight: 600;">Share CheckHire, earn on every deal</p>
+<p style="margin: 4px 0 0 0; font-size: 13px; color: #475569;">Know someone who does freelance work? Share your referral link and earn 20% of our platform fee on every deal they make for 12 months. Check your referral link in <a href="${APP_URL}/settings" style="color: #0d9488; text-decoration: underline;">Settings</a>.</p>
+</div>`;
+}
+
 // ── Hero Amount Display ──
 
 type HeroVariant =
@@ -405,6 +412,7 @@ const NOTIFICATION_CONFIG: Record<string, NotificationConfig> = {
           `<p style="margin: 20px 0 0 0; font-size: 14px; color: #475569;">The 72-hour review period expired on <strong>${title}</strong>. ${amount} has been released to your bank account.</p>` +
           `<p style="margin: 12px 0 0 0; font-size: 14px; color: #475569;">Want it faster next time? Use <strong>Instant Payout</strong> to get your money in minutes.</p>` +
           accountNudge +
+          (data.isGuestFreelancer ? "" : buildReferralNudge()) +
           buildCtaButton(link, "View Payout", "success")
         );
       }
@@ -435,6 +443,7 @@ const NOTIFICATION_CONFIG: Record<string, NotificationConfig> = {
         `<p style="margin: 20px 0 0 0; font-size: 14px; color: #475569;">The client confirmed delivery on <strong>${title}</strong>. ${amount} has been released to your bank account.</p>` +
         `<p style="margin: 12px 0 0 0; font-size: 14px; color: #475569;">Standard payouts arrive in 2 business days. Want it faster? Use <strong>Instant Payout</strong> to get your money in under 30 minutes.</p>` +
         accountNudge +
+        (data.isGuestFreelancer ? "" : buildReferralNudge()) +
         buildCtaButton(link, "View Payout", "success")
       );
     },

@@ -88,6 +88,22 @@ export const GET = withApiHandler(async () => {
     .from("user_profiles")
     .select("id", { count: "exact", head: true });
 
+  // Revenue: 5% platform fee on completed deals
+  const platformFees = Math.round(totalVolume * 0.05);
+  // Stripe fee estimate: 2.9% + $0.30 per transaction on the total charged
+  // Total charged = deal amount + 5% fee, so Stripe fee ≈ 2.9% of (volume * 1.05) + $0.30 * completed deals
+  const estimatedStripeFees =
+    Math.round(totalVolume * 1.05 * 0.029) +
+    (completedDeals || 0) * 30;
+  const netRevenue = platformFees - estimatedStripeFees;
+
+  // Active funded escrow (deals currently holding money)
+  const { data: fundedDeals } = await serviceClient
+    .from("deals")
+    .select("total_amount")
+    .in("escrow_status", ["funded", "partially_released", "frozen"]);
+  const fundedEscrow = fundedDeals?.reduce((s, d) => s + d.total_amount, 0) || 0;
+
   return NextResponse.json({
     ok: true,
     stats: {
@@ -101,6 +117,10 @@ export const GET = withApiHandler(async () => {
       active_users_30d: activeUserIds.size,
       open_disputes: openDisputes || 0,
       total_users: totalUsers || 0,
+      platform_fees_cents: platformFees,
+      estimated_stripe_fees_cents: estimatedStripeFees,
+      net_revenue_cents: netRevenue,
+      funded_escrow_cents: fundedEscrow,
     },
   });
 });

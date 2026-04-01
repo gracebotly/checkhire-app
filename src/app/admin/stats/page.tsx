@@ -12,6 +12,7 @@ import {
   Star,
   Users,
   Scale,
+  Lock,
 } from "lucide-react";
 
 type Stats = {
@@ -25,6 +26,10 @@ type Stats = {
   active_users_30d: number;
   open_disputes: number;
   total_users: number;
+  platform_fees_cents: number;
+  estimated_stripe_fees_cents: number;
+  net_revenue_cents: number;
+  funded_escrow_cents: number;
 };
 
 export default function AdminStatsPage() {
@@ -116,6 +121,30 @@ export default function AdminStatsPage() {
       value: stats.open_disputes.toLocaleString(),
       icon: Scale,
       highlight: stats.open_disputes > 0,
+    },
+    {
+      label: "Platform Fees Earned",
+      value: `$${(stats.platform_fees_cents / 100).toLocaleString("en-US", { minimumFractionDigits: 2 })}`,
+      icon: DollarSign,
+      highlight: false,
+    },
+    {
+      label: "Est. Stripe Fees",
+      value: `$${(stats.estimated_stripe_fees_cents / 100).toLocaleString("en-US", { minimumFractionDigits: 2 })}`,
+      icon: DollarSign,
+      highlight: false,
+    },
+    {
+      label: "Net Revenue",
+      value: `$${(stats.net_revenue_cents / 100).toLocaleString("en-US", { minimumFractionDigits: 2 })}`,
+      icon: TrendingUp,
+      highlight: false,
+    },
+    {
+      label: "Active Escrow (Funded)",
+      value: `$${(stats.funded_escrow_cents / 100).toLocaleString("en-US", { minimumFractionDigits: 2 })}`,
+      icon: Lock,
+      highlight: false,
     },
   ];
 

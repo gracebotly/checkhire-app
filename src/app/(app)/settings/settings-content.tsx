@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Alert } from "@/components/ui/alert";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/ui/toast";
+import { ReferralDashboard } from "@/components/referral/ReferralDashboard";
 
 export function SettingsContent() {
   const { toast } = useToast();
@@ -317,6 +318,15 @@ export function SettingsContent() {
           <Button onClick={handleSave} disabled={saving}>
             {saving ? "Saving..." : "Save"}
           </Button>
+
+
+          {/* Referral Program */}
+          <div className="mt-8">
+            <h2 className="text-xl font-semibold text-slate-900 font-display mb-4">
+              Referral Program
+            </h2>
+            <ReferralDashboard />
+          </div>
         </div>
       </motion.div>
     </div>

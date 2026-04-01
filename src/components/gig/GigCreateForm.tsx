@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Lock, Globe, Pencil } from "lucide-react";
@@ -28,6 +28,7 @@ import {
 } from "@/components/gig/MilestoneBuilder";
 import { useToast } from "@/components/ui/toast";
 import { DEAL_CATEGORIES } from "@/lib/categories";
+import { createClient } from "@/lib/supabase/client";
 import type { DealTemplate, DealCategory } from "@/types/database";
 
 type RepeatDealData = {
@@ -124,8 +125,25 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
   const [submitting, setSubmitting] = useState(false);
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
   const [templateName, setTemplateName] = useState("");
+  const [showReferralField, setShowReferralField] = useState(false);
+  const [referralCodeInput, setReferralCodeInput] = useState("");
+  const [userProfile, setUserProfile] = useState<{ referred_by: string | null } | null>(null);
 
   const totalAmountDollars = parseFloat(amount) || 0;
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(async ({ data }) => {
+      const userId = data.user?.id;
+      if (!userId) return;
+      const { data: profile } = await supabase
+        .from("user_profiles")
+        .select("referred_by")
+        .eq("id", userId)
+        .maybeSingle();
+      setUserProfile({ referred_by: profile?.referred_by ?? null });
+    });
+  }, []);
 
   const validateStep = (): boolean => {
     setError("");
@@ -218,6 +236,7 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
           }))
         : null,
       template_id: initialTemplate?.id || null,
+      referral_code: referralCodeInput || undefined,
     };
 
     try {
@@ -680,6 +699,33 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
                   </button>
                 </div>
               </div>
+
+
+              {/* Optional Referral Code — only show if user has no referrer */}
+              {!userProfile?.referred_by && (
+                <div className="pt-4 border-t border-gray-100">
+                  <button
+                    type="button"
+                    onClick={() => setShowReferralField(!showReferralField)}
+                    className="text-sm text-slate-600 cursor-pointer transition-colors duration-200 hover:text-slate-900"
+                  >
+                    Have a referral code?
+                  </button>
+                  {showReferralField && (
+                    <div className="mt-2">
+                      <Input
+                        placeholder="e.g. REF-7X4K2M"
+                        value={referralCodeInput}
+                        onChange={(e) => setReferralCodeInput(e.target.value.toUpperCase())}
+                        className="max-w-xs"
+                      />
+                      <p className="text-xs text-slate-600 mt-1">
+                        Enter the code of the person who referred you to CheckHire.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div className="flex flex-col gap-3">
                 <Button

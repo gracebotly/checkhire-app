@@ -351,7 +351,13 @@ export type NotificationType =
   | 'dispute_proposal_received'
   | 'dispute_auto_resolved'
   | 'dispute_negotiation_round'
-  | 'dispute_escalated';
+  | 'dispute_escalated'
+  | 'checkout_expired'
+  | 'payment_failed_async'
+  | 'chargeback_opened'
+  | 'chargeback_closed'
+  | 'payout_delayed'
+  | 'payout_landed';
 
 export type EmailNotification = {
   id: string;
@@ -384,6 +390,10 @@ export type NotificationData = {
   isGuestFreelancer?: boolean;
   category?: string;
   percentage?: number;
+  failureReason?: string;
+  chargebackStatus?: string;
+  chargebackAmount?: number;
+  payoutId?: string;
 };
 
 // ─── Dispute with Deal Info (Admin Views) ───

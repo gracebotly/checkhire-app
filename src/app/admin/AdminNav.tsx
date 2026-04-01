@@ -8,6 +8,7 @@ const tabs = [
   { label: "Disputes", href: "/admin/disputes" },
   { label: "Users", href: "/admin/users" },
   { label: "Stats", href: "/admin/stats" },
+  { label: "Referrals", href: "/admin/referrals" },
 ];
 
 export function AdminNav() {

@@ -21,6 +21,9 @@ export type UserProfile = {
   stripe_onboarding_complete: boolean;
   is_platform_admin: boolean;
   suspended: boolean;
+  referral_code: string | null;
+  referral_slug: string | null;
+  referred_by: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -406,3 +409,64 @@ export type PlatformStats = {
   open_disputes: number;
   total_users: number;
 };
+
+
+// ============================================
+// Referral System Types
+// ============================================
+
+export interface ReferralEarning {
+  id: string;
+  referrer_user_id: string;
+  referred_user_id: string;
+  deal_id: string;
+  deal_amount: number;
+  platform_fee: number;
+  stripe_fee: number;
+  net_platform_revenue: number;
+  referral_commission: number;
+  status: 'credited' | 'paid_out';
+  created_at: string;
+  paid_out_at: string | null;
+}
+
+export interface ReferralPayout {
+  id: string;
+  user_id: string;
+  amount: number;
+  method: 'platform_credit' | 'stripe_transfer' | 'manual';
+  status: 'pending' | 'completed' | 'failed';
+  notes: string | null;
+  created_at: string;
+  completed_at: string | null;
+}
+
+export interface ReferralClick {
+  id: string;
+  referral_code: string;
+  referrer_user_id: string;
+  ip_hash: string | null;
+  user_agent: string | null;
+  source: string;
+  converted: boolean;
+  converted_user_id: string | null;
+  created_at: string;
+}
+
+export interface ReferralStats {
+  total_referrals: number;
+  active_referrals: number;
+  total_earnings: number;
+  available_balance: number;
+  paid_out: number;
+}
+
+export interface AdminReferralOverview {
+  total_referrers: number;
+  total_referred_users: number;
+  total_commissions_earned: number;
+  total_commissions_paid: number;
+  pending_payouts: number;
+  total_clicks: number;
+  conversion_rate: number;
+}

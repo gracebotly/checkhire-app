@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "typecheck": "tsc --noEmit --pretty false"
+    "typecheck": "tsc --noEmit --pretty false",
+    "seed": "npx tsx scripts/seed-gigs.ts"
   },
   "dependencies": {
     "@radix-ui/react-checkbox": "^1.0.4",

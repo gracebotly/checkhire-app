@@ -101,13 +101,20 @@ export default function DashboardPage() {
                   <Briefcase className="h-7 w-7 text-brand" />
                 </div>
                 <p className="text-base font-semibold text-slate-900">
-                  No gigs yet
+                  Welcome to CheckHire
                 </p>
-                <p className="mt-1 text-sm text-slate-600">
-                  Create your first gig to get started.
+                <p className="mt-1 max-w-sm text-sm text-slate-600">
+                  Create a payment link, share it anywhere, and get paid safely
+                  with escrow protection. Your gigs will appear here.
                 </p>
-                <Link href="/deal/new" className="mt-4">
-                  <Button>Post Your First Gig</Button>
+                <Link href="/deal/new" className="mt-5">
+                  <Button size="lg">Create Your First Payment Link</Button>
+                </Link>
+                <Link
+                  href="/how-it-works"
+                  className="mt-3 cursor-pointer text-sm font-medium text-brand transition-colors duration-200 hover:text-brand-hover"
+                >
+                  Learn how it works →
                 </Link>
               </div>
             ) : (

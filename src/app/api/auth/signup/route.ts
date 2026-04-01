@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { withApiHandler } from "@/lib/api/withApiHandler";
 import { generateReferralCode } from "@/lib/referrals/generate-code";
+import { sendWelcomeEmail } from "@/lib/email/sendWelcomeEmail";
 
 export const runtime = "nodejs";
 
@@ -137,6 +138,9 @@ export const POST = withApiHandler(async function POST(request: NextRequest) {
     }
   }
   // --- END REFERRAL ---
+
+  // Send welcome email (non-blocking, non-fatal)
+  sendWelcomeEmail({ to: email, userName: name || null }).catch(() => {});
 
   return NextResponse.json({ ok: true, hasSession: Boolean(data?.session) });
 });

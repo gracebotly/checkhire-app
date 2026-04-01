@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Mail,
@@ -165,8 +165,9 @@ export default function AuthShell() {
   const [suPasswordError, setSuPasswordError] = useState<string | null>(null);
   const [siEmailError, setSiEmailError] = useState<string | null>(null);
 
-  // Reset loading states when page is restored from bfcache (browser back button)
-  // This prevents the Google OAuth "Redirecting..." button from getting stuck
+  // Reset loading states when page is restored from bfcache (browser back button).
+  // After Google OAuth redirect, if user hits back, bfcache preserves
+  // googleLoading === true. This listener detects the restoration and resets it.
   useEffect(() => {
     const handlePageShow = (e: PageTransitionEvent) => {
       if (e.persisted) {
@@ -178,7 +179,6 @@ export default function AuthShell() {
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
-        // Small delay to let bfcache restoration settle
         setTimeout(() => {
           setGoogleLoading(false);
         }, 100);

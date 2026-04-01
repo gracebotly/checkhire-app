@@ -4,12 +4,11 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
-import { Lock, Globe, Pencil } from "lucide-react";
+import { Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Alert } from "@/components/ui/alert";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -56,7 +55,6 @@ const STEP_TITLES = [
   "What's the gig?",
   "How much?",
   "When?",
-  "Who can see this?",
   "Review & Post",
 ];
 
@@ -117,7 +115,6 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
     }
     return "";
   });
-  const [dealType, setDealType] = useState<"private" | "public">("private");
 
   // UI state
   const [step, setStep] = useState(0);
@@ -199,7 +196,7 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
   const goNext = () => {
     if (!validateStep()) return;
     setDirection(1);
-    setStep((s) => Math.min(s + 1, 4));
+    setStep((s) => Math.min(s + 1, 3));
   };
 
   const goBack = () => {
@@ -228,7 +225,7 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
       other_category_description: category === "other" ? otherCategoryDescription.trim() : null,
       payment_frequency: paymentFrequency,
       deadline: deadline || null,
-      deal_type: dealType,
+      deal_type: "public",
       has_milestones: hasMilestones,
       milestones: hasMilestones
         ? milestones.map((m) => ({
@@ -486,20 +483,40 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
                 </p>
               </div>
 
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  id="milestones"
-                  checked={hasMilestones}
-                  onCheckedChange={(checked) =>
-                    setHasMilestones(checked === true)
-                  }
-                />
-                <label
-                  htmlFor="milestones"
-                  className="cursor-pointer text-sm font-medium text-slate-900"
-                >
-                  Split into milestones
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-slate-900">
+                  Payment structure
                 </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setHasMilestones(false)}
+                    className={`cursor-pointer rounded-xl border p-4 text-left transition-colors duration-200 ${
+                      !hasMilestones
+                        ? "border-brand bg-brand-muted"
+                        : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50"
+                    }`}
+                  >
+                    <p className="text-sm font-semibold text-slate-900">Pay all at once</p>
+                    <p className="mt-0.5 text-xs text-slate-600">
+                      Release full payment when work is complete
+                    </p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setHasMilestones(true)}
+                    className={`cursor-pointer rounded-xl border p-4 text-left transition-colors duration-200 ${
+                      hasMilestones
+                        ? "border-brand bg-brand-muted"
+                        : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50"
+                    }`}
+                  >
+                    <p className="text-sm font-semibold text-slate-900">Pay in stages</p>
+                    <p className="mt-0.5 text-xs text-slate-600">
+                      Split into checkpoints — review work along the way
+                    </p>
+                  </button>
+                </div>
               </div>
 
               {hasMilestones && (
@@ -531,54 +548,8 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
             </div>
           )}
 
-          {/* Step 4 — Who can see this? */}
+          {/* Step 4 — Review & Post */}
           {step === 3 && (
-            <div className="space-y-3">
-              <button
-                type="button"
-                onClick={() => setDealType("private")}
-                className={`flex w-full cursor-pointer items-start gap-4 rounded-xl border p-5 text-left transition-colors duration-200 ${
-                  dealType === "private"
-                    ? "border-brand bg-brand-muted"
-                    : "border-gray-200 bg-white hover:border-gray-300"
-                }`}
-              >
-                <Lock className="mt-0.5 h-5 w-5 text-slate-600" />
-                <div>
-                  <p className="text-sm font-semibold text-slate-900">
-                    Private
-                  </p>
-                  <p className="mt-0.5 text-sm text-slate-600">
-                    Share a link with a specific person. Only they can
-                    accept the gig.
-                  </p>
-                </div>
-              </button>
-              <button
-                type="button"
-                onClick={() => setDealType("public")}
-                className={`flex w-full cursor-pointer items-start gap-4 rounded-xl border p-5 text-left transition-colors duration-200 ${
-                  dealType === "public"
-                    ? "border-brand bg-brand-muted"
-                    : "border-gray-200 bg-white hover:border-gray-300"
-                }`}
-              >
-                <Globe className="mt-0.5 h-5 w-5 text-slate-600" />
-                <div>
-                  <p className="text-sm font-semibold text-slate-900">
-                    Public
-                  </p>
-                  <p className="mt-0.5 text-sm text-slate-600">
-                    Open for anyone to apply. Review pitches and pick the
-                    best fit.
-                  </p>
-                </div>
-              </button>
-            </div>
-          )}
-
-          {/* Step 5 — Review & Post */}
-          {step === 4 && (
             <div className="space-y-4">
               <div className="rounded-xl border border-gray-200 bg-white p-5 space-y-4">
                 {/* Title */}
@@ -698,23 +669,7 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
                   </button>
                 </div>
 
-                {/* Visibility */}
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-xs text-slate-600">Visibility</p>
-                    <p className="text-sm text-slate-900">
-                      {dealType === "private" ? "Private" : "Public"}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => goToStep(3)}
-                    className="cursor-pointer text-slate-600 transition-colors duration-200 hover:text-slate-900"
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
+</div>
 
 
               {/* Optional Referral Code — only show if user has no referrer */}
@@ -766,7 +721,7 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
       </AnimatePresence>
 
       {/* Navigation buttons */}
-      {step < 4 && (
+      {step < 3 && (
         <div className="mt-8 flex items-center justify-between">
           {step > 0 ? (
             <Button variant="ghost" onClick={goBack}>
@@ -779,7 +734,7 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
         </div>
       )}
 
-      {step === 4 && step > 0 && (
+      {step === 3 && step > 0 && (
         <div className="mt-4">
           <Button variant="ghost" onClick={goBack}>
             Back

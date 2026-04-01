@@ -95,7 +95,7 @@ export default async function NewDealPage({
     <ToastProvider>
       <div className="min-h-screen bg-white">
         <Navbar />
-        <EmailConfirmBanner emailConfirmed={emailConfirmed} />
+        <EmailConfirmBanner emailConfirmed={emailConfirmed} userEmail={user.email} />
         <main className="pb-20 md:pb-0">
           {!emailConfirmed ? (
             <div className="mx-auto max-w-4xl px-6 py-10">

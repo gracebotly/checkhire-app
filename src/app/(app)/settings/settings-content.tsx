@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { AvatarUpload } from "@/components/ui/avatar-upload";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/ui/toast";
 import { ReferralDashboard } from "@/components/referral/ReferralDashboard";
@@ -334,9 +335,14 @@ export function SettingsContent() {
 
           {/* ═══════════════ PROFILE ═══════════════ */}
           <section>
-            <div className="flex items-center gap-2 mb-4">
-              <User className="h-4 w-4 text-slate-600" />
-              <h2 className="text-base font-semibold text-slate-900">Profile</h2>
+            <div className="mb-4">
+              <div className="flex items-center gap-2">
+                <User className="h-4 w-4 text-slate-600" />
+                <h2 className="text-base font-semibold text-slate-900">Profile</h2>
+              </div>
+              <p className="mt-1 ml-6 text-xs text-slate-600">
+                This info appears on your public profile and next to your name on every gig.
+              </p>
             </div>
             <div className="rounded-xl border border-gray-200 bg-white p-5 space-y-4">
               <div>
@@ -393,13 +399,13 @@ export function SettingsContent() {
 
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-slate-900">
-                  Avatar URL
+                  Profile photo
                 </label>
-                <Input
-                  value={avatarUrl}
-                  onChange={(e) => setAvatarUrl(e.target.value)}
-                  placeholder="https://example.com/avatar.jpg"
-                  type="url"
+                <AvatarUpload
+                  currentUrl={avatarUrl || null}
+                  displayName={displayName}
+                  onUploaded={(url) => setAvatarUrl(url)}
+                  onRemoved={() => setAvatarUrl("")}
                 />
               </div>
 

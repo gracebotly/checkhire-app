@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { categoryLabels } from "@/lib/categories";
 import {
   Calendar,
   Lock,
@@ -87,14 +88,6 @@ const statusMap: Record<
   refunded: { label: "Refunded", variant: "outline" },
 };
 
-const categoryLabels: Record<string, string> = {
-  design: "Design",
-  development: "Development",
-  writing: "Writing",
-  marketing: "Marketing",
-  virtual_assistant: "Virtual Assistant",
-  other: "Other",
-};
 
 function getInitials(name: string | null): string {
   if (!name) return "?";
@@ -356,6 +349,11 @@ export function GigPageClient({
           {deal.category && (
             <Badge variant="outline">
               {categoryLabels[deal.category]}
+            </Badge>
+          )}
+          {deal.payment_frequency && deal.payment_frequency !== "one_time" && (
+            <Badge variant="outline">
+              {deal.payment_frequency === "weekly" ? "Paid Weekly" : deal.payment_frequency === "biweekly" ? "Paid Biweekly" : "Paid Monthly"}
             </Badge>
           )}
         </div>

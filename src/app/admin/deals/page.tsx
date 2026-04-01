@@ -14,6 +14,8 @@ type Deal = {
   status: string;
   escrow_status: string;
   deal_link_slug: string;
+  flagged_for_review: boolean;
+  flagged_reason: string | null;
   created_at: string;
   updated_at: string;
   client: { display_name: string | null; email: string | null } | null;
@@ -50,6 +52,7 @@ const filterTabs = [
   { key: "active", label: "Active" },
   { key: "completed", label: "Completed" },
   { key: "funded", label: "Funded" },
+  { key: "flagged", label: "Flagged" },
 ];
 
 function formatDate(iso: string) {
@@ -138,6 +141,9 @@ export default function AdminDealsPage() {
                         ${(deal.total_amount / 100).toFixed(2)}
                       </span>
                       <Badge variant={badge.variant}>{badge.label}</Badge>
+                      {deal.flagged_for_review && (
+                        <Badge variant="warning">Flagged for Review</Badge>
+                      )}
                     </div>
                     <p className="mt-1.5 text-xs text-slate-600">
                       Client: {deal.client?.display_name || "Unknown"}{" "}
@@ -171,6 +177,12 @@ export default function AdminDealsPage() {
                     </p>
                   </div>
                 </div>
+                {deal.flagged_for_review && deal.flagged_reason && (
+                  <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
+                    <p className="text-xs font-semibold text-amber-800">Flagged for review</p>
+                    <p className="mt-1 text-xs text-amber-700">{deal.flagged_reason}</p>
+                  </div>
+                )}
                 <Link
                   href={`/deal/${deal.deal_link_slug}`}
                   className="mt-2 inline-flex items-center gap-1 text-xs text-brand transition-colors duration-200 hover:text-brand-hover"

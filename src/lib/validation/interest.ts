@@ -13,7 +13,7 @@ export const interestActionSchema = z.object({
 
 export const publicDealsQuerySchema = z.object({
   category: z
-    .enum(["design", "development", "writing", "marketing", "virtual_assistant", "other"])
+    .enum(["web_dev", "design", "writing", "video", "marketing", "virtual_assistant", "audio", "translation", "other"])
     .optional(),
   min_amount: z.coerce.number().int().min(0).optional(),
   max_amount: z.coerce.number().int().min(0).optional(),

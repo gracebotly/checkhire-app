@@ -116,12 +116,15 @@ export function BrowseGigsContent() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Categories</SelectItem>
-                <SelectItem value="design">Design</SelectItem>
-                <SelectItem value="development">Development</SelectItem>
-                <SelectItem value="writing">Writing</SelectItem>
-                <SelectItem value="marketing">Marketing</SelectItem>
+                <SelectItem value="web_dev">Web & App Dev</SelectItem>
+                <SelectItem value="design">Design & Branding</SelectItem>
+                <SelectItem value="writing">Writing & Content</SelectItem>
+                <SelectItem value="video">Video & Animation</SelectItem>
+                <SelectItem value="marketing">Marketing & Social</SelectItem>
                 <SelectItem value="virtual_assistant">Virtual Assistant</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
+                <SelectItem value="audio">Audio & Music</SelectItem>
+                <SelectItem value="translation">Translation</SelectItem>
+                <SelectItem value="other">Other Digital</SelectItem>
               </SelectContent>
             </Select>
 

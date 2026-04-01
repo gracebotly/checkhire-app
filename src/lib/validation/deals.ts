@@ -18,14 +18,26 @@ export const createDealSchema = z
       .max(1000000, "Maximum $10,000"),
     category: z
       .enum([
+        "web_dev",
         "design",
-        "development",
         "writing",
+        "video",
         "marketing",
         "virtual_assistant",
+        "audio",
+        "translation",
         "other",
       ])
       .nullable(),
+    other_category_description: z
+      .string()
+      .min(10, "Please describe the work (at least 10 characters)")
+      .max(100, "Keep it brief (100 characters max)")
+      .nullable()
+      .optional(),
+    payment_frequency: z
+      .enum(["one_time", "weekly", "biweekly", "monthly"])
+      .default("one_time"),
     deadline: z.string().nullable(),
     deal_type: z.enum(["private", "public"]),
     has_milestones: z.boolean(),
@@ -55,6 +67,14 @@ export const createDealSchema = z
     {
       message: "Milestone amounts must equal total budget",
       path: ["milestones"],
+    }
+  )
+  .refine(
+    (data) =>
+      data.category !== "other" || (data.other_category_description && data.other_category_description.trim().length >= 10),
+    {
+      message: "Please describe the type of work when selecting 'Other'",
+      path: ["other_category_description"],
     }
   );
 

@@ -27,6 +27,7 @@ import {
   type MilestoneFormItem,
 } from "@/components/gig/MilestoneBuilder";
 import { useToast } from "@/components/ui/toast";
+import { DEAL_CATEGORIES } from "@/lib/categories";
 import type { DealTemplate, DealCategory } from "@/types/database";
 
 type RepeatDealData = {
@@ -40,16 +41,14 @@ type RepeatDealData = {
 type Props = {
   initialTemplate?: DealTemplate | null;
   initialRepeatData?: RepeatDealData | null;
+  wizardData?: {
+    category: string | null;
+    title: string | null;
+    amount: string | null;
+    otherDescription: string | null;
+    frequency: string | null;
+  } | null;
 };
-
-const CATEGORIES: { value: DealCategory; label: string }[] = [
-  { value: "design", label: "Design" },
-  { value: "development", label: "Development" },
-  { value: "writing", label: "Writing" },
-  { value: "marketing", label: "Marketing" },
-  { value: "virtual_assistant", label: "Virtual Assistant" },
-  { value: "other", label: "Other" },
-];
 
 const STEP_TITLES = [
   "What's the gig?",
@@ -59,13 +58,13 @@ const STEP_TITLES = [
   "Review & Post",
 ];
 
-export function GigCreateForm({ initialTemplate, initialRepeatData }: Props) {
+export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }: Props) {
   const router = useRouter();
   const { toast } = useToast();
 
   // Form state
   const [title, setTitle] = useState(
-    initialRepeatData?.title || initialTemplate?.title || ""
+    initialRepeatData?.title || initialTemplate?.title || wizardData?.title || ""
   );
   const [description, setDescription] = useState(
     initialRepeatData?.description || initialTemplate?.description || ""
@@ -74,14 +73,22 @@ export function GigCreateForm({ initialTemplate, initialRepeatData }: Props) {
     initialRepeatData?.deliverables || initialTemplate?.deliverables || ""
   );
   const [category, setCategory] = useState<DealCategory | "">(
-    (initialRepeatData?.category as DealCategory) || ""
+    (initialRepeatData?.category as DealCategory) ||
+    (wizardData?.category as DealCategory) ||
+    ""
+  );
+  const [otherCategoryDescription, setOtherCategoryDescription] = useState(
+    wizardData?.otherDescription || ""
+  );
+  const [paymentFrequency, setPaymentFrequency] = useState(
+    wizardData?.frequency || "one_time"
   );
   const [amount, setAmount] = useState(
     initialRepeatData?.total_amount
       ? (initialRepeatData.total_amount / 100).toString()
       : initialTemplate?.default_amount
         ? (initialTemplate.default_amount / 100).toString()
-        : ""
+        : wizardData?.amount || ""
   );
   const [hasMilestones, setHasMilestones] = useState(
     initialTemplate?.has_milestones || false
@@ -128,6 +135,10 @@ export function GigCreateForm({ initialTemplate, initialRepeatData }: Props) {
         if (title.length > 100) { setError("Title too long (max 100)"); return false; }
         if (!description.trim()) { setError("Description is required"); return false; }
         if (!deliverables.trim()) { setError("Deliverables are required"); return false; }
+        if (category === "other" && otherCategoryDescription.trim().length < 10) {
+          setError("Please describe the type of work (at least 10 characters)");
+          return false;
+        }
         return true;
       case 1:
         if (!amount || totalAmountDollars < 10) { setError("Minimum $10"); return false; }
@@ -194,6 +205,8 @@ export function GigCreateForm({ initialTemplate, initialRepeatData }: Props) {
       deliverables: deliverables.trim(),
       total_amount: totalCents,
       category: category || null,
+      other_category_description: category === "other" ? otherCategoryDescription.trim() : null,
+      payment_frequency: paymentFrequency,
       deadline: deadline || null,
       deal_type: dealType,
       has_milestones: hasMilestones,
@@ -357,13 +370,58 @@ export function GigCreateForm({ initialTemplate, initialRepeatData }: Props) {
                     <SelectValue placeholder="Select a category" />
                   </SelectTrigger>
                   <SelectContent>
-                    {CATEGORIES.map((c) => (
+                    {DEAL_CATEGORIES.map((c) => (
                       <SelectItem key={c.value} value={c.value}>
                         {c.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                {category === "other" && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    transition={{ duration: 0.2, ease: "easeOut" }}
+                    className="mt-3"
+                  >
+                    <label className="mb-1.5 block text-sm font-medium text-slate-900">
+                      Describe the type of work
+                    </label>
+                    <Input
+                      value={otherCategoryDescription}
+                      onChange={(e) => setOtherCategoryDescription(e.target.value)}
+                      placeholder="e.g., Data analysis for a research project"
+                      maxLength={100}
+                    />
+                    <p className="mt-1 text-xs text-slate-600">
+                      {otherCategoryDescription.length}/100
+                    </p>
+                  </motion.div>
+                )}
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-slate-900">Payment frequency</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { value: "one_time", label: "One-time" },
+                    { value: "weekly", label: "Weekly" },
+                    { value: "biweekly", label: "Biweekly" },
+                    { value: "monthly", label: "Monthly" },
+                  ].map((freq) => (
+                    <button
+                      key={freq.value}
+                      type="button"
+                      onClick={() => setPaymentFrequency(freq.value)}
+                      className={`cursor-pointer rounded-xl border px-4 py-3 text-left transition-colors duration-200 ${
+                        paymentFrequency === freq.value
+                          ? "border-brand bg-brand-muted"
+                          : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50"
+                      }`}
+                    >
+                      <p className="text-sm font-semibold text-slate-900">{freq.label}</p>
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           )}
@@ -563,8 +621,26 @@ export function GigCreateForm({ initialTemplate, initialRepeatData }: Props) {
                   <div>
                     <p className="text-xs text-slate-600">Category</p>
                     <Badge variant="outline">
-                      {CATEGORIES.find((c) => c.value === category)?.label}
+                      {DEAL_CATEGORIES.find((c) => c.value === category)?.label}
                     </Badge>
+                  </div>
+                )}
+
+                {/* Payment Frequency */}
+                {paymentFrequency !== "one_time" && (
+                  <div>
+                    <p className="text-xs text-slate-600">Payment Frequency</p>
+                    <Badge variant="outline">
+                      {paymentFrequency === "weekly" ? "Weekly" : paymentFrequency === "biweekly" ? "Biweekly" : "Monthly"}
+                    </Badge>
+                  </div>
+                )}
+
+                {/* Other Category Description */}
+                {category === "other" && otherCategoryDescription && (
+                  <div>
+                    <p className="text-xs text-slate-600">Service Description</p>
+                    <p className="text-sm text-slate-900">{otherCategoryDescription}</p>
                   </div>
                 )}
 

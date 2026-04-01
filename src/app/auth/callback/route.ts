@@ -40,8 +40,9 @@ export async function GET(request: Request) {
     .maybeSingle();
 
   if (profile) {
-    // Existing user — go to dashboard
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    // Existing user — go to dashboard (or next param if provided)
+    const next = searchParams.get("next") || "/dashboard";
+    return NextResponse.redirect(new URL(next, request.url));
   }
 
   // New user — create user_profile
@@ -64,5 +65,6 @@ export async function GET(request: Request) {
     profile_slug: profileSlug,
   });
 
-  return NextResponse.redirect(new URL("/dashboard", request.url));
+  const next = searchParams.get("next") || "/dashboard";
+  return NextResponse.redirect(new URL(next, request.url));
 }

@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { GigCreateForm } from "@/components/gig/GigCreateForm";
 import type { DealTemplate } from "@/types/database";
+import { redirect } from "next/navigation";
 
 type RepeatDealData = {
   title: string;
@@ -13,23 +14,34 @@ type RepeatDealData = {
 export default async function NewDealPage({
   searchParams,
 }: {
-  searchParams: Promise<{ template?: string; repeat_from?: string }>;
+  searchParams: Promise<{
+    template?: string;
+    repeat_from?: string;
+    category?: string;
+    title?: string;
+    amount?: string;
+    from_wizard?: string;
+    other_desc?: string;
+    frequency?: string;
+  }>;
 }) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  // Auth redirect is handled by middleware — if we got here, user is authenticated
-  if (!user) {
-    return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <p className="text-sm text-slate-600">Please sign in to create a gig.</p>
-      </div>
-    );
-  }
+  // Auth redirect is handled by middleware, but keep a server-side fallback
+  if (!user) redirect("/login?next=/deal/new");
 
-  const { template: templateId, repeat_from: repeatFromId } =
-    await searchParams;
+  const {
+    template: templateId,
+    repeat_from: repeatFromId,
+    category: wizardCategory,
+    title: wizardTitle,
+    amount: wizardAmount,
+    from_wizard: fromWizard,
+    other_desc: wizardOtherDesc,
+    frequency: wizardFrequency,
+  } = await searchParams;
 
   let initialTemplate: DealTemplate | null = null;
   let initialRepeatData: RepeatDealData | null = null;
@@ -68,11 +80,22 @@ export default async function NewDealPage({
   return (
     <div className="mx-auto max-w-4xl px-6 py-10">
       <h1 className="mb-8 text-center font-display text-2xl font-bold text-slate-900">
-        Post a Gig
+        {fromWizard ? "Finish Your Payment Link" : "Post a Gig"}
       </h1>
       <GigCreateForm
         initialTemplate={initialTemplate}
         initialRepeatData={initialRepeatData}
+        wizardData={
+          fromWizard
+            ? {
+                category: wizardCategory || null,
+                title: wizardTitle || null,
+                amount: wizardAmount || null,
+                otherDescription: wizardOtherDesc || null,
+                frequency: wizardFrequency || null,
+              }
+            : null
+        }
       />
     </div>
   );

@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { Calendar } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { TrustBadge } from "@/components/gig/TrustBadge";
+import { categoryLabels } from "@/lib/categories";
 import type { DealWithParticipants, DealStatus } from "@/types/database";
 
 type Props = {
@@ -29,14 +30,6 @@ const statusMap: Record<
   refunded: { label: "Refunded", variant: "outline" },
 };
 
-const categoryLabels: Record<string, string> = {
-  design: "Design",
-  development: "Development",
-  writing: "Writing",
-  marketing: "Marketing",
-  virtual_assistant: "Virtual Assistant",
-  other: "Other",
-};
 
 function formatRelativeTime(dateStr: string): string {
   const now = Date.now();

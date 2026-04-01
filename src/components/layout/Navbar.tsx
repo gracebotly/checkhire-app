@@ -148,7 +148,7 @@ export function Navbar() {
                 Sign In
               </Link>
               <Link
-                href="/login?mode=signup"
+                href="/create"
                 className="cursor-pointer rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-brand-hover"
               >
                 Create Payment Link
@@ -325,7 +325,7 @@ export function Navbar() {
                     Sign In
                   </Link>
                   <Link
-                    href="/login?mode=signup"
+                    href="/create"
                     onClick={closeMobile}
                     className="cursor-pointer rounded-lg bg-brand px-3 py-2.5 text-center text-sm font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-brand-hover"
                   >

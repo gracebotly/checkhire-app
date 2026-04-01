@@ -61,7 +61,7 @@ export default function HomePage() {
 
             <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
               <Link
-                href="/login?mode=signup&redirect=/deal/new"
+                href="/create"
                 className="flex cursor-pointer items-center gap-2 rounded-lg bg-brand px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-brand-hover"
               >
                 Create a Payment Link — Free
@@ -290,7 +290,7 @@ export default function HomePage() {
                   freelancers, ever.
                 </p>
                 <Link
-                  href="/login?mode=signup&redirect=/deal/new"
+                  href="/create"
                   className="mt-6 inline-flex cursor-pointer items-center gap-2 rounded-lg bg-brand px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-brand-hover"
                 >
                   Create a Payment Link — Free

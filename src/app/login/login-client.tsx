@@ -165,9 +165,24 @@ export default function AuthShell() {
   const [suPasswordError, setSuPasswordError] = useState<string | null>(null);
   const [siEmailError, setSiEmailError] = useState<string | null>(null);
 
+  // Clear stale auth sessions on mount.
+  // If user was deleted from Supabase dashboard, browser still has old JWT.
+  // This detects the invalid session and clears it so signup/signin works cleanly.
+  useEffect(() => {
+    async function clearStaleSession() {
+      try {
+        const { error } = await supabase.auth.getUser();
+        if (error) {
+          await supabase.auth.signOut();
+        }
+      } catch {
+        // Ignore
+      }
+    }
+    clearStaleSession();
+  }, [supabase]);
+
   // Reset loading states when page is restored from bfcache (browser back button).
-  // After Google OAuth redirect, if user hits back, bfcache preserves
-  // googleLoading === true. This listener detects the restoration and resets it.
   useEffect(() => {
     const handlePageShow = (e: PageTransitionEvent) => {
       if (e.persisted) {
@@ -222,18 +237,23 @@ export default function AuthShell() {
     e.preventDefault();
     setSiLoading(true);
     setSiError(null);
-    const { error } = await supabase.auth.signInWithPassword({
-      email: siEmail,
-      password: siPassword,
-    });
-    if (error) {
-      setSiError(error.message);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: siEmail,
+        password: siPassword,
+      });
+      if (error) {
+        setSiError(error.message);
+        return;
+      }
+      const redirectPath = searchParams.get("redirect") || searchParams.get("next") || "/dashboard";
+      router.push(redirectPath);
+      router.refresh();
+    } catch {
+      setSiError("Something went wrong. Please try again.");
+    } finally {
       setSiLoading(false);
-      return;
     }
-    const redirect = searchParams.get("redirect") || searchParams.get("next") || "/dashboard";
-    router.push(redirect);
-    router.refresh();
   };
 
   // ── Google OAuth ──
@@ -320,20 +340,29 @@ export default function AuthShell() {
 
       if (!res.ok || !body.ok) {
         setSuError(body?.message || "Sign up failed.");
-        setSuLoading(false);
         return;
       }
 
-      if (body?.hasSession) {
-        router.push("/dashboard");
-        router.refresh();
+      // Establish a browser-side session by signing in with the same
+      // credentials. The server-side signup sets cookies, but the
+      // browser Supabase client needs its own session to work.
+      // This is the same pattern used by CreateWizard and it works.
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: suEmail,
+        password: suPassword,
+      });
+
+      if (signInError) {
+        setSuSuccess(true);
         return;
       }
 
-      setSuSuccess(true);
-      setSuLoading(false);
+      const redirectPath = searchParams.get("redirect") || searchParams.get("next") || "/dashboard";
+      router.push(redirectPath);
+      router.refresh();
     } catch {
       setSuError("Network error during signup.");
+    } finally {
       setSuLoading(false);
     }
   };

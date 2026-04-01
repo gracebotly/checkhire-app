@@ -875,6 +875,115 @@ const NOTIFICATION_CONFIG: Record<string, NotificationConfig> = {
     },
   },
 
+  // ── Template 36: checkout_expired ──
+  checkout_expired: {
+    accent: "#d97706",
+    subject: (data) =>
+      `Your escrow payment didn't go through — ${escapeHtml(data.dealTitle)}`,
+    body: (data) => {
+      const title = escapeHtml(data.dealTitle);
+      const link = dealUrl(data.dealSlug);
+      return (
+        `<h2 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 700; color: #0f172a;">Payment Not Completed</h2>` +
+        `<p style="margin: 0 0 12px 0; font-size: 14px; color: #475569;">Your escrow payment for <strong>${title}</strong> wasn't completed. The checkout session expired. No money was charged.</p>` +
+        `<p style="margin: 0; font-size: 14px; color: #475569;">If you still want to fund this gig, click below to try again.</p>` +
+        buildCtaButton(link, "Try Again", "primary")
+      );
+    },
+  },
+
+  // ── Template 37: payment_failed_async ──
+  payment_failed_async: {
+    accent: "#dc2626",
+    subject: (data) =>
+      `⚠️ Bank transfer failed — ${escapeHtml(data.dealTitle)}`,
+    body: (data) => {
+      const title = escapeHtml(data.dealTitle);
+      const reason = data.failureReason ? escapeHtml(data.failureReason) : "insufficient funds or bank rejection";
+      const link = dealUrl(data.dealSlug);
+      return (
+        `<h2 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 700; color: #991b1b;">Payment Failed</h2>` +
+        `<div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 14px 18px; margin: 16px 0;"><p style="margin: 0; font-size: 14px; color: #991b1b; font-weight: 600;">Escrow is no longer funded for this gig.</p></div>` +
+        `<p style="margin: 0 0 12px 0; font-size: 14px; color: #475569;">Your bank transfer for <strong>${title}</strong> was declined. Reason: ${reason}.</p>` +
+        `<p style="margin: 0; font-size: 14px; color: #475569;">The escrow has been reverted. Please try funding with a different payment method.</p>` +
+        buildCtaButton(link, "Fund Escrow", "primary")
+      );
+    },
+  },
+
+  // ── Template 38: chargeback_opened ──
+  chargeback_opened: {
+    accent: "#dc2626",
+    subject: (data) =>
+      `🚨 Chargeback filed — ${escapeHtml(data.dealTitle)}`,
+    body: (data) => {
+      const title = escapeHtml(data.dealTitle);
+      const amount = data.chargebackAmount ? formatAmount(data.chargebackAmount) : "";
+      const link = dealUrl(data.dealSlug);
+      return (
+        `<h2 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 700; color: #991b1b;">Chargeback Filed</h2>` +
+        `<div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 14px 18px; margin: 16px 0;"><p style="margin: 0; font-size: 14px; color: #991b1b; font-weight: 600;">Funds are frozen by the bank — not by CheckHire.</p></div>` +
+        (amount ? `<p style="margin: 0 0 12px 0; font-size: 14px; color: #475569;">A chargeback of ${amount} was filed on <strong>${title}</strong>. The cardholder's bank has disputed this payment.</p>` : `<p style="margin: 0 0 12px 0; font-size: 14px; color: #475569;">A chargeback was filed on <strong>${title}</strong>. The cardholder's bank has disputed this payment.</p>`) +
+        `<p style="margin: 0; font-size: 14px; color: #475569;">CheckHire will respond to the bank with the deal's evidence timeline. No action is required from you at this time.</p>` +
+        buildCtaButton(link, "View Deal", "primary")
+      );
+    },
+  },
+
+  // ── Template 39: chargeback_closed ──
+  chargeback_closed: {
+    accent: "#64748b",
+    subject: (data) =>
+      `Chargeback resolved — ${escapeHtml(data.dealTitle)}`,
+    body: (data) => {
+      const title = escapeHtml(data.dealTitle);
+      const status = data.chargebackStatus || "closed";
+      const link = dealUrl(data.dealSlug);
+      const won = status === "won";
+      return (
+        `<h2 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 700; color: #0f172a;">Chargeback ${won ? "Resolved in Your Favor" : "Lost"}</h2>` +
+        (won
+          ? `<p style="margin: 0; font-size: 14px; color: #475569;">The bank ruled in our favor on the chargeback for <strong>${title}</strong>. Funds have been returned and the deal can proceed normally.</p>`
+          : `<p style="margin: 0; font-size: 14px; color: #475569;">The bank ruled against us on the chargeback for <strong>${title}</strong>. The funds have been removed from the platform. A member of the CheckHire team will reach out about next steps.</p>`) +
+        buildCtaButton(link, "View Deal", "neutral")
+      );
+    },
+  },
+
+  // ── Template 40: transfer_failed ──
+  transfer_failed: {
+    accent: "#dc2626",
+    subject: (data) =>
+      `⚠️ Payout delayed — ${escapeHtml(data.dealTitle)}`,
+    body: (data) => {
+      const title = escapeHtml(data.dealTitle);
+      const reason = data.failureReason ? escapeHtml(data.failureReason) : "a temporary issue";
+      const link = dealUrl(data.dealSlug);
+      return (
+        `<h2 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 700; color: #991b1b;">Payout Delayed</h2>` +
+        `<p style="margin: 0 0 12px 0; font-size: 14px; color: #475569;">We tried to send your payment for <strong>${title}</strong>, but it couldn't be processed due to ${reason}.</p>` +
+        `<p style="margin: 0; font-size: 14px; color: #475569;">We're working on it. If the issue persists, please check that your bank details are correct in your payout settings.</p>` +
+        buildCtaButton(`${APP_URL}/settings`, "Check Payout Settings", "primary")
+      );
+    },
+  },
+
+  // ── Template 41: payout_landed ──
+  payout_landed: {
+    accent: "#16a34a",
+    subject: (data) =>
+      `💰 ${formatAmount(data.amount!)} has arrived in your bank`,
+    body: (data) => {
+      const amount = formatAmount(data.amount!);
+      return (
+        buildHeroAmount(data.amount!, "released") +
+        `<p style="margin: 20px 0 0 0; font-size: 14px; color: #475569;">${amount} has landed in your bank account. This payment is now complete.</p>` +
+        `<p style="margin: 12px 0 0 0; font-size: 14px; color: #475569;">Thank you for using CheckHire. Your next gig is waiting.</p>` +
+        buildCtaButton(`${APP_URL}/gigs`, "Browse Gigs", "success")
+      );
+    },
+  },
+
   // ── Template (stub): milestone_submitted ──
   milestone_submitted: {
     accent: "#d97706",

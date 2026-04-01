@@ -4,9 +4,9 @@ import { Footer } from "@/components/layout/Footer";
 import { AboutContent } from "./about-content";
 
 export const metadata: Metadata = {
-  title: "About",
+  title: "About — CheckHire",
   description:
-    "CheckHire is the trust-first job board. Learn why we built it and how we're different.",
+    "CheckHire is the escrow payment link for gig work. Learn how we protect freelancers and clients from scams in online communities.",
 };
 
 export default function AboutPage() {

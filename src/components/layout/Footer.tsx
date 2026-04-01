@@ -12,7 +12,7 @@ const LINKS = {
   Community: [
     {
       label: "Reddit",
-      href: "https://reddit.com/r/SecureFreelance",
+      href: "https://reddit.com/r/checkhire",
       external: true,
     },
     {
@@ -42,8 +42,7 @@ export function Footer() {
               </span>
             </div>
             <p className="mt-3 text-sm text-slate-600">
-              Safe escrow for gig work. You found each other — we make sure
-              nobody gets screwed.
+              The payment link for gig work.
             </p>
             <div className="mt-4">
               <NewsletterSignup

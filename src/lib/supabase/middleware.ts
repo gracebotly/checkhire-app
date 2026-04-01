@@ -7,17 +7,10 @@ const PUBLIC_PATHS = [
   "/auth/callback",
   "/auth/confirm",
   "/auth/auth-code-error",
-  "/api/auth/signup",
-  "/api/auth/send-signin-link",
-  // Public deal pages (anyone can view a deal by slug)
   "/deal",
-  // Public user profiles
   "/u",
-  // Public deals catalog
   "/deals",
-  // Public browse gigs page
   "/gigs",
-  // Static informational pages
   "/about",
   "/contact",
   "/terms",
@@ -32,7 +25,10 @@ export async function updateSession(request: NextRequest) {
   if (request.method === "OPTIONS") {
     return NextResponse.next({ request });
   }
+
   const pathname = request.nextUrl.pathname;
+
+  // Skip API routes — they handle their own auth
   if (pathname.startsWith("/api/")) {
     return NextResponse.next({ request });
   }
@@ -48,7 +44,9 @@ export async function updateSession(request: NextRequest) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value)
+          );
           response = NextResponse.next({ request });
           cookiesToSet.forEach(({ name, value, options }) =>
             response.cookies.set(name, value, options)
@@ -58,17 +56,50 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
+  // CRITICAL: Always call getUser() to refresh the session.
+  // Do NOT use getSession() — it doesn't validate the token with the server.
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const isPublic = PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"));
+  const isPublic = PUBLIC_PATHS.some(
+    (p) => pathname === p || pathname.startsWith(p + "/")
+  );
 
+  // Unauthenticated user on a protected page → redirect to login
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("next", pathname);
     return NextResponse.redirect(url);
+  }
+
+  // Admin route protection — check if user is admin
+  if (user && pathname.startsWith("/admin")) {
+    const serviceUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (serviceKey) {
+      const serviceClient = createServerClient(serviceUrl, serviceKey, {
+        cookies: {
+          getAll() { return []; },
+          setAll() {},
+        },
+        auth: { persistSession: false },
+      });
+
+      const { data: profile } = await serviceClient
+        .from("user_profiles")
+        .select("is_platform_admin")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (!profile?.is_platform_admin) {
+        const url = request.nextUrl.clone();
+        url.pathname = "/dashboard";
+        return NextResponse.redirect(url);
+      }
+    }
   }
 
   return response;

@@ -7,7 +7,14 @@ export default async function ProfileRedirect() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) redirect("/login");
+  // Auth redirect is handled by middleware
+  if (!user) {
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <p className="text-sm text-slate-600">Please sign in to view your profile.</p>
+      </div>
+    );
+  }
 
   const { data: profile } = await supabase
     .from("user_profiles")

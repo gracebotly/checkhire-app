@@ -34,13 +34,35 @@ export const POST = withApiHandler(async (req: Request) => {
   const data = parsed.data;
 
   // Compliance check — block prohibited gig content
-  const contentToCheck = `${data.title} ${data.description} ${data.deliverables}`;
+  const contentToCheck = `${data.title} ${data.description} ${data.deliverables} ${data.other_category_description || ""}`;
   const blockedTerm = checkBlocklist(contentToCheck);
   if (blockedTerm) {
     return NextResponse.json(
       { ok: false, code: "BLOCKED_CONTENT", message: "This gig may not comply with our Acceptable Use Policy. Please review your description or contact support." },
       { status: 400 }
     );
+  }
+
+  // Auto-flag for admin review: "other" category or first-time users
+  let flagForReview = false;
+  let flagReason: string | null = null;
+
+  if (data.category === "other") {
+    flagForReview = true;
+    flagReason = `Category "Other" — description: "${data.other_category_description || "none"}"`;
+  }
+
+  // Check if this is the user's first deal
+  const { count } = await supabase
+    .from("deals")
+    .select("id", { count: "exact", head: true })
+    .eq("client_user_id", user.id);
+
+  if (count === 0) {
+    flagForReview = true;
+    flagReason = flagReason
+      ? `${flagReason} | First-time user`
+      : "First-time user";
   }
 
   const slug = await generateSlug(supabase);
@@ -53,6 +75,10 @@ export const POST = withApiHandler(async (req: Request) => {
       deliverables: data.deliverables,
       total_amount: data.total_amount,
       category: data.category,
+      other_category_description: data.other_category_description || null,
+      payment_frequency: data.payment_frequency || "one_time",
+      flagged_for_review: flagForReview,
+      flagged_reason: flagReason,
       deadline: data.deadline,
       deal_type: data.deal_type,
       deal_link_slug: slug,

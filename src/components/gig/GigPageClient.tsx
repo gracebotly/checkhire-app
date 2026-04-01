@@ -351,6 +351,11 @@ export function GigPageClient({
               {categoryLabels[deal.category]}
             </Badge>
           )}
+          {deal.payment_frequency && deal.payment_frequency !== "one_time" && (
+            <Badge variant="outline">
+              {deal.payment_frequency === "weekly" ? "Paid Weekly" : deal.payment_frequency === "biweekly" ? "Paid Biweekly" : "Paid Monthly"}
+            </Badge>
+          )}
         </div>
         <p className="mt-3 font-mono text-2xl font-semibold tabular-nums text-slate-900">
           ${(deal.total_amount / 100).toFixed(2)}

@@ -15,3 +15,14 @@ export const DEAL_CATEGORIES: { value: DealCategory; label: string; description:
 export const categoryLabels: Record<string, string> = Object.fromEntries(
   DEAL_CATEGORIES.map((c) => [c.value, c.label])
 );
+
+export const PAYMENT_FREQUENCIES: { value: string; label: string; description: string }[] = [
+  { value: "one_time", label: "One-time", description: "Single payment for a defined project" },
+  { value: "weekly", label: "Weekly", description: "Pay every week for ongoing work" },
+  { value: "biweekly", label: "Biweekly", description: "Pay every two weeks" },
+  { value: "monthly", label: "Monthly", description: "Pay once a month" },
+];
+
+export const frequencyLabels: Record<string, string> = Object.fromEntries(
+  PAYMENT_FREQUENCIES.map((f) => [f.value, f.label])
+);

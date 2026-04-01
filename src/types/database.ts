@@ -40,6 +40,8 @@ export type DealCategory =
   | 'translation'
   | 'other';
 
+export type PaymentFrequency = 'one_time' | 'weekly' | 'biweekly' | 'monthly';
+
 export type DealStatus =
   | 'draft'
   | 'pending_acceptance'
@@ -71,6 +73,10 @@ export type Deal = {
   deal_type: DealType;
   deal_link_slug: string;
   category: DealCategory | null;
+  other_category_description: string | null;
+  payment_frequency: PaymentFrequency;
+  flagged_for_review: boolean;
+  flagged_reason: string | null;
   client_user_id: string;
   freelancer_user_id: string | null;
   status: DealStatus;

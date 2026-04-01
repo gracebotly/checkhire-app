@@ -43,6 +43,8 @@ export function CreateWizard() {
   const [screen, setScreen] = useState(0);
   const [direction, setDirection] = useState(1);
   const [selectedCategory, setSelectedCategory] = useState<DealCategory | null>(null);
+  const [otherDescription, setOtherDescription] = useState("");
+  const [paymentFrequency, setPaymentFrequency] = useState("one_time");
   const [title, setTitle] = useState("");
   const [budget, setBudget] = useState("");
   const [email, setEmail] = useState("");
@@ -70,6 +72,8 @@ export function CreateWizard() {
     if (selectedCategory) wizardParams.set("category", selectedCategory);
     if (title) wizardParams.set("title", title);
     if (budget) wizardParams.set("amount", budget);
+    if (selectedCategory === "other" && otherDescription) wizardParams.set("other_desc", otherDescription);
+    if (paymentFrequency !== "one_time") wizardParams.set("frequency", paymentFrequency);
     wizardParams.set("from_wizard", "1");
     return wizardParams;
   };
@@ -241,10 +245,34 @@ export function CreateWizard() {
                 })}
               </div>
 
+              {/* "Other" category description — slides in when Other is selected */}
+              {selectedCategory === "other" && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.2, ease: "easeOut" }}
+                  className="mt-3"
+                >
+                  <label className="mb-1.5 block text-sm font-medium text-slate-900">
+                    Briefly describe the work
+                  </label>
+                  <Input
+                    value={otherDescription}
+                    onChange={(e) => setOtherDescription(e.target.value)}
+                    placeholder="e.g., Data analysis for a research project"
+                    maxLength={100}
+                  />
+                  <p className="mt-1 text-xs text-slate-600">
+                    {otherDescription.length}/100 — helps us ensure this is a supported service
+                  </p>
+                </motion.div>
+              )}
+
               <Button
                 size="lg"
                 className="mt-6 w-full"
-                disabled={!selectedCategory}
+                disabled={!selectedCategory || (selectedCategory === "other" && otherDescription.length < 10)}
                 onClick={() => goTo(2)}
               >
                 Continue
@@ -288,6 +316,33 @@ export function CreateWizard() {
                     min={10}
                     className="pl-7"
                   />
+                </div>
+              </div>
+
+              {/* Payment frequency */}
+              <div className="mt-4">
+                <label className="mb-1.5 block text-sm font-medium text-slate-900">How often will you pay?</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { value: "one_time", label: "One-time", sub: "Single project" },
+                    { value: "weekly", label: "Weekly", sub: "Pay every week" },
+                    { value: "biweekly", label: "Biweekly", sub: "Every 2 weeks" },
+                    { value: "monthly", label: "Monthly", sub: "Once a month" },
+                  ].map((freq) => (
+                    <button
+                      key={freq.value}
+                      type="button"
+                      onClick={() => setPaymentFrequency(freq.value)}
+                      className={`cursor-pointer rounded-xl border p-3 text-left transition-colors duration-200 ${
+                        paymentFrequency === freq.value
+                          ? "border-brand bg-brand-muted"
+                          : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50"
+                      }`}
+                    >
+                      <p className="text-sm font-semibold text-slate-900">{freq.label}</p>
+                      <p className="text-xs text-slate-600">{freq.sub}</p>
+                    </button>
+                  ))}
                 </div>
               </div>
 
@@ -336,6 +391,11 @@ export function CreateWizard() {
                   <p className="mt-0.5 text-xs text-slate-600">
                     {WIZARD_CATEGORIES.find((c) => c.value === selectedCategory)?.label}
                   </p>
+                  {paymentFrequency !== "one_time" && (
+                    <p className="mt-0.5 text-xs font-semibold text-slate-600">
+                      {paymentFrequency === "weekly" ? "Paid weekly" : paymentFrequency === "biweekly" ? "Paid biweekly" : "Paid monthly"}
+                    </p>
+                  )}
                   {budgetNum >= 10 && (
                     <p className="mt-1 font-mono text-lg font-semibold tabular-nums text-brand">{fmt(budgetNum)}</p>
                   )}

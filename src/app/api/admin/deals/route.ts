@@ -28,6 +28,8 @@ export const GET = withApiHandler(async (req: Request) => {
     query = query.eq("status", "completed");
   } else if (filter === "funded") {
     query = query.in("escrow_status", ["funded", "partially_released"]);
+  } else if (filter === "flagged") {
+    query = query.eq("flagged_for_review", true);
   }
 
   const { data: deals, count, error } = await query

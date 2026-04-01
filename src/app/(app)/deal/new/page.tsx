@@ -21,6 +21,8 @@ export default async function NewDealPage({
     title?: string;
     amount?: string;
     from_wizard?: string;
+    other_desc?: string;
+    frequency?: string;
   }>;
 }) {
   const supabase = await createClient();
@@ -37,6 +39,8 @@ export default async function NewDealPage({
     title: wizardTitle,
     amount: wizardAmount,
     from_wizard: fromWizard,
+    other_desc: wizardOtherDesc,
+    frequency: wizardFrequency,
   } = await searchParams;
 
   let initialTemplate: DealTemplate | null = null;
@@ -87,6 +91,8 @@ export default async function NewDealPage({
                 category: wizardCategory || null,
                 title: wizardTitle || null,
                 amount: wizardAmount || null,
+                otherDescription: wizardOtherDesc || null,
+                frequency: wizardFrequency || null,
               }
             : null
         }

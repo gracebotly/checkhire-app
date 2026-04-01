@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getStripe } from "@/lib/stripe/client";
 import { sendAndLogNotification } from "@/lib/email/logNotification";
+import { calculateReferralCommission } from "@/lib/referrals/commission";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -87,6 +88,13 @@ export async function GET(req: Request) {
       if (deal.freelancer_user_id) {
         const { data: fd } = await supabase.from("user_profiles").select("completed_deals_count").eq("id", deal.freelancer_user_id).maybeSingle();
         if (fd) await supabase.from("user_profiles").update({ completed_deals_count: (fd.completed_deals_count || 0) + 1 }).eq("id", deal.freelancer_user_id);
+      }
+
+      // Credit referral commission (if client was referred)
+      try {
+        await calculateReferralCommission(deal.id);
+      } catch (err) {
+        console.error("[auto-release] Referral commission failed for deal:", deal.id, err);
       }
 
       // Emails
@@ -186,6 +194,13 @@ export async function GET(req: Request) {
         const { data: fd } = await supabase.from("user_profiles").select("completed_deals_count").eq("id", deal.freelancer_user_id).maybeSingle();
         if (cd) await supabase.from("user_profiles").update({ completed_deals_count: (cd.completed_deals_count || 0) + 1 }).eq("id", deal.client_user_id);
         if (fd) await supabase.from("user_profiles").update({ completed_deals_count: (fd.completed_deals_count || 0) + 1 }).eq("id", deal.freelancer_user_id);
+
+        // Credit referral commission (if client was referred)
+        try {
+          await calculateReferralCommission(deal.id);
+        } catch (err) {
+          console.error("[auto-release] Referral commission failed for deal:", deal.id, err);
+        }
       } else {
         await supabase.from("deals").update({ escrow_status: "partially_released" }).eq("id", deal.id);
       }

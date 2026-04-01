@@ -5,6 +5,7 @@ import { getStripe } from "@/lib/stripe/client";
 import { withApiHandler } from "@/lib/api/withApiHandler";
 import { confirmDeliverySchema } from "@/lib/validation/escrow";
 import { sendAndLogNotification } from "@/lib/email/logNotification";
+import { calculateReferralCommission } from "@/lib/referrals/commission";
 
 export const POST = withApiHandler(
   async (req: Request, { params }: { params: Promise<{ id: string }> }) => {
@@ -127,6 +128,14 @@ export const POST = withApiHandler(
           .from("user_profiles")
           .update({ completed_deals_count: (freelancerData.completed_deals_count || 0) + 1 })
           .eq("id", deal.freelancer_user_id!);
+      }
+
+      // Credit referral commission (if client was referred)
+      try {
+        await calculateReferralCommission(id);
+      } catch (err) {
+        console.error("[Referral] Commission calculation failed for deal:", id, err);
+        // Non-blocking — don't fail the confirm response
       }
 
       // Send deal_completed to client

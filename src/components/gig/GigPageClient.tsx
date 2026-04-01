@@ -43,6 +43,7 @@ import { StarRating } from "@/components/gig/StarRating";
 import { InterestForm } from "@/components/gig/InterestForm";
 import { InterestList } from "@/components/gig/InterestList";
 import { RepeatDealButton } from "@/components/gig/RepeatDealButton";
+import { ReferralPromptCard } from "@/components/gig/ReferralPromptCard";
 import { DisputeButton } from "@/components/gig/DisputeButton";
 import { ProposalReveal } from "@/components/gig/ProposalReveal";
 import { useToast } from "@/components/ui/toast";
@@ -576,6 +577,13 @@ export function GigPageClient({
       {role === "freelancer" && deal.status === "completed" && (
         <div className="mb-6">
           <InstantPayoutCard amount={deal.total_amount} dealId={deal.id} />
+        </div>
+      )}
+
+      {/* Referral prompt for freelancers on completed deals */}
+      {role === "freelancer" && deal.status === "completed" && currentUserId && (
+        <div className="mb-6">
+          <ReferralPromptCard amountCents={deal.total_amount} />
         </div>
       )}
 

@@ -25,6 +25,7 @@ import {
   Share2,
   Zap,
   Building2,
+  Mail,
 } from "lucide-react";
 
 const section = (delay: number) => ({
@@ -39,7 +40,7 @@ export default function HomePage() {
     <div className="min-h-screen bg-white">
       <Navbar />
       <main>
-        {/* 1. Hero */}
+        {/* 1. Hero — Email Capture First */}
         <motion.section className="px-6 py-20 md:py-28" {...section(0)}>
           <div className="mx-auto max-w-6xl text-center">
             <div className="mx-auto mb-6 inline-flex items-center gap-2 rounded-full border border-brand-muted bg-brand-muted px-4 py-1.5">
@@ -50,30 +51,43 @@ export default function HomePage() {
             </div>
 
             <h1 className="font-display text-3xl font-bold text-slate-900 md:text-5xl md:leading-tight">
-              The payment link that{" "}
-              <span className="text-brand">protects both sides.</span>
+              Stop getting scammed{" "}
+              <span className="text-brand">hiring online.</span>
             </h1>
 
             <p className="mx-auto mt-4 max-w-lg text-base text-slate-600 md:text-lg">
-              Create an escrow payment link in under 3 minutes. Share it
-              anywhere. Freelancer keeps 100%.
+              Get verified gig postings, scam alerts, and safe hiring tips
+              delivered weekly — straight from the communities where it
+              happens.
             </p>
 
-            <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+            {/* Email capture — the primary CTA */}
+            <div className="mx-auto mt-8 max-w-md">
+              <NewsletterSignup
+                variant="inline"
+                utmCampaign="hero"
+                placeholder="Enter your email"
+                buttonText="Join Free"
+                heading=""
+                description=""
+              />
+            </div>
+
+            <p className="mx-auto mt-3 max-w-md text-xs text-slate-600">
+              Free weekly newsletter. No spam. Unsubscribe anytime.
+            </p>
+
+            {/* Secondary link — not a big CTA button */}
+            <p className="mt-6 text-sm text-slate-600">
+              Already know CheckHire?{" "}
               <Link
                 href="/create"
-                className="flex cursor-pointer items-center gap-2 rounded-lg bg-brand px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-brand-hover"
+                className="cursor-pointer font-semibold text-brand transition-colors duration-200 hover:text-brand-hover"
               >
-                Create a Payment Link — Free
-                <ArrowRight className="h-4 w-4" />
+                Create a payment link
+                <ArrowRight className="ml-1 inline h-3.5 w-3.5" />
               </Link>
-              <a
-                href="#how-it-works"
-                className="cursor-pointer rounded-lg border border-gray-200 bg-white px-6 py-3 text-sm font-semibold text-slate-900 shadow-sm transition-colors duration-200 hover:bg-gray-50"
-              >
-                How It Works
-              </a>
-            </div>
+            </p>
 
             {/* Stat bar */}
             <div className="mx-auto mt-10 flex max-w-md items-center justify-center gap-6 border-t border-gray-100 pt-8">
@@ -105,14 +119,26 @@ export default function HomePage() {
           </div>
         </motion.section>
 
-        {/* 2. Fee Calculator */}
-        <motion.section className="px-6 py-16" {...section(0.04)}>
+        {/* 2. Social Proof / Community Badge */}
+        <motion.section className="px-6 py-10" {...section(0.02)}>
           <div className="mx-auto max-w-6xl">
-            <h2 className="mb-8 text-center font-display text-2xl font-bold text-slate-900">
-              Know exactly what you&apos;ll pay
-            </h2>
-            <div className="mx-auto max-w-md">
-              <FeeCalculator />
+            <div className="rounded-xl border border-gray-200 bg-white p-6 text-center">
+              <p className="text-sm font-semibold text-slate-900">
+                Join the safest hiring community on Reddit
+              </p>
+              <p className="mt-1 text-xs text-slate-600">
+                Every hiring post on r/checkhire is backed by locked escrow
+                money or a verified video. No unverified posts.
+              </p>
+              <a
+                href="https://reddit.com/r/checkhire"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 inline-flex cursor-pointer items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-slate-900 shadow-sm transition-colors duration-200 hover:bg-gray-50"
+              >
+                <RedditIcon className="h-4 w-4" />
+                Join r/checkhire
+              </a>
             </div>
           </div>
         </motion.section>
@@ -121,7 +147,7 @@ export default function HomePage() {
         <motion.section
           id="how-it-works"
           className="px-6 py-16"
-          {...section(0.08)}
+          {...section(0.04)}
         >
           <div className="mx-auto max-w-6xl">
             <h2 className="mb-10 text-center font-display text-2xl font-bold text-slate-900">
@@ -175,11 +201,23 @@ export default function HomePage() {
           </div>
         </motion.section>
 
-        {/* 3.5. Instant Payout Callout */}
-        <motion.section className="px-6 py-16" {...section(0.10)}>
-          <div className="mx-auto max-w-6xl grid gap-8 md:grid-cols-2 items-center">
+        {/* 4. Fee Calculator */}
+        <motion.section className="px-6 py-16" {...section(0.06)}>
+          <div className="mx-auto max-w-6xl">
+            <h2 className="mb-8 text-center font-display text-2xl font-bold text-slate-900">
+              Know exactly what you&apos;ll pay
+            </h2>
+            <div className="mx-auto max-w-md">
+              <FeeCalculator />
+            </div>
+          </div>
+        </motion.section>
+
+        {/* 5. Instant Payout Callout */}
+        <motion.section className="px-6 py-16" {...section(0.08)}>
+          <div className="mx-auto grid max-w-6xl items-center gap-8 md:grid-cols-2">
             <div>
-              <span className="inline-block rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700 mb-4">
+              <span className="mb-4 inline-block rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
                 FAST PAYOUTS
               </span>
               <h2 className="font-display text-2xl font-bold text-slate-900">
@@ -222,8 +260,8 @@ export default function HomePage() {
           </div>
         </motion.section>
 
-        {/* 4. Payment Methods */}
-        <motion.section className="px-6 py-10" {...section(0.14)}>
+        {/* 6. Payment Methods */}
+        <motion.section className="px-6 py-10" {...section(0.1)}>
           <div className="mx-auto max-w-6xl">
             <p className="mb-6 text-center text-xs font-semibold uppercase tracking-wide text-slate-600">
               We accept
@@ -232,10 +270,10 @@ export default function HomePage() {
           </div>
         </motion.section>
 
-        {/* 5. Value Props */}
+        {/* 7. Value Props */}
         <motion.section
           className="border-t border-gray-100 bg-gray-50 px-6 py-16"
-          {...section(0.18)}
+          {...section(0.12)}
         >
           <div className="mx-auto grid max-w-6xl gap-8 md:grid-cols-3">
             <div className="text-center">
@@ -270,39 +308,42 @@ export default function HomePage() {
                 Freelancer keeps 100%
               </h3>
               <p className="mt-2 text-sm text-slate-600">
-                Zero freelancer fees. The client covers all fees.
-                Freelancer receives exactly the posted amount.
+                Zero freelancer fees. The client covers all fees. Freelancer
+                receives exactly the posted amount.
               </p>
             </div>
           </div>
         </motion.section>
 
-        {/* 6. Final CTA + Newsletter */}
-        <motion.section className="px-6 py-16" {...section(0.22)}>
+        {/* 8. Bottom CTA — Newsletter + Payment Link */}
+        <motion.section className="px-6 py-16" {...section(0.14)}>
           <div className="mx-auto max-w-6xl">
             <div className="grid items-start gap-8 md:grid-cols-2">
-              <div className="text-center md:text-left">
-                <h2 className="font-display text-2xl font-bold text-slate-900">
-                  Ready to get started?
-                </h2>
-                <p className="mt-3 max-w-lg text-sm text-slate-600">
-                  Create your first payment link in under 2 minutes. No fees for
-                  freelancers, ever.
-                </p>
-                <Link
-                  href="/create"
-                  className="mt-6 inline-flex cursor-pointer items-center gap-2 rounded-lg bg-brand px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-brand-hover"
-                >
-                  Create a Payment Link — Free
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </div>
               <NewsletterSignup
                 variant="card"
                 utmCampaign="bottom_cta"
-                heading="Not ready yet?"
-                description="Get weekly scam teardowns and gig safety tips from real Reddit posts."
+                heading="Get verified gig postings weekly"
+                description="Escrow-backed gigs, scam alerts, and safe hiring tips — delivered to your inbox every week."
               />
+              <div className="rounded-xl border border-gray-200 bg-white p-6">
+                <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-brand-muted">
+                  <Shield className="h-5 w-5 text-brand" />
+                </div>
+                <h3 className="font-display text-base font-semibold text-slate-900">
+                  Ready to create a payment link?
+                </h3>
+                <p className="mt-1 text-sm text-slate-600">
+                  Fund escrow in under 3 minutes. Share the link anywhere. The
+                  freelancer keeps 100%.
+                </p>
+                <Link
+                  href="/create"
+                  className="mt-4 inline-flex cursor-pointer items-center gap-2 rounded-lg bg-brand px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-brand-hover"
+                >
+                  Create Payment Link
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
             </div>
           </div>
         </motion.section>

@@ -129,7 +129,7 @@ function formatBytes(bytes: number) {
 }
 
 export default function DisputePage() {
-  const { id } = useParams<{ id: string }>();
+  const { slug: id } = useParams<{ slug: string }>();
   const { toast } = useToast();
 
   const [loading, setLoading] = useState(true);

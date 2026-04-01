@@ -127,6 +127,11 @@ export function GigPageClient({
   const [guestToken, setGuestToken] = useState(initialGuestToken);
   const [termsExpanded, setTermsExpanded] = useState(role === "visitor");
 
+  const [editingSlug, setEditingSlug] = useState(false);
+  const [slugInput, setSlugInput] = useState(deal.deal_link_slug);
+  const [slugSaving, setSlugSaving] = useState(false);
+  const [slugError, setSlugError] = useState("");
+
   // Dialog states
   const [revisionNotes, setRevisionNotes] = useState("");
   const [revisionDialogOpen, setRevisionDialogOpen] = useState(false);
@@ -193,6 +198,43 @@ export function GigPageClient({
       setError(err instanceof Error ? err.message : "Failed to accept");
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  const handleSaveSlug = async () => {
+    const cleaned = slugInput.toLowerCase().trim();
+    if (cleaned === deal.deal_link_slug) {
+      setEditingSlug(false);
+      return;
+    }
+    if (cleaned.length < 3) {
+      setSlugError("Minimum 3 characters");
+      return;
+    }
+    if (!/^[a-z0-9][a-z0-9-]*[a-z0-9]$/.test(cleaned)) {
+      setSlugError("Lowercase letters, numbers, and hyphens only");
+      return;
+    }
+    setSlugSaving(true);
+    setSlugError("");
+    try {
+      const res = await fetch(`/api/deals/${deal.id}/slug`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug: cleaned }),
+      });
+      const data = await res.json();
+      if (!data.ok) {
+        setSlugError(data.message || "Failed to update link");
+        return;
+      }
+      setEditingSlug(false);
+      window.history.replaceState(null, "", `/deal/${cleaned}`);
+      router.refresh();
+    } catch {
+      setSlugError("Something went wrong");
+    } finally {
+      setSlugSaving(false);
     }
   };
 
@@ -610,7 +652,7 @@ export function GigPageClient({
       {/* ShareHub — for client on pending/funded deals */}
       {role === "client" &&
         (deal.status === "pending_acceptance" || deal.status === "funded") && (
-          <div className="mb-6">
+          <div className="mb-6 space-y-3">
             <ShareHub
               dealSlug={deal.deal_link_slug}
               dealTitle={deal.title}
@@ -621,6 +663,63 @@ export function GigPageClient({
               clientName={deal.client.display_name || "Client"}
               escrowFunded={deal.escrow_status === "funded"}
             />
+            <div className="rounded-lg bg-gray-50 px-3 py-2">
+              {editingSlug && role === "client" ? (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-1">
+                    <span className="font-mono text-xs text-slate-600">checkhire.com/deal/</span>
+                    <input
+                      type="text"
+                      value={slugInput}
+                      onChange={(e) => {
+                        setSlugInput(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""));
+                        setSlugError("");
+                      }}
+                      className="flex-1 rounded border border-gray-200 bg-white px-2 py-1 font-mono text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-ring/40 focus:border-brand"
+                      maxLength={60}
+                    />
+                  </div>
+                  {slugError && (
+                    <p className="text-xs text-red-600">{slugError}</p>
+                  )}
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      onClick={handleSaveSlug}
+                      disabled={slugSaving}
+                    >
+                      {slugSaving ? "Saving..." : "Save"}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        setEditingSlug(false);
+                        setSlugInput(deal.deal_link_slug);
+                        setSlugError("");
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <p className="font-mono text-xs text-slate-600">
+                    checkhire.com/deal/{deal.deal_link_slug}
+                  </p>
+                  {role === "client" && (
+                    <button
+                      type="button"
+                      onClick={() => setEditingSlug(true)}
+                      className="cursor-pointer text-xs text-brand transition-colors duration-200 hover:text-brand-hover"
+                    >
+                      Customize
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -837,9 +936,27 @@ export function GigPageClient({
           {role === "visitor" &&
             deal.status === "pending_acceptance" &&
             !deal.freelancer && (
-              <Button onClick={handleAccept} disabled={actionLoading}>
-                {actionLoading ? "Accepting..." : "Accept Gig"}
-              </Button>
+              <>
+                {deal.escrow_status === "funded" ? (
+                  <Button onClick={handleAccept} disabled={actionLoading}>
+                    {actionLoading ? "Accepting..." : "Accept Gig"}
+                  </Button>
+                ) : (
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                    <div className="flex items-start gap-3">
+                      <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900">
+                          Payment not yet secured
+                        </p>
+                        <p className="mt-1 text-sm text-slate-600">
+                          The client hasn&apos;t funded escrow yet. You can&apos;t accept this gig until the payment is locked. Message the client to let them know you&apos;re interested.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
 
           {/* ── Client actions ── */}

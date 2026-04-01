@@ -39,7 +39,7 @@ export const createDealSchema = z
       .enum(["one_time", "weekly", "biweekly", "monthly"])
       .default("one_time"),
     deadline: z.string().nullable(),
-    deal_type: z.enum(["private", "public"]),
+    deal_type: z.enum(["private", "public"]).default("public"),
     has_milestones: z.boolean(),
     milestones: z
       .array(
@@ -110,4 +110,16 @@ export const createTemplateSchema = z.object({
       })
     )
     .optional(),
+});
+
+export const updateDealSlugSchema = z.object({
+  slug: z
+    .string()
+    .min(3, "Minimum 3 characters")
+    .max(60, "Maximum 60 characters")
+    .regex(
+      /^[a-z0-9][a-z0-9-]*[a-z0-9]$/,
+      "Lowercase letters, numbers, and hyphens only. Must start and end with a letter or number."
+    )
+    .refine((s) => !s.includes("--"), "No consecutive hyphens"),
 });

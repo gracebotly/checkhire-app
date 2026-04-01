@@ -383,9 +383,9 @@ export function CreateWizard() {
                   transition={{ duration: 0.25, ease: "easeOut" }}
                   className="mt-4 rounded-xl border border-gray-200 bg-white p-4"
                 >
-                  <div className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-green-50 px-3 py-1">
-                    <Shield className="h-3 w-3 text-green-700" />
-                    <span className="text-xs font-semibold text-green-700">Payment secured</span>
+                  <div className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-brand-muted px-3 py-1">
+                    <Shield className="h-3 w-3 text-brand" />
+                    <span className="text-xs font-semibold text-brand">Gig preview</span>
                   </div>
                   <p className="text-sm font-semibold text-slate-900">{title}</p>
                   <p className="mt-0.5 text-xs text-slate-600">
@@ -400,7 +400,7 @@ export function CreateWizard() {
                     <p className="mt-1 font-mono text-lg font-semibold tabular-nums text-brand">{fmt(budgetNum)}</p>
                   )}
                   <div className="mt-2 rounded-lg bg-gray-50 px-3 py-2">
-                    <p className="font-mono text-xs text-slate-600">checkhire.com/deal/your-gig-link</p>
+                    <p className="text-xs text-slate-600">This is how freelancers will see your gig</p>
                   </div>
                 </motion.div>
               )}

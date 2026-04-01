@@ -10,6 +10,7 @@ export default async function AppLayout({
   children: React.ReactNode;
 }) {
   let emailConfirmed = true; // default to true so banner doesn't flash
+  let userEmail: string | null = null;
 
   try {
     const supabase = await createClient();
@@ -17,6 +18,7 @@ export default async function AppLayout({
       data: { user },
     } = await supabase.auth.getUser();
     emailConfirmed = !!user?.email_confirmed_at;
+    userEmail = user?.email || null;
   } catch {
     // If auth check fails, don't show the banner
   }
@@ -25,7 +27,7 @@ export default async function AppLayout({
     <ToastProvider>
       <div className="min-h-screen bg-white">
         <Navbar />
-        <EmailConfirmBanner emailConfirmed={emailConfirmed} />
+        <EmailConfirmBanner emailConfirmed={emailConfirmed} userEmail={userEmail} />
         <main className="pb-20 md:pb-0">{children}</main>
         <BottomNav />
       </div>

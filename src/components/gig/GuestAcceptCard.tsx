@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { CheckCircle } from "lucide-react";
+import { CheckCircle, Shield } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -170,66 +170,86 @@ export function GuestAcceptCard({
             transition={{ duration: 0.25, ease: "easeOut" }}
             className="space-y-4"
           >
-            <div>
-              <h3 className="text-lg font-semibold text-slate-900">
-                Accept This Gig
-              </h3>
-              <div className="mt-2">
-                {escrowFunded && amountCents ? (
-                  <Badge variant="success">
-                    ${(amountCents / 100).toFixed(2)} secured in escrow
-                  </Badge>
-                ) : (
-                  <Badge variant="warning">Escrow not yet funded</Badge>
+            {!escrowFunded ? (
+              <div className="text-center space-y-3 py-2">
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-100">
+                  <Shield className="h-6 w-6 text-amber-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-slate-900">
+                  Payment Not Yet Secured
+                </h3>
+                <p className="text-sm text-slate-600">
+                  The client hasn&apos;t funded escrow yet. Once they lock the payment, you&apos;ll be able to accept this gig and start working.
+                </p>
+                {amountCents && (
+                  <p className="font-mono text-lg font-semibold tabular-nums text-slate-900">
+                    ${(amountCents / 100).toFixed(2)}
+                  </p>
                 )}
+                <p className="text-xs text-slate-600">
+                  Check back soon or message the client directly.
+                </p>
               </div>
-            </div>
+            ) : (
+              <>
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-900">
+                    Accept This Gig
+                  </h3>
+                  <div className="mt-2">
+                    <Badge variant="success">
+                      ${(amountCents! / 100).toFixed(2)} secured in escrow
+                    </Badge>
+                  </div>
+                </div>
 
-            <button
-              type="button"
-              onClick={handleGoogleAuth}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#4285f4] px-4 py-2.5 text-sm font-medium text-white cursor-pointer transition-colors duration-200 hover:bg-[#3574d4]"
-            >
-              <GoogleIcon />
-              Continue with Google
-            </button>
+                <button
+                  type="button"
+                  onClick={handleGoogleAuth}
+                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#4285f4] px-4 py-2.5 text-sm font-medium text-white cursor-pointer transition-colors duration-200 hover:bg-[#3574d4]"
+                >
+                  <GoogleIcon />
+                  Continue with Google
+                </button>
 
-            <div className="flex items-center gap-3">
-              <div className="h-px flex-1 bg-gray-300" />
-              <span className="text-xs text-slate-600">
-                or accept without an account
-              </span>
-              <div className="h-px flex-1 bg-gray-300" />
-            </div>
+                <div className="flex items-center gap-3">
+                  <div className="h-px flex-1 bg-gray-300" />
+                  <span className="text-xs text-slate-600">
+                    or accept without an account
+                  </span>
+                  <div className="h-px flex-1 bg-gray-300" />
+                </div>
 
-            <div className="space-y-3">
-              <Input
-                placeholder="Your name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-              <Input
-                type="email"
-                placeholder="your@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-              <Button
-                className="w-full"
-                onClick={handleSendCode}
-                disabled={!name.trim() || !email.trim() || loading}
-              >
-                {loading ? "Sending..." : "Continue →"}
-              </Button>
-            </div>
+                <div className="space-y-3">
+                  <Input
+                    placeholder="Your name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                  />
+                  <Input
+                    type="email"
+                    placeholder="your@email.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                  <Button
+                    className="w-full"
+                    onClick={handleSendCode}
+                    disabled={!name.trim() || !email.trim() || loading}
+                  >
+                    {loading ? "Sending..." : "Continue →"}
+                  </Button>
+                </div>
 
-            {error && (
-              <p className="text-sm text-red-600 text-center">{error}</p>
+                {error && (
+                  <p className="text-sm text-red-600 text-center">{error}</p>
+                )}
+
+                <p className="text-xs text-slate-600 text-center">
+                  By accepting, you agree to CheckHire&apos;s terms of service.
+                </p>
+              </>
             )}
-
-            <p className="text-xs text-slate-600 text-center">
-              By accepting, you agree to CheckHire&apos;s terms of service.
-            </p>
           </motion.div>
         )}
 

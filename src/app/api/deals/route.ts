@@ -18,6 +18,18 @@ export const POST = withApiHandler(async (req: Request) => {
       { status: 401 }
     );
 
+  // Require email verification before creating gigs
+  if (!user.email_confirmed_at) {
+    return NextResponse.json(
+      {
+        ok: false,
+        code: "EMAIL_NOT_VERIFIED",
+        message: "Please verify your email before creating a gig. Check your inbox for a confirmation link.",
+      },
+      { status: 403 }
+    );
+  }
+
   const body = await req.json();
   const parsed = createDealSchema.safeParse(body);
   if (!parsed.success) {

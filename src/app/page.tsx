@@ -1,6 +1,8 @@
 "use client";
 
+import { Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { motion } from "motion/react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
@@ -8,6 +10,7 @@ import { NewsletterSignup } from "@/components/newsletter/NewsletterSignup";
 import { FeeCalculator } from "@/components/gig/FeeCalculator";
 import { PaymentMethodsBar } from "@/components/gig/PaymentMethodsBar";
 import { PayoutSpeedComparison } from "@/components/gig/PayoutSpeedComparison";
+import { ReferralWelcomeBanner } from "@/components/referral/ReferralWelcomeBanner";
 import {
   RedditIcon,
   WhatsAppIcon,
@@ -35,11 +38,15 @@ const section = (delay: number) => ({
   transition: { duration: 0.4, ease: "easeOut" as const, delay },
 });
 
-export default function HomePage() {
+function HomePageContent() {
+  const searchParams = useSearchParams();
+  const isReferred = searchParams.get("referred") === "1";
+
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
       <main>
+        {isReferred && <ReferralWelcomeBanner />}
         {/* 1. Hero — Email Capture First */}
         <motion.section className="px-6 py-20 md:py-28" {...section(0)}>
           <div className="mx-auto max-w-6xl text-center">
@@ -339,5 +346,13 @@ export default function HomePage() {
       </main>
       <Footer />
     </div>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-white" />}>
+      <HomePageContent />
+    </Suspense>
   );
 }

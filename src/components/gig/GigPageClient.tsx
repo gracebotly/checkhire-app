@@ -422,7 +422,9 @@ export function GigPageClient({
             </Badge>
           )}
         </div>
-        <p className="mt-3 font-mono text-2xl font-semibold tabular-nums text-slate-900">
+        <p className={`mt-3 font-mono font-semibold tabular-nums text-slate-900 ${
+          role === "visitor" ? "text-lg" : "text-2xl"
+        }`}>
           ${(deal.total_amount / 100).toFixed(2)}
         </p>
         {deal.deadline && (
@@ -433,10 +435,12 @@ export function GigPageClient({
         )}
       </div>
 
-      {/* 2. Escrow Status Bar */}
-      <div className="mb-6">
-        <EscrowStatusBar status={deal.escrow_status} amount={deal.total_amount} />
-      </div>
+      {/* 2. Escrow Status Bar — hide for visitors on unfunded deals (redundant with badge) */}
+      {!(role === "visitor" && deal.escrow_status === "unfunded") && (
+        <div className="mb-6">
+          <EscrowStatusBar status={deal.escrow_status} amount={deal.total_amount} />
+        </div>
+      )}
 
       {/* 2a. Moderation Banners — only shown when deal is NOT approved */}
       {deal.review_status === "pending" && isParticipant && (
@@ -799,6 +803,7 @@ export function GigPageClient({
               description={deal.description}
               clientName={deal.client.display_name || "Client"}
               escrowFunded={deal.escrow_status === "funded"}
+              onFundEscrow={deal.escrow_status === "unfunded" ? () => handleFundEscrow() : undefined}
             />
             <div className="rounded-lg bg-gray-50 px-3 py-2">
               {editingSlug && role === "client" ? (
@@ -1131,19 +1136,9 @@ export function GigPageClient({
                     {actionLoading ? "Accepting..." : "Accept Gig"}
                   </Button>
                 ) : (
-                  <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-                    <div className="flex items-start gap-3">
-                      <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
-                      <div>
-                        <p className="text-sm font-semibold text-slate-900">
-                          Payment not yet secured
-                        </p>
-                        <p className="mt-1 text-sm text-slate-600">
-                          The client hasn&apos;t funded escrow yet. You can&apos;t accept this gig until the payment is locked. Message the client to let them know you&apos;re interested.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+                  <p className="text-sm text-slate-600">
+                    Escrow not yet funded. You&apos;ll be able to accept once the client locks payment.
+                  </p>
                 )}
               </>
             )}

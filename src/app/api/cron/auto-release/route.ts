@@ -26,6 +26,7 @@ export async function GET(req: Request) {
       .select("*, freelancer:user_profiles!deals_freelancer_user_id_profile_fkey(stripe_connected_account_id, stripe_onboarding_complete, email), client:user_profiles!deals_client_user_id_profile_fkey(email)")
       .eq("status", "submitted")
       .eq("escrow_status", "funded")
+      .in("review_status", ["approved"])
       .not("auto_release_at", "is", null)
       .lte("auto_release_at", new Date().toISOString());
 
@@ -147,10 +148,15 @@ export async function GET(req: Request) {
       // Re-check deal status to prevent race with dispute opening
       const { data: currentDeal } = await supabase
         .from("deals")
-        .select("status, escrow_status")
+        .select("status, escrow_status, review_status")
         .eq("id", deal.id)
         .maybeSingle();
       if (!currentDeal || currentDeal.status === "disputed" || currentDeal.escrow_status === "frozen") {
+        continue;
+      }
+
+      // Moderation guard: skip deals not yet approved
+      if (currentDeal.review_status && currentDeal.review_status !== "approved") {
         continue;
       }
 

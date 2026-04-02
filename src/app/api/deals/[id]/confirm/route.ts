@@ -25,6 +25,21 @@ export const POST = withApiHandler(
     if (!deal) return NextResponse.json({ ok: false, code: "NOT_FOUND", message: "Deal not found" }, { status: 404 });
     if (deal.client_user_id !== user.id) return NextResponse.json({ ok: false, code: "FORBIDDEN", message: "Only the client can confirm delivery" }, { status: 403 });
 
+    // ── Moderation guard: block payouts for unreviewed deals ──
+    if (deal.review_status && deal.review_status !== "approved") {
+      return NextResponse.json(
+        {
+          ok: false,
+          code: "MODERATION_HOLD",
+          message:
+            deal.review_status === "rejected"
+              ? "This gig has been removed and funds cannot be released."
+              : "This gig is being verified by CheckHire. Payouts will be enabled once verification is complete.",
+        },
+        { status: 403 }
+      );
+    }
+
     // Get freelancer's Stripe account
     const { data: freelancerProfile } = await supabase.from("user_profiles").select("stripe_connected_account_id, stripe_onboarding_complete, email, display_name").eq("id", deal.freelancer_user_id!).maybeSingle();
     if (!freelancerProfile?.stripe_connected_account_id || !freelancerProfile.stripe_onboarding_complete) {

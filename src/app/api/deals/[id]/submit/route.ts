@@ -40,7 +40,12 @@ export const POST = withApiHandler(
     const { data: profile } = await supabase.from("user_profiles").select("display_name").eq("id", user.id).maybeSingle();
     const displayName = profile?.display_name || "Freelancer";
 
-    const autoReleaseAt = new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString();
+    // Only start 72-hour countdown if deal has passed moderation review
+    // If still pending review, auto_release_at stays null — it gets set when admin approves
+    const dealPassedReview = !deal.review_status || deal.review_status === "approved";
+    const autoReleaseAt = dealPassedReview
+      ? new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString()
+      : null;
 
     if (milestone_id) {
       const { data: milestone } = await supabase.from("milestones").select("*").eq("id", milestone_id).eq("deal_id", id).maybeSingle();

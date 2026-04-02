@@ -80,6 +80,11 @@ export type Deal = {
   payment_frequency: PaymentFrequency;
   flagged_for_review: boolean;
   flagged_reason: string | null;
+  review_status: "pending" | "approved" | "changes_requested" | "rejected";
+  review_notes: string | null;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  risk_score: number;
   client_user_id: string;
   freelancer_user_id: string | null;
   status: DealStatus;
@@ -357,7 +362,10 @@ export type NotificationType =
   | 'chargeback_opened'
   | 'chargeback_closed'
   | 'payout_delayed'
-  | 'payout_landed';
+  | 'payout_landed'
+  | 'moderation_approved'
+  | 'moderation_changes_requested'
+  | 'moderation_rejected';
 
 export type EmailNotification = {
   id: string;
@@ -480,3 +488,26 @@ export interface AdminReferralOverview {
   total_clicks: number;
   conversion_rate: number;
 }
+
+
+// ─── Deal Moderation Log ───
+export type DealModerationLog = {
+  id: string;
+  deal_id: string;
+  admin_user_id: string;
+  action: "approved" | "changes_requested" | "rejected" | "escalated";
+  previous_status: string | null;
+  new_status: string;
+  notes: string | null;
+  created_at: string;
+};
+
+export type ModerationAction = "approved" | "changes_requested" | "rejected";
+
+export type RejectionCategory =
+  | "violates_terms"
+  | "suspected_scam"
+  | "prohibited_content"
+  | "duplicate_deal"
+  | "insufficient_detail"
+  | "other";

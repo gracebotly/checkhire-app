@@ -6,6 +6,7 @@ import { createDealSchema } from "@/lib/validation/deals";
 import { generateSlug } from "@/lib/deals/generateSlug";
 import { checkBlocklist } from "@/lib/validation/blocklist";
 import { sendAndLogNotification } from "@/lib/email/logNotification";
+import { calculateRiskScore } from "@/lib/moderation/riskScore";
 
 export const POST = withApiHandler(async (req: Request) => {
   const supabase = await createClient();
@@ -55,27 +56,43 @@ export const POST = withApiHandler(async (req: Request) => {
     );
   }
 
-  // Auto-flag for admin review: "other" category or first-time users
-  let flagForReview = false;
-  let flagReason: string | null = null;
+  // ── Risk-based moderation ──
+  const { data: userProfile } = await supabase
+    .from("user_profiles")
+    .select("completed_deals_count, trust_badge, email")
+    .eq("id", user.id)
+    .maybeSingle();
 
-  if (data.category === "other") {
-    flagForReview = true;
-    flagReason = `Category "Other" — description: "${data.other_category_description || "none"}"`;
-  }
-
-  // Check if this is the user's first deal
-  const { count } = await supabase
+  const { count: existingDealCount } = await supabase
     .from("deals")
     .select("id", { count: "exact", head: true })
     .eq("client_user_id", user.id);
 
-  if (count === 0) {
-    flagForReview = true;
-    flagReason = flagReason
-      ? `${flagReason} | First-time user`
-      : "First-time user";
-  }
+  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+  const { count: recentDealCount } = await supabase
+    .from("deals")
+    .select("id", { count: "exact", head: true })
+    .eq("client_user_id", user.id)
+    .gte("created_at", oneHourAgo);
+
+  const riskAssessment = calculateRiskScore({
+    completedDealsCount: userProfile?.completed_deals_count ?? 0,
+    trustBadge: userProfile?.trust_badge ?? "new",
+    dealAmount: data.total_amount,
+    title: data.title,
+    description: data.description,
+    deliverables: data.deliverables ?? null,
+    category: data.category ?? null,
+    otherCategoryDescription: data.other_category_description ?? null,
+    email: userProfile?.email ?? null,
+    existingDealCount: existingDealCount ?? 0,
+    recentDealCount: recentDealCount ?? 0,
+  });
+
+  const flagForReview = riskAssessment.shouldFlag;
+  const flagReason: string | null = riskAssessment.shouldFlag
+    ? riskAssessment.reasons.join(" | ")
+    : null;
 
   const slug = await generateSlug(supabase, data.title);
 
@@ -91,6 +108,8 @@ export const POST = withApiHandler(async (req: Request) => {
       payment_frequency: data.payment_frequency || "one_time",
       flagged_for_review: flagForReview,
       flagged_reason: flagReason,
+      review_status: flagForReview ? "pending" : "approved",
+      risk_score: riskAssessment.score,
       deadline: data.deadline,
       deal_type: data.deal_type,
       deal_link_slug: slug,

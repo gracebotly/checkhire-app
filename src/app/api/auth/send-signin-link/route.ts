@@ -54,26 +54,23 @@ export const POST = withApiHandler(async function POST(req: Request) {
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithOtp({
+  const { data, error } = await supabase.auth.signInWithOtp({
     email,
     options: {
-      shouldCreateUser: false,
+      shouldCreateUser: true,
       emailRedirectTo: `${siteUrl(req)}/auth/callback?intent=signin`,
     },
   });
 
   if (error) {
-    console.error("[send-signin-link]", error.message);
-
-    if (error.message.toLowerCase().includes("signups not allowed")) {
-      return NextResponse.json(
-        { ok: false, code: "not_found", message: "No account found with this email. Please sign up first." },
-        { status: 404 }
-      );
-    }
+    console.error("[send-signin-link]", error.message, {
+      email,
+      errorCode: (error as any).code,
+      projectUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    });
 
     return NextResponse.json(
-      { ok: false, code: "send_failed", message: "Failed to send sign-in link. Please try again." },
+      { ok: false, code: "send_failed", message: "We couldn't send a sign-in link for this email. Please try again or sign in with your password." },
       { status: 500 }
     );
   }

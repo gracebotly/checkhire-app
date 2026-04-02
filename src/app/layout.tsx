@@ -17,13 +17,13 @@ export const metadata: Metadata = {
     template: "%s | CheckHire",
   },
   description:
-    "You found each other. We make sure nobody gets screwed. Define the deal, lock the payment, release when the work is done. Freelancer keeps 100%.",
+    "Work with anyone online — without the risk. Define the deal, lock the payment, release when the work is done. Freelancer keeps 100%.",
   openGraph: {
     type: "website",
     siteName: "CheckHire",
     title: "CheckHire — Safe Payments for Online Work",
     description:
-      "You found each other. We make sure nobody gets screwed. Escrow-backed deals for freelance gig work. Payments secured by Stripe.",
+      "Work with anyone online — without the risk. Escrow-backed deals for freelance gig work. Payments secured by Stripe.",
   },
 };
 

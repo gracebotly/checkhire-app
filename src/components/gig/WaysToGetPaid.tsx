@@ -29,7 +29,7 @@ export function WaysToGetPaid() {
           </div>
           <h3 className="text-base font-semibold text-slate-900">Instant</h3>
           <p className="mt-1 text-sm text-slate-600">
-            Under 30 minutes to your debit card
+            Straight to your debit card in seconds
           </p>
           <p className="mt-1 text-sm text-slate-600">
             Available 24/7 including weekends and holidays

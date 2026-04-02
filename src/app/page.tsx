@@ -58,12 +58,12 @@ function HomePageContent() {
             </div>
 
             <h1 className="font-display text-3xl font-bold text-slate-900 md:text-5xl md:leading-tight">
-              You found each other.{" "}
-              <span className="text-brand">We make sure nobody gets screwed.</span>
+              Work with anyone online —{" "}
+              <span className="text-brand">without the risk.</span>
             </h1>
 
             <p className="mx-auto mt-4 max-w-lg text-base text-slate-600 md:text-lg">
-              Define the work. Lock the payment. Get protected — before anything starts.
+              Define the work. Secure the payment. Stay protected.
             </p>
 
             {/* Email capture — the primary CTA */}
@@ -79,7 +79,7 @@ function HomePageContent() {
             </div>
 
             <p className="mx-auto mt-3 max-w-md text-xs text-slate-600">
-              Free weekly newsletter — scam alerts, safe hiring tips, verified gigs. Unsubscribe anytime.
+              Get curated remote gigs, safe hiring tips, and opportunities that won't waste your time.
             </p>
 
             {/* Secondary link — not a big CTA button */}
@@ -237,7 +237,7 @@ function HomePageContent() {
                       Instant payout
                     </p>
                     <p className="text-xs text-slate-600">
-                      Under 30 minutes to your debit card — 1% fee
+                      Straight to your debit card in seconds — 1% fee
                     </p>
                   </div>
                 </div>

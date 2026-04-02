@@ -442,7 +442,7 @@ const NOTIFICATION_CONFIG: Record<string, NotificationConfig> = {
       return (
         buildHeroAmount(data.amount!, "released") +
         `<p style="margin: 20px 0 0 0; font-size: 14px; color: #475569;">The client confirmed delivery on <strong>${title}</strong>. ${amount} has been released to your bank account.</p>` +
-        `<p style="margin: 12px 0 0 0; font-size: 14px; color: #475569;">Standard payouts arrive in 2 business days. Want it faster? Use <strong>Instant Payout</strong> to get your money in under 30 minutes.</p>` +
+        `<p style="margin: 12px 0 0 0; font-size: 14px; color: #475569;">Standard payouts arrive in 2 business days. Want it faster? Use <strong>Instant Payout</strong> to get your money in seconds.</p>` +
         accountNudge +
         (data.isGuestFreelancer ? "" : buildReferralNudge()) +
         buildCtaButton(link, "View Payout", "success")

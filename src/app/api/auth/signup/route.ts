@@ -4,6 +4,8 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { withApiHandler } from "@/lib/api/withApiHandler";
 import { generateReferralCode } from "@/lib/referrals/generate-code";
 import { sendWelcomeEmail } from "@/lib/email/sendWelcomeEmail";
+import { notifyAdmin } from "@/lib/slack/notify";
+import { newUserSignup } from "@/lib/slack/templates";
 
 export const runtime = "nodejs";
 
@@ -120,10 +122,11 @@ export const POST = withApiHandler(async function POST(request: NextRequest) {
   }
 
   const refCookie = request.cookies.get("checkhire_ref")?.value;
+  let referredByName: string | null = null;
   if (refCookie && /^REF-[A-Z0-9]{6}$/.test(refCookie)) {
     const { data: referrer } = await supabaseService
       .from("user_profiles")
-      .select("id, referral_code")
+      .select("id, referral_code, display_name")
       .eq("referral_code", refCookie)
       .single();
 
@@ -134,10 +137,20 @@ export const POST = withApiHandler(async function POST(request: NextRequest) {
         .eq("id", newUserId)
         .is("referred_by", null);
 
+      referredByName = referrer.display_name || referrer.referral_code || null;
       console.log(`[Referral] User ${newUserId} referred by ${referrer.id}`);
     }
   }
   // --- END REFERRAL ---
+
+  // Fire-and-forget — do not block signup response
+  void notifyAdmin(
+    newUserSignup({
+      display_name: name || "New User",
+      email,
+      referred_by: referredByName || undefined,
+    }),
+  );
 
   // Send welcome email (non-blocking, non-fatal)
   sendWelcomeEmail({ to: email, userName: name || null }).catch(() => {});

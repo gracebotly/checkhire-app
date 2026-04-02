@@ -174,7 +174,7 @@ export default function HowItWorksPage() {
                     <span className="text-sm font-mono tabular-nums text-green-600 font-semibold">Free</span>
                   </div>
                   <div className="flex justify-between border-b border-gray-100 pb-2">
-                    <span className="text-sm text-slate-600">Instant payout (30 min)</span>
+                    <span className="text-sm text-slate-600">Instant payout (seconds)</span>
                     <span className="text-sm font-mono tabular-nums text-slate-900">1% (min $0.50)</span>
                   </div>
                   <div className="flex justify-between">

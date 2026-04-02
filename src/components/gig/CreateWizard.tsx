@@ -134,10 +134,12 @@ export function CreateWizard() {
       });
       if (signInError) throw new Error(signInError.message);
 
-      // Redirect to deal/new with wizard data
-      const wizardParams = buildWizardParams();
-      router.push(`/deal/new?${wizardParams.toString()}`);
+      // Refresh server session first, then navigate with wizard data
       router.refresh();
+      const wizardParams = buildWizardParams();
+      // Small delay to let the server session update propagate before navigation
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      router.push(`/deal/new?${wizardParams.toString()}`);
     } catch (err) {
       setAuthError(err instanceof Error ? err.message : "Signup failed");
     } finally {

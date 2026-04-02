@@ -80,8 +80,11 @@ export async function updateSession(request: NextRequest) {
   // Unauthenticated user on a protected page → redirect to login
   if (!user && (!isPublic || isProtectedOverride)) {
     const url = request.nextUrl.clone();
+    // Preserve the full path including query params (e.g., /deal/new?category=video&from_wizard=1)
+    const fullPath = request.nextUrl.pathname + request.nextUrl.search;
     url.pathname = "/login";
-    url.searchParams.set("next", pathname);
+    url.search = "";
+    url.searchParams.set("next", fullPath);
     return NextResponse.redirect(url);
   }
 

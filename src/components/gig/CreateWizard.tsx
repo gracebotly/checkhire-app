@@ -190,7 +190,8 @@ export function CreateWizard() {
               </div>
 
               <h1 className="font-display text-2xl font-bold text-slate-900 md:text-3xl">
-                Hire anyone online.<br />Nobody gets screwed.
+                Work with anyone online —<br />
+                <span className="text-brand">without the risk.</span>
               </h1>
               <p className="mt-3 text-sm text-slate-600 leading-relaxed">
                 Define what will be delivered. Secure the payment. Release when you&apos;re happy. Simple as sharing a link.

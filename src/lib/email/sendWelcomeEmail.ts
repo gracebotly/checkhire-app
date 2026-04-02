@@ -118,7 +118,7 @@ export async function sendWelcomeEmail(params: WelcomeEmailParams) {
           <tr>
             <td style="padding: 20px 32px; border-top: 1px solid #e2e8f0; text-align: center;">
               <p style="margin: 0; font-size: 12px; color: #94a3b8;">
-                You found each other. We make sure nobody gets screwed.
+                Work with anyone online &mdash; without the risk.
               </p>
               <p style="margin: 8px 0 0 0; font-size: 12px; color: #94a3b8;">
                 <a href="${appUrl}" style="color: #297a6d; text-decoration: none;">checkhire.co</a>
@@ -148,7 +148,7 @@ Create your first payment link: ${appUrl}/deal/new
 Freelancers pay $0. You pay 5%. The freelancer receives exactly the posted amount.
 
 — CheckHire
-You found each other. We make sure nobody gets screwed.`;
+Work with anyone online — without the risk.`;
 
   try {
     await resend.emails.send({

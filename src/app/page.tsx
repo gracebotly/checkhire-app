@@ -58,12 +58,12 @@ function HomePageContent() {
             </div>
 
             <h1 className="font-display text-3xl font-bold text-slate-900 md:text-5xl md:leading-tight">
-              You found each other.{" "}
-              <span className="text-brand">We make sure nobody gets screwed.</span>
+              Work with anyone online —{" "}
+              <span className="text-brand">without the risk.</span>
             </h1>
 
             <p className="mx-auto mt-4 max-w-lg text-base text-slate-600 md:text-lg">
-              Define the work. Lock the payment. Get protected — before anything starts.
+              Define the work. Secure the payment. Stay protected.
             </p>
 
             {/* Email capture — the primary CTA */}

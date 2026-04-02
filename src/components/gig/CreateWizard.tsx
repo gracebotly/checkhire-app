@@ -291,8 +291,8 @@ export function CreateWizard() {
           {screen === 2 && (
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">Step 2 of 3</p>
-              <h2 className="mt-1 font-display text-xl font-bold text-slate-900">Describe your gig</h2>
-              <p className="mt-1 text-sm text-slate-600">Just the basics. You&apos;ll add full details after signup.</p>
+              <h2 className="mt-1 font-display text-xl font-bold text-slate-900">Build your gig link</h2>
+              <p className="mt-1 text-sm text-slate-600">Everything you enter here becomes the page freelancers see when they click your link.</p>
 
               <div className="mt-5">
                 <label className="mb-1.5 block text-sm font-medium text-slate-900">Gig title</label>
@@ -305,7 +305,7 @@ export function CreateWizard() {
               </div>
 
               <div className="mt-4">
-                <label className="mb-1.5 block text-sm font-medium text-slate-900">Freelancer payment (USD)</label>
+                <label className="mb-1.5 block text-sm font-medium text-slate-900">Freelancer payment</label>
                 <div className="relative">
                   <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-slate-600">$</span>
                   <Input
@@ -321,7 +321,7 @@ export function CreateWizard() {
 
               {/* Payment frequency */}
               <div className="mt-4">
-                <label className="mb-1.5 block text-sm font-medium text-slate-900">How often will you pay?</label>
+                <label className="mb-1.5 block text-sm font-medium text-slate-900">Payment structure</label>
                 <div className="grid grid-cols-2 gap-2">
                   {[
                     { value: "one_time", label: "One-time", sub: "Single project" },

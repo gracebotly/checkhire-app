@@ -1,7 +1,7 @@
 import { Zap, Building2 } from "lucide-react";
 
 const platforms = [
-  { name: "CheckHire (instant)", speed: "30 min", barWidth: "3%", highlight: true },
+  { name: "CheckHire (instant)", speed: "Seconds", barWidth: "3%", highlight: true },
   { name: "CheckHire (standard)", speed: "2 days", barWidth: "10%", highlight: true },
   { name: "Upwork", speed: "7–10 days", barWidth: "65%", highlight: false },
   { name: "Fiverr", speed: "up to 14 days", barWidth: "100%", highlight: false },

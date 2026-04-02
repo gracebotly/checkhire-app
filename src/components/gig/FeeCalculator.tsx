@@ -192,7 +192,7 @@ export function FeeCalculator() {
                     Instant payout
                   </p>
                   <p className="text-xs text-slate-600">
-                    Under 30 min to your debit card
+                    Straight to your debit card in seconds
                   </p>
                 </div>
                 <div className="text-right">

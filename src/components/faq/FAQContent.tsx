@@ -95,14 +95,14 @@ export function FAQContent() {
         <div className="space-y-2">
           <p>All payouts go through Stripe Connect. You have two options:</p>
           <p><span className="font-semibold text-slate-900">Standard payout (free):</span> 2 business days to your bank account. Works with traditional banks and virtual banks like Revolut, Wise, and N26.</p>
-          <p><span className="font-semibold text-slate-900">Instant payout ($1 or 1%, whichever is greater):</span> Under 30 minutes to an eligible debit card, available 24/7 including weekends and holidays. Only available in select countries (see below).</p>
+          <p><span className="font-semibold text-slate-900">Instant payout ($1 or 1%, whichever is greater):</span> Straight to an eligible debit card in seconds, available 24/7 including weekends and holidays. Only available in select countries (see below).</p>
         </div>
       ),
     },
     {
       id: "f-instant",
       question: "How does instant payout work?",
-      answer: "If you're in a supported country with an eligible debit card, you can choose instant payout when your funds are released. The money arrives in under 30 minutes — even on weekends and holidays. There's a small fee ($1 or 1% of the payout, whichever is greater). Instant payouts are currently available in the US, Canada, UK, EU, Australia, Singapore, Norway, New Zealand, Malaysia, Hong Kong, and UAE only. Your debit card must be eligible — Stripe will tell you during setup if yours qualifies.",
+      answer: "If you're in a supported country with an eligible debit card, you can choose instant payout when your funds are released. The money arrives in seconds — even on weekends and holidays. There's a small fee ($1 or 1% of the payout, whichever is greater). Instant payouts are currently available in the US, Canada, UK, EU, Australia, Singapore, Norway, New Zealand, Malaysia, Hong Kong, and UAE only. Your debit card must be eligible — Stripe will tell you during setup if yours qualifies.",
     },
     {
       id: "f-countries",

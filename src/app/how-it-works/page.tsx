@@ -55,7 +55,7 @@ const steps = [
 ];
 
 const comparison = [
-  { platform: "CheckHire", freelancerFee: "0%", clientFee: "~7.9% + $0.30", payoutSpeed: "30 min or 2 days", highlight: true },
+  { platform: "CheckHire", freelancerFee: "0%", clientFee: "~7.9% + $0.30", payoutSpeed: "Seconds or 2 days", highlight: true },
   { platform: "Upwork", freelancerFee: "10–20%", clientFee: "3.4%", payoutSpeed: "7–10 business days", highlight: false },
   { platform: "Fiverr", freelancerFee: "20%", clientFee: "5.5%", payoutSpeed: "Up to 14 days", highlight: false },
   { platform: "PayPal", freelancerFee: "No escrow", clientFee: "N/A", payoutSpeed: "Instant (no protection)", highlight: false },

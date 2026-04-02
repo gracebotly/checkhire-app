@@ -9,12 +9,18 @@ export async function GET(
   { params }: { params: Promise<{ slug: string }> },
 ) {
   const { slug } = await params;
+
+  // Validate slug format: lowercase alphanumeric + hyphens, 3-20 chars
+  const cleanSlug = slug.toLowerCase().trim();
+  if (!/^[a-z0-9][a-z0-9-]{1,18}[a-z0-9]$/.test(cleanSlug)) {
+    return NextResponse.redirect(new URL("/", request.url));
+  }
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
   const { data: user } = await supabase
     .from("user_profiles")
     .select("referral_code")
-    .eq("referral_slug", slug.toLowerCase())
+    .eq("referral_slug", cleanSlug)
     .single();
 
   const redirectUrl = new URL("/", request.url);

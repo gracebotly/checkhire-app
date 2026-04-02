@@ -221,7 +221,7 @@ export function CreateWizard() {
               </div>
 
               <p className="mt-6 text-xs text-slate-600 leading-relaxed">
-                Freelancer keeps <span className="font-semibold text-brand">100%</span>. You pay 5% + standard processing. Full refund if nobody accepts within 30 days.
+                Freelancer keeps <span className="font-semibold text-brand">100%</span>. You pay 5% + processing. Cancel and get a full refund anytime before work starts.
               </p>
 
               <Button size="lg" className="mt-6 w-full" onClick={() => goTo(1)}>

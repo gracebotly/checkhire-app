@@ -22,7 +22,7 @@ export default async function Image({
 
     if (supabaseUrl && serviceKey) {
       const res = await fetch(
-        `${supabaseUrl}/rest/v1/user_profiles?profile_slug=eq.${slug}&select=display_name,trust_badge,completed_deals_count,average_rating`,
+        `${supabaseUrl}/rest/v1/user_profiles?profile_slug=eq.${encodeURIComponent(slug)}&select=display_name,trust_badge,completed_deals_count,average_rating`,
         {
           headers: {
             apikey: serviceKey,

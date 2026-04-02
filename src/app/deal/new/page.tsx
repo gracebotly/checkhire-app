@@ -111,9 +111,25 @@ export default async function NewDealPage({
             </div>
           ) : (
             <div className="mx-auto max-w-4xl px-6 py-10">
-              <h1 className="mb-8 text-center font-display text-2xl font-bold text-slate-900">
-                {fromWizard ? "Finish Your Gig Link" : "Create Your Gig Link"}
+              <h1 className="mb-2 text-center font-display text-2xl font-bold text-slate-900">
+                {fromWizard ? "Finish your deal" : "Post a Gig"}
               </h1>
+              {fromWizard && (wizardTitle || wizardAmount) && (
+                <div className="mx-auto mb-8 max-w-md rounded-xl border border-gray-200 bg-gray-50 p-4 text-center">
+                  {wizardTitle && (
+                    <p className="text-sm font-semibold text-slate-900">{wizardTitle}</p>
+                  )}
+                  {wizardAmount && (
+                    <p className="mt-1 font-mono text-lg font-semibold tabular-nums text-brand">
+                      ${parseFloat(wizardAmount).toFixed(2)}
+                    </p>
+                  )}
+                  <p className="mt-1 text-xs text-slate-600">
+                    Fill in the details below to publish your deal link
+                  </p>
+                </div>
+              )}
+              {!fromWizard && <div className="mb-8" />}
               <GigCreateForm
                 initialTemplate={initialTemplate}
                 initialRepeatData={initialRepeatData}

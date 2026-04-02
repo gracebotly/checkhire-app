@@ -83,12 +83,18 @@ export function CreateWizard() {
     setAuthError("");
     const supabase = createClient();
 
+    // Save wizard data to sessionStorage — survives the OAuth redirect chain
     const wizardParams = buildWizardParams();
+    try {
+      sessionStorage.setItem("checkhire_wizard_data", wizardParams.toString());
+    } catch {
+      // sessionStorage unavailable — data will be lost but auth still works
+    }
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?intent=signup&next=${encodeURIComponent(`/deal/new?${wizardParams.toString()}`)}`,
+        redirectTo: `${window.location.origin}/auth/callback?intent=signup`,
       },
     });
     if (error) {
@@ -134,9 +140,16 @@ export function CreateWizard() {
       });
       if (signInError) throw new Error(signInError.message);
 
+      // Save wizard data to sessionStorage as backup
+      const wizardParams = buildWizardParams();
+      try {
+        sessionStorage.setItem("checkhire_wizard_data", wizardParams.toString());
+      } catch {
+        // sessionStorage unavailable
+      }
+
       // Refresh server session first, then navigate with wizard data
       router.refresh();
-      const wizardParams = buildWizardParams();
       // Small delay to let the server session update propagate before navigation
       await new Promise((resolve) => setTimeout(resolve, 100));
       router.push(`/deal/new?${wizardParams.toString()}`);
@@ -497,6 +510,11 @@ export function CreateWizard() {
                     type="button"
                     onClick={() => {
                       const wizardParams = buildWizardParams();
+                      try {
+                        sessionStorage.setItem("checkhire_wizard_data", wizardParams.toString());
+                      } catch {
+                        // sessionStorage unavailable
+                      }
                       router.push(`/login?next=${encodeURIComponent(`/deal/new?${wizardParams.toString()}`)}`);
                     }}
                     className="cursor-pointer font-semibold text-brand transition-colors duration-200 hover:text-brand-hover"

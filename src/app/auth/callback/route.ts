@@ -40,7 +40,7 @@ export async function GET(request: Request) {
     .maybeSingle();
 
   if (profile) {
-    // Existing user — go to dashboard (or next param if provided)
+    // Existing user — go to next param or dashboard
     const next = searchParams.get("next") || "/dashboard";
     return NextResponse.redirect(new URL(next, request.url));
   }
@@ -65,6 +65,9 @@ export async function GET(request: Request) {
     profile_slug: profileSlug,
   });
 
-  const next = searchParams.get("next") || "/dashboard";
+  // For new users, check if next param exists (email signup flow preserves it).
+  // If not (Google OAuth — Supabase strips custom params), redirect to /deal/new
+  // where sessionStorage wizard data will be picked up by the client.
+  const next = searchParams.get("next") || "/deal/new?from_wizard=1";
   return NextResponse.redirect(new URL(next, request.url));
 }

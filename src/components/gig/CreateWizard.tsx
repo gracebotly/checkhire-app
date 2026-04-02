@@ -148,11 +148,10 @@ export function CreateWizard() {
         // sessionStorage unavailable
       }
 
-      // Refresh server session first, then navigate with wizard data
-      router.refresh();
-      // Small delay to let the server session update propagate before navigation
-      await new Promise((resolve) => setTimeout(resolve, 100));
-      router.push(`/deal/new?${wizardParams.toString()}`);
+      // Hard navigation ensures the auth cookie is sent with the request.
+      // router.push + router.refresh causes a race condition where the
+      // server component at /deal/new may not have the session cookie yet.
+      window.location.href = `/deal/new?${wizardParams.toString()}`;
     } catch (err) {
       setAuthError(err instanceof Error ? err.message : "Signup failed");
     } finally {

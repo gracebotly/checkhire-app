@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import { generateReferralCode } from "@/lib/referrals/generate-code";
+import { sendWelcomeEmail } from "@/lib/email/sendWelcomeEmail";
 
 export const runtime = "nodejs";
 
@@ -33,6 +34,10 @@ export async function GET(request: Request) {
     return NextResponse.redirect(new URL("/auth/auth-code-error", request.url));
   }
 
+  // Detect wizard flow — if the user came from CreateWizard, always go to /deal/new
+  const intent = searchParams.get("intent");
+  const isWizardFlow = intent === "signup";
+
   // Check if user_profile exists
   const { data: profile } = await supabaseAdmin
     .from("user_profiles")
@@ -60,7 +65,11 @@ export async function GET(request: Request) {
       }
     }
 
-    // Existing user — go to next param or dashboard
+    // If wizard flow, go to /deal/new so GigCreateForm can recover sessionStorage data.
+    // Otherwise, use the next param or default to dashboard.
+    if (isWizardFlow) {
+      return NextResponse.redirect(new URL("/deal/new?from_wizard=1", request.url));
+    }
     const next = searchParams.get("next") || "/dashboard";
     return NextResponse.redirect(new URL(next, request.url));
   }
@@ -90,7 +99,6 @@ export async function GET(request: Request) {
   });
 
   // Retry with new code if unique constraint violation
-  // (the insert above may fail silently on referral_code collision)
   const { data: createdProfile } = await supabaseAdmin
     .from("user_profiles")
     .select("referral_code")
@@ -98,7 +106,6 @@ export async function GET(request: Request) {
     .maybeSingle();
 
   if (createdProfile && !createdProfile.referral_code) {
-    // Insert succeeded but referral_code was rejected — update separately
     for (let attempt = 0; attempt < 3; attempt++) {
       referralCode = generateReferralCode();
       const { error: codeError } = await supabaseAdmin
@@ -138,9 +145,16 @@ export async function GET(request: Request) {
   }
   // --- END REFERRAL ATTRIBUTION ---
 
-  // For new users, check if next param exists (email signup flow preserves it).
-  // If not (Google OAuth — Supabase strips custom params), redirect to /deal/new
-  // where sessionStorage wizard data will be picked up by the client.
-  const next = searchParams.get("next") || "/deal/new?from_wizard=1";
+  // Send welcome email for new users (fire-and-forget — never blocks the redirect)
+  if (user.email) {
+    sendWelcomeEmail({ to: user.email, userName: displayName }).catch(() => {});
+  }
+
+  // For new users from wizard flow, go to /deal/new.
+  // GigCreateForm will recover the wizard data from sessionStorage.
+  if (isWizardFlow) {
+    return NextResponse.redirect(new URL("/deal/new?from_wizard=1", request.url));
+  }
+  const next = searchParams.get("next") || "/dashboard";
   return NextResponse.redirect(new URL(next, request.url));
 }

@@ -134,6 +134,7 @@ export const POST = withApiHandler(
         guest_freelancer_email: emailLower,
         guest_freelancer_name: name,
         guest_email_verified_at: new Date().toISOString(),
+        accepted_at: new Date().toISOString(),
         status: deal.escrow_status === "funded" ? "in_progress" : deal.status,
       })
       .eq("id", id);

@@ -22,7 +22,7 @@ export default async function Image({
 
     if (supabaseUrl && serviceKey) {
       const res = await fetch(
-        `${supabaseUrl}/rest/v1/deals?deal_link_slug=eq.${slug}&select=title,total_amount,escrow_status,deal_type,client_user_id`,
+        `${supabaseUrl}/rest/v1/deals?deal_link_slug=eq.${encodeURIComponent(slug)}&select=title,total_amount,escrow_status,deal_type,client_user_id`,
         {
           headers: {
             apikey: serviceKey,
@@ -45,7 +45,7 @@ export default async function Image({
 
         // Fetch client name
         const clientRes = await fetch(
-          `${supabaseUrl}/rest/v1/user_profiles?id=eq.${deal.client_user_id}&select=display_name,trust_badge`,
+          `${supabaseUrl}/rest/v1/user_profiles?id=eq.${encodeURIComponent(deal.client_user_id)}&select=display_name,trust_badge`,
           {
             headers: {
               apikey: serviceKey,

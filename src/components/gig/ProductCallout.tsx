@@ -13,17 +13,17 @@ export function ProductCallout() {
             </span>
           </div>
           <p className="text-base font-semibold text-slate-900">
-            Safe escrow for gig work — freelancer keeps 100%.
+            Protect any online deal — freelancer keeps 100%.
           </p>
           <p className="text-sm text-slate-600 mt-1">
-            Create a deal in under 3 minutes. No fees for freelancers.
+            Turn any online deal into a protected transaction. Takes 60 seconds.
           </p>
         </div>
         <Link
           href="/login?mode=signup&redirect=/deal/new"
           className="inline-flex cursor-pointer items-center justify-center px-5 py-2.5 rounded-lg bg-brand text-white text-sm font-semibold transition-colors duration-200 hover:bg-brand-hover whitespace-nowrap flex-shrink-0"
         >
-          Post a Gig Free
+          Create Protected Deal
         </Link>
       </div>
     </div>

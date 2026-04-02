@@ -188,21 +188,21 @@ export function CreateWizard() {
             <div>
               <div className="mx-auto mb-4 inline-flex items-center gap-2 rounded-full bg-brand-muted px-4 py-1.5">
                 <Shield className="h-4 w-4 text-brand" />
-                <span className="text-xs font-semibold text-brand">ESCROW-PROTECTED PAYMENTS</span>
+                <span className="text-xs font-semibold text-brand">PROTECTED DEALS</span>
               </div>
 
               <h1 className="font-display text-2xl font-bold text-slate-900 md:text-3xl">
-                Hire anyone online.<br />Nobody gets screwed.
+                The safest way to pay<br />someone you met online.
               </h1>
               <p className="mt-3 text-sm text-slate-600 leading-relaxed">
-                Lock payment before work starts. Release when you&apos;re happy. Simple as sharing a link.
+                Define what will be delivered. Secure the payment. Release when you&apos;re happy. Simple as sharing a link.
               </p>
 
               <div className="mt-6 flex gap-3">
                 {[
-                  { num: "1", title: "Lock payment", sub: "Money held safely in escrow" },
-                  { num: "2", title: "Share the link", sub: "Reddit, Discord, anywhere" },
-                  { num: "3", title: "Approve & release", sub: "Or auto-releases in 72hrs" },
+                  { num: "1", title: "Define the deal", sub: "Set clear expectations upfront" },
+                  { num: "2", title: "Secure the payment", sub: "Funds held until work is done" },
+                  { num: "3", title: "Release with confidence", sub: "Or auto-releases in 72 hours" },
                 ].map((s, i) => (
                   <motion.div
                     key={s.num}
@@ -221,11 +221,11 @@ export function CreateWizard() {
               </div>
 
               <p className="mt-6 text-xs text-slate-600 leading-relaxed">
-                Freelancer keeps <span className="font-semibold text-brand">100%</span>. You pay 5% + standard processing. Full refund if nobody accepts within 30 days.
+                Freelancer keeps <span className="font-semibold text-brand">100%</span>. You pay a small protection fee. Cancel and get a full refund anytime before work starts.
               </p>
 
               <Button size="lg" className="mt-6 w-full" onClick={() => goTo(1)}>
-                Create a payment link
+                Create a protected deal
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
@@ -235,8 +235,8 @@ export function CreateWizard() {
           {screen === 1 && (
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">Step 1 of 3</p>
-              <h2 className="mt-1 font-display text-xl font-bold text-slate-900">What kind of work?</h2>
-              <p className="mt-1 text-sm text-slate-600">Pick the category that best describes the gig.</p>
+              <h2 className="mt-1 font-display text-xl font-bold text-slate-900">What type of work are you protecting?</h2>
+              <p className="mt-1 text-sm text-slate-600">This helps us tailor the deal for both sides.</p>
 
               <div className="mt-5 grid grid-cols-3 gap-2">
                 {WIZARD_CATEGORIES.map((cat) => {
@@ -306,11 +306,11 @@ export function CreateWizard() {
           {screen === 2 && (
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">Step 2 of 3</p>
-              <h2 className="mt-1 font-display text-xl font-bold text-slate-900">Build your gig link</h2>
-              <p className="mt-1 text-sm text-slate-600">Everything you enter here becomes the page freelancers see when they click your link.</p>
+              <h2 className="mt-1 font-display text-xl font-bold text-slate-900">Define your deal</h2>
+              <p className="mt-1 text-sm text-slate-600">This is what the other person sees when they open your deal. Be specific — it protects both of you.</p>
 
               <div className="mt-5">
-                <label className="mb-1.5 block text-sm font-medium text-slate-900">Gig title</label>
+                <label className="mb-1.5 block text-sm font-medium text-slate-900">Deal title</label>
                 <Input
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
@@ -320,7 +320,7 @@ export function CreateWizard() {
               </div>
 
               <div className="mt-4">
-                <label className="mb-1.5 block text-sm font-medium text-slate-900">Freelancer payment</label>
+                <label className="mb-1.5 block text-sm font-medium text-slate-900">Payment amount</label>
                 <div className="relative">
                   <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-slate-600">$</span>
                   <Input
@@ -400,7 +400,7 @@ export function CreateWizard() {
                 >
                   <div className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-brand-muted px-3 py-1">
                     <Shield className="h-3 w-3 text-brand" />
-                    <span className="text-xs font-semibold text-brand">Gig preview</span>
+                    <span className="text-xs font-semibold text-brand">Deal preview</span>
                   </div>
                   <p className="text-sm font-semibold text-slate-900">{title}</p>
                   <p className="mt-0.5 text-xs text-slate-600">
@@ -415,7 +415,7 @@ export function CreateWizard() {
                     <p className="mt-1 font-mono text-lg font-semibold tabular-nums text-brand">{fmt(budgetNum)}</p>
                   )}
                   <div className="mt-2 rounded-lg bg-gray-50 px-3 py-2">
-                    <p className="text-xs text-slate-600">This is how freelancers will see your gig</p>
+                    <p className="text-xs text-slate-600">This is how the other person will see your deal</p>
                   </div>
                 </motion.div>
               )}
@@ -426,7 +426,7 @@ export function CreateWizard() {
                 disabled={title.length < 3 || budgetNum < 10}
                 onClick={() => goTo(3)}
               >
-                Almost there
+                Almost done
               </Button>
               <button
                 type="button"
@@ -442,8 +442,8 @@ export function CreateWizard() {
           {screen === 3 && (
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">Last step</p>
-              <h2 className="mt-1 font-display text-xl font-bold text-slate-900">Your link is ready</h2>
-              <p className="mt-1 text-sm text-slate-600">Create an account to publish it. Takes 10 seconds.</p>
+              <h2 className="mt-1 font-display text-xl font-bold text-slate-900">Your protected deal is ready</h2>
+              <p className="mt-1 text-sm text-slate-600">Create an account to activate protection. Takes 10 seconds.</p>
 
               <div className="mt-5 rounded-xl border border-gray-200 bg-white p-5">
                 {/* Google OAuth */}

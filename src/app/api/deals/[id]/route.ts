@@ -80,7 +80,10 @@ export const PATCH = withApiHandler(
 
       const { data: updatedDeal, error: updateError } = await supabase
         .from("deals")
-        .update({ freelancer_user_id: user.id })
+        .update({
+          freelancer_user_id: user.id,
+          accepted_at: new Date().toISOString(),
+        })
         .eq("id", id)
         .select()
         .single();

@@ -1,6 +1,8 @@
 "use client";
 
+import { Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { motion } from "motion/react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
@@ -8,6 +10,7 @@ import { NewsletterSignup } from "@/components/newsletter/NewsletterSignup";
 import { FeeCalculator } from "@/components/gig/FeeCalculator";
 import { PaymentMethodsBar } from "@/components/gig/PaymentMethodsBar";
 import { PayoutSpeedComparison } from "@/components/gig/PayoutSpeedComparison";
+import { ReferralWelcomeBanner } from "@/components/referral/ReferralWelcomeBanner";
 import {
   RedditIcon,
   WhatsAppIcon,
@@ -35,30 +38,32 @@ const section = (delay: number) => ({
   transition: { duration: 0.4, ease: "easeOut" as const, delay },
 });
 
-export default function HomePage() {
+function HomePageContent() {
+  const searchParams = useSearchParams();
+  const isReferred = searchParams.get("referred") === "1";
+
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
       <main>
+        {isReferred && <ReferralWelcomeBanner />}
         {/* 1. Hero — Email Capture First */}
         <motion.section className="px-6 py-20 md:py-28" {...section(0)}>
           <div className="mx-auto max-w-6xl text-center">
             <div className="mx-auto mb-6 inline-flex items-center gap-2 rounded-full border border-brand-muted bg-brand-muted px-4 py-1.5">
               <Shield className="h-4 w-4 text-brand" />
               <span className="text-xs font-semibold text-brand">
-                ESCROW-PROTECTED PAYMENTS
+                DEAL PROTECTION FOR THE INTERNET
               </span>
             </div>
 
             <h1 className="font-display text-3xl font-bold text-slate-900 md:text-5xl md:leading-tight">
-              Stop getting scammed{" "}
-              <span className="text-brand">hiring online.</span>
+              Never get scammed again{" "}
+              <span className="text-brand">paying someone online.</span>
             </h1>
 
             <p className="mx-auto mt-4 max-w-lg text-base text-slate-600 md:text-lg">
-              Get verified gig postings, scam alerts, and safe hiring tips
-              delivered weekly — straight from the communities where it
-              happens.
+              Define the work. Lock the payment. Get protected — before anything starts.
             </p>
 
             {/* Email capture — the primary CTA */}
@@ -74,17 +79,17 @@ export default function HomePage() {
             </div>
 
             <p className="mx-auto mt-3 max-w-md text-xs text-slate-600">
-              Free weekly newsletter. No spam. Unsubscribe anytime.
+              Free weekly newsletter — scam alerts, safe hiring tips, verified gigs. Unsubscribe anytime.
             </p>
 
             {/* Secondary link — not a big CTA button */}
             <p className="mt-6 text-sm text-slate-600">
-              Already know CheckHire?{" "}
+              Ready to protect a deal?{" "}
               <Link
                 href="/create"
                 className="cursor-pointer font-semibold text-brand transition-colors duration-200 hover:text-brand-hover"
               >
-                Create a payment link
+                Create a protected deal
                 <ArrowRight className="ml-1 inline h-3.5 w-3.5" />
               </Link>
             </p>
@@ -104,7 +109,7 @@ export default function HomePage() {
                 <p className="font-mono text-xl font-bold tabular-nums text-brand">
                   72hr
                 </p>
-                <p className="mt-0.5 text-xs text-slate-600">Auto-release</p>
+                <p className="mt-0.5 text-xs text-slate-600">Auto-release protection</p>
               </div>
               <div className="h-8 w-px bg-gray-200" />
               <div className="text-center">
@@ -112,7 +117,7 @@ export default function HomePage() {
                   100%
                 </p>
                 <p className="mt-0.5 text-xs text-slate-600">
-                  You keep it all
+                  Freelancer keeps it all
                 </p>
               </div>
             </div>
@@ -124,11 +129,10 @@ export default function HomePage() {
           <div className="mx-auto max-w-6xl">
             <div className="rounded-xl border border-gray-200 bg-white p-6 text-center">
               <p className="text-sm font-semibold text-slate-900">
-                Join the safest hiring community on Reddit
+                The only hiring community where every job poster is verified
               </p>
               <p className="mt-1 text-xs text-slate-600">
-                Every hiring post on r/checkhire is backed by locked escrow
-                money or a verified video. No unverified posts.
+                Every hiring post on r/checkhire is backed by locked money or a real face on video. No anonymous scammers get through.
               </p>
               <a
                 href="https://reddit.com/r/checkhire"
@@ -143,7 +147,7 @@ export default function HomePage() {
           </div>
         </motion.section>
 
-        {/* 3. How It Works */}
+        {/* 3. We Protect the Deal Before It Starts */}
         <motion.section
           id="how-it-works"
           className="px-6 py-16"
@@ -151,7 +155,7 @@ export default function HomePage() {
         >
           <div className="mx-auto max-w-6xl">
             <h2 className="mb-10 text-center font-display text-2xl font-bold text-slate-900">
-              How It Works
+              We Protect the Deal Before It Starts
             </h2>
             <div className="grid gap-8 md:grid-cols-3">
               <div className="text-center">
@@ -159,11 +163,10 @@ export default function HomePage() {
                   <FileText className="h-5 w-5 text-brand" />
                 </div>
                 <h3 className="text-base font-semibold text-slate-900">
-                  Create a payment link
+                  Define the deal
                 </h3>
                 <p className="mt-2 text-sm text-slate-600">
-                  Describe the gig, set the price. Get a shareable escrow link
-                  in seconds.
+                  Outline what will be delivered, when, and how success is measured. Get a shareable link in seconds.
                 </p>
               </div>
               <div className="text-center">
@@ -174,8 +177,7 @@ export default function HomePage() {
                   Share it anywhere
                 </h3>
                 <p className="mt-2 text-sm text-slate-600">
-                  Reddit, Facebook, Discord, WhatsApp, email, text — your link
-                  works everywhere.
+                  Reddit, Facebook, Discord, WhatsApp, email, text — your protected deal link works everywhere.
                 </p>
                 <div className="mt-3 flex items-center justify-center gap-2 text-slate-600">
                   <RedditIcon className="h-4 w-4" />
@@ -190,11 +192,10 @@ export default function HomePage() {
                   <Zap className="h-5 w-5 text-brand" />
                 </div>
                 <h3 className="text-base font-semibold text-slate-900">
-                  Get paid safely
+                  Release with confidence
                 </h3>
                 <p className="mt-2 text-sm text-slate-600">
-                  Freelancer delivers, you confirm, money releases. Or it
-                  auto-releases in 72 hours.
+                  Payment is released only when the work is confirmed — or auto-releases in 72 hours if the client goes silent.
                 </p>
               </div>
             </div>
@@ -205,7 +206,7 @@ export default function HomePage() {
         <motion.section className="px-6 py-16" {...section(0.06)}>
           <div className="mx-auto max-w-6xl">
             <h2 className="mb-8 text-center font-display text-2xl font-bold text-slate-900">
-              Know exactly what you&apos;ll pay
+              Transparent pricing. No hidden fees.
             </h2>
             <div className="mx-auto max-w-md">
               <FeeCalculator />
@@ -218,14 +219,13 @@ export default function HomePage() {
           <div className="mx-auto grid max-w-6xl items-center gap-8 md:grid-cols-2">
             <div>
               <span className="mb-4 inline-block rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
-                FAST PAYOUTS
+                FASTEST PAYOUTS IN THE INDUSTRY
               </span>
               <h2 className="font-display text-2xl font-bold text-slate-900">
-                Get paid in minutes, not weeks.
+                Get paid in minutes — not weeks.
               </h2>
               <p className="mt-3 text-sm text-slate-600">
-                Other platforms make you wait 7–14 days for your money. CheckHire
-                freelancers get paid the moment work is approved.
+                Other platforms hold your money for 7-14 days. On CheckHire, funds release the moment work is approved. No waiting. No wondering.
               </p>
               <div className="mt-6 space-y-3">
                 <div className="flex items-center gap-3">
@@ -281,11 +281,10 @@ export default function HomePage() {
                 <Lock className="h-5 w-5 text-brand" />
               </div>
               <h3 className="text-base font-semibold text-slate-900">
-                Funds locked before work starts
+                Payment is secured before anyone starts
               </h3>
               <p className="mt-2 text-sm text-slate-600">
-                Client pays into escrow. Freelancer sees &ldquo;Payment
-                Secured&rdquo; with the exact amount held for them.
+                Funds are held safely and only move when both sides agree the work is complete. The freelancer sees the exact amount locked for them.
               </p>
             </div>
             <div className="text-center">
@@ -296,8 +295,7 @@ export default function HomePage() {
                 72-hour auto-release
               </h3>
               <p className="mt-2 text-sm text-slate-600">
-                Client has 72 hours to review delivered work. No response? Funds
-                release automatically. No more ghost clients.
+                If the client disappears after work is submitted, funds auto-release to the freelancer. No more ghost clients. No more chasing payments.
               </p>
             </div>
             <div className="text-center">
@@ -305,11 +303,10 @@ export default function HomePage() {
                 <DollarSign className="h-5 w-5 text-brand" />
               </div>
               <h3 className="text-base font-semibold text-slate-900">
-                Freelancer keeps 100%
+                Freelancers pay nothing. Ever.
               </h3>
               <p className="mt-2 text-sm text-slate-600">
-                Zero freelancer fees. The client covers all fees. Freelancer
-                receives exactly the posted amount.
+                The client covers all fees. The freelancer receives exactly the posted amount — no deductions, no commissions, no surprises.
               </p>
             </div>
           </div>
@@ -322,25 +319,24 @@ export default function HomePage() {
               <NewsletterSignup
                 variant="card"
                 utmCampaign="bottom_cta"
-                heading="Get verified gig postings weekly"
-                description="Escrow-backed gigs, scam alerts, and safe hiring tips — delivered to your inbox every week."
+                heading="Stay protected — scam alerts delivered weekly"
+                description="Verified gigs, scam breakdowns, and safe hiring tips — straight from the communities where it happens."
               />
               <div className="rounded-xl border border-gray-200 bg-white p-6">
                 <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-brand-muted">
                   <Shield className="h-5 w-5 text-brand" />
                 </div>
                 <h3 className="font-display text-base font-semibold text-slate-900">
-                  Ready to create a payment link?
+                  Ready to protect your next deal?
                 </h3>
                 <p className="mt-1 text-sm text-slate-600">
-                  Fund escrow in under 3 minutes. Share the link anywhere. The
-                  freelancer keeps 100%.
+                  Set up deal protection in under 60 seconds. Share the link anywhere. Freelancer keeps 100%.
                 </p>
                 <Link
                   href="/create"
                   className="mt-4 inline-flex cursor-pointer items-center gap-2 rounded-lg bg-brand px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-brand-hover"
                 >
-                  Create Payment Link
+                  Create Protected Deal
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </div>
@@ -350,5 +346,13 @@ export default function HomePage() {
       </main>
       <Footer />
     </div>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-white" />}>
+      <HomePageContent />
+    </Suspense>
   );
 }

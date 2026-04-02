@@ -101,6 +101,7 @@ export type Deal = {
   expires_at: string | null;
   created_at: string;
   funded_at: string | null;
+  accepted_at: string | null;
   submitted_at: string | null;
   completed_at: string | null;
   cancelled_at: string | null;

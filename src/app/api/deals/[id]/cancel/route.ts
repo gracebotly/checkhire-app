@@ -5,6 +5,9 @@ import { getStripe } from "@/lib/stripe/client";
 import { withApiHandler } from "@/lib/api/withApiHandler";
 import { sendAndLogNotification } from "@/lib/email/logNotification";
 
+/** 24 hours in milliseconds */
+const GRACE_PERIOD_MS = 24 * 60 * 60 * 1000;
+
 export const POST = withApiHandler(
   async (_req: Request, { params }: { params: Promise<{ id: string }> }) => {
     const { id } = await params;
@@ -23,7 +26,7 @@ export const POST = withApiHandler(
     const { data: profile } = await supabase.from("user_profiles").select("display_name").eq("id", user.id).maybeSingle();
     const displayName = profile?.display_name || "Unknown";
 
-    // State 5 — Terminal states: cannot cancel
+    // Terminal states: cannot cancel
     const terminalStatuses = ["submitted", "disputed", "completed", "refunded", "cancelled"];
     if (terminalStatuses.includes(deal.status)) {
       return NextResponse.json(
@@ -34,14 +37,24 @@ export const POST = withApiHandler(
 
     const hasFreelancer = deal.freelancer_user_id !== null || deal.guest_freelancer_email !== null;
 
-    // State 1 — Unfunded, no freelancer
-    if (deal.escrow_status === "unfunded") {
+    // State 1 — Unfunded, no freelancer: free cancel
+    if (deal.escrow_status === "unfunded" && !hasFreelancer) {
       if (!isClient) return NextResponse.json({ ok: false, code: "FORBIDDEN", message: "Only the client can cancel an unfunded gig" }, { status: 403 });
 
       await serviceClient.from("deals").update({ status: "cancelled", cancelled_at: new Date().toISOString() }).eq("id", id);
       await serviceClient.from("deal_activity_log").insert({ deal_id: id, user_id: null, entry_type: "system", content: `Gig cancelled by ${displayName}` });
 
-      // Notify freelancer if assigned
+      return NextResponse.json({ ok: true });
+    }
+
+    // State 1b — Unfunded, freelancer accepted: client can still cancel (no money at stake)
+    if (deal.escrow_status === "unfunded" && hasFreelancer) {
+      if (!isClient) return NextResponse.json({ ok: false, code: "FORBIDDEN", message: "Only the client can cancel an unfunded gig" }, { status: 403 });
+
+      await serviceClient.from("deals").update({ status: "cancelled", cancelled_at: new Date().toISOString() }).eq("id", id);
+      await serviceClient.from("deal_activity_log").insert({ deal_id: id, user_id: null, entry_type: "system", content: `Gig cancelled by ${displayName}` });
+
+      // Notify freelancer
       if (deal.freelancer_user_id) {
         const { data: fp } = await serviceClient.from("user_profiles").select("email").eq("id", deal.freelancer_user_id).maybeSingle();
         if (fp?.email) {
@@ -54,7 +67,7 @@ export const POST = withApiHandler(
       return NextResponse.json({ ok: true });
     }
 
-    // State 2 — Funded, no freelancer
+    // State 2 — Funded, no freelancer: full refund
     if (deal.escrow_status === "funded" && !hasFreelancer) {
       if (!isClient) return NextResponse.json({ ok: false, code: "FORBIDDEN", message: "Only the client can cancel" }, { status: 403 });
 
@@ -70,8 +83,11 @@ export const POST = withApiHandler(
       return NextResponse.json({ ok: true });
     }
 
-    // State 3 — Funded, freelancer accepted, NO evidence uploaded
+    // State 3 — Funded, freelancer accepted
     if (deal.escrow_status === "funded" && hasFreelancer) {
+      if (!isClient) return NextResponse.json({ ok: false, code: "FORBIDDEN", message: "Only the client can cancel" }, { status: 403 });
+
+      // Check for evidence — if evidence exists, must use dispute flow
       const { data: evidenceEntries } = await serviceClient
         .from("deal_activity_log")
         .select("id")
@@ -79,7 +95,6 @@ export const POST = withApiHandler(
         .eq("is_submission_evidence", true)
         .limit(1);
 
-      // State 4 — Evidence EXISTS
       if (evidenceEntries && evidenceEntries.length > 0) {
         return NextResponse.json(
           { ok: false, code: "EVIDENCE_EXISTS", message: "This gig has work evidence. Use the dispute process to resolve disagreements." },
@@ -87,9 +102,31 @@ export const POST = withApiHandler(
         );
       }
 
-      // No evidence — client can cancel
-      if (!isClient) return NextResponse.json({ ok: false, code: "FORBIDDEN", message: "Only the client can cancel when no work evidence has been submitted" }, { status: 403 });
+      // ── GRACE PERIOD CHECK ──
+      // After a freelancer accepts a funded gig, the client has 24 hours to cancel.
+      // After that, the escrow is locked and the client must use the dispute process.
+      const acceptedAt = deal.accepted_at ? new Date(deal.accepted_at) : null;
 
+      if (acceptedAt) {
+        const gracePeriodEnd = new Date(acceptedAt.getTime() + GRACE_PERIOD_MS);
+        const now = new Date();
+
+        if (now > gracePeriodEnd) {
+          // Grace period expired — escrow is locked
+          const hoursAgo = Math.floor((now.getTime() - acceptedAt.getTime()) / (1000 * 60 * 60));
+          return NextResponse.json(
+            {
+              ok: false,
+              code: "ESCROW_LOCKED",
+              message: `Escrow is locked — the freelancer accepted ${hoursAgo} hours ago. The 24-hour cancellation window has passed. If there's a problem with this gig, please open a dispute instead.`,
+            },
+            { status: 400 }
+          );
+        }
+      }
+      // If accepted_at is null (legacy deal), allow cancellation (backwards compatible)
+
+      // Within grace period (or no accepted_at) — proceed with refund
       if (deal.stripe_payment_intent_id) {
         const stripe = getStripe();
         await stripe.refunds.create({ payment_intent: deal.stripe_payment_intent_id });

@@ -42,7 +42,7 @@ export function Footer() {
               </span>
             </div>
             <p className="mt-3 text-sm text-slate-600">
-              The payment link for gig work.
+              The safe way to work with anyone online.
             </p>
             <div className="mt-4">
               <NewsletterSignup

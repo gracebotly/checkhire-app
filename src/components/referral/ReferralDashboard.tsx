@@ -3,22 +3,17 @@
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import {
-  Link as LinkIcon,
   Copy,
   Check,
   DollarSign,
-  Pencil,
   ChevronDown,
   ChevronUp,
   Info,
 } from "lucide-react";
-import * as Dialog from "@radix-ui/react-dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 
 interface ReferralData {
   referral_code: string;
-  referral_slug: string | null;
   referral_link: string;
   stats: {
     total_referrals: number;
@@ -38,12 +33,10 @@ interface ReferralData {
 export function ReferralDashboard() {
   const [data, setData] = useState<ReferralData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [copied, setCopied] = useState(false);
-  const [slugModalOpen, setSlugModalOpen] = useState(false);
-  const [newSlug, setNewSlug] = useState("");
-  const [slugError, setSlugError] = useState("");
-  const [slugSaving, setSlugSaving] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
+  const [copiedCode, setCopiedCode] = useState(false);
   const [payoutLoading, setPayoutLoading] = useState(false);
+  const [payoutError, setPayoutError] = useState("");
   const [trackingExpanded, setTrackingExpanded] = useState(false);
 
   useEffect(() => {
@@ -64,45 +57,20 @@ export function ReferralDashboard() {
   async function copyLink() {
     if (!data) return;
     await navigator.clipboard.writeText(data.referral_link);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2000);
   }
 
-  async function saveSlug() {
-    setSlugError("");
-    setSlugSaving(true);
-    try {
-      const res = await fetch("/api/referrals/slug", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug: newSlug.toLowerCase() }),
-      });
-      if (res.ok) {
-        const json = await res.json();
-        setData((prev) =>
-          prev
-            ? {
-                ...prev,
-                referral_slug: json.referral_slug,
-                referral_link: json.referral_link,
-              }
-            : null,
-        );
-        setSlugModalOpen(false);
-        setNewSlug("");
-      } else {
-        const err = await res.json();
-        setSlugError(err.error || "Failed to save slug");
-      }
-    } catch {
-      setSlugError("Network error");
-    } finally {
-      setSlugSaving(false);
-    }
+  async function copyCode() {
+    if (!data) return;
+    await navigator.clipboard.writeText(data.referral_code);
+    setCopiedCode(true);
+    setTimeout(() => setCopiedCode(false), 2000);
   }
 
   async function requestPayout() {
     setPayoutLoading(true);
+    setPayoutError("");
     try {
       const res = await fetch("/api/referrals/payout", {
         method: "POST",
@@ -113,10 +81,10 @@ export function ReferralDashboard() {
         fetchReferralData();
       } else {
         const err = await res.json();
-        setSlugError(err.error || "Failed to request payout");
+        setPayoutError(err.error || "Failed to request payout");
       }
     } catch {
-      setSlugError("Network error");
+      setPayoutError("Network error");
     } finally {
       setPayoutLoading(false);
     }
@@ -159,28 +127,63 @@ export function ReferralDashboard() {
         Every user you refer earns you 20% of our platform fee for 12 months.
       </p>
 
-      {/* Referral link */}
-      <div className="flex items-center gap-2 mb-4">
-        <div className="flex-1 bg-gray-50 rounded-lg px-3 py-2.5 flex items-center gap-2 min-w-0">
-          <LinkIcon className="h-4 w-4 text-slate-600 shrink-0" />
-          <span className="text-sm font-mono text-slate-900 truncate">{data.referral_link}</span>
+      {/* Referral link — primary copy target */}
+      <div className="mb-3">
+        <label className="mb-1.5 block text-xs font-semibold text-slate-600 uppercase tracking-wide">
+          Your referral link
+        </label>
+        <div className="flex items-center gap-2">
+          <div className="flex-1 bg-gray-50 rounded-lg px-3 py-2.5 min-w-0">
+            <span className="text-sm font-mono text-slate-900 truncate block">{data.referral_link}</span>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={copyLink}
+            className="shrink-0 cursor-pointer transition-colors duration-200"
+          >
+            {copiedLink ? (
+              <>
+                <Check className="h-4 w-4 mr-1" /> Copied!
+              </>
+            ) : (
+              <>
+                <Copy className="h-4 w-4 mr-1" /> Copy link
+              </>
+            )}
+          </Button>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={copyLink}
-          className="shrink-0 cursor-pointer transition-colors duration-200"
-        >
-          {copied ? (
-            <>
-              <Check className="h-4 w-4 mr-1" /> Copied!
-            </>
-          ) : (
-            <>
-              <Copy className="h-4 w-4 mr-1" /> Copy
-            </>
-          )}
-        </Button>
+      </div>
+
+      {/* Referral code — secondary copy target */}
+      <div className="mb-4">
+        <label className="mb-1.5 block text-xs font-semibold text-slate-600 uppercase tracking-wide">
+          Your referral code
+        </label>
+        <div className="flex items-center gap-2">
+          <div className="bg-gray-50 rounded-lg px-3 py-2.5">
+            <span className="text-sm font-mono font-semibold text-slate-900">{data.referral_code}</span>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={copyCode}
+            className="shrink-0 cursor-pointer transition-colors duration-200"
+          >
+            {copiedCode ? (
+              <>
+                <Check className="h-4 w-4 mr-1" /> Copied!
+              </>
+            ) : (
+              <>
+                <Copy className="h-4 w-4 mr-1" /> Copy code
+              </>
+            )}
+          </Button>
+        </div>
+        <p className="mt-1 text-xs text-slate-600">
+          Share this code directly. Others can enter it when creating a deal on CheckHire.
+        </p>
       </div>
 
       {/* How tracking works — collapsible */}
@@ -206,20 +209,20 @@ export function ReferralDashboard() {
             className="mt-2 rounded-lg bg-gray-50 p-3 space-y-2"
           >
             <p className="text-xs text-slate-600">
-              <span className="font-semibold text-slate-900">30-day cookie.</span>{" "}
-              When someone clicks your link, we track them for 30 days. If they sign up within that window, they&apos;re credited to you.
+              <span className="font-semibold text-slate-900">Share the link.</span>{" "}
+              When someone clicks your referral link, we track them for 30 days. If they sign up within that window, they&apos;re credited to you.
             </p>
             <p className="text-xs text-slate-600">
-              <span className="font-semibold text-slate-900">First click wins.</span>{" "}
+              <span className="font-semibold text-slate-900">Or share the code.</span>{" "}
+              They can enter your referral code manually when creating a deal on CheckHire. Same result.
+            </p>
+            <p className="text-xs text-slate-600">
+              <span className="font-semibold text-slate-900">First code wins.</span>{" "}
               If someone clicks multiple referral links, the first one gets the credit.
             </p>
             <p className="text-xs text-slate-600">
               <span className="font-semibold text-slate-900">12-month earnings.</span>{" "}
               Once someone is credited to you, you earn 20% of our net platform fee on every deal they complete for 12 months.
-            </p>
-            <p className="text-xs text-slate-600">
-              <span className="font-semibold text-slate-900">Automatic.</span>{" "}
-              Commissions are calculated and credited after each completed deal. No action needed from you.
             </p>
           </motion.div>
         )}
@@ -247,24 +250,7 @@ export function ReferralDashboard() {
         </div>
       </div>
 
-      {/* Customize link button — always visible */}
-      <div className="mb-4">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => {
-            setNewSlug(data.referral_slug || "");
-            setSlugModalOpen(true);
-          }}
-          className="cursor-pointer transition-colors duration-200"
-        >
-          <Pencil className="h-4 w-4 mr-1" /> Customize link
-        </Button>
-      </div>
-
       {/* ═══ PAYOUT SECTION — 3 states ═══ */}
-
-      {/* State 1: No earnings — don't show payout section at all */}
 
       {/* State 2: Has earnings but under $25 — show progress */}
       {hasEarnings && !payoutEligible && (
@@ -300,7 +286,7 @@ export function ReferralDashboard() {
                 Cash out available
               </p>
               <p className="mt-0.5 text-xs text-green-800">
-                Minimum $25. Payouts are processed manually and typically arrive within 5–7 business days.
+                Minimum $25. Payouts are processed manually and typically arrive within 5-7 business days.
               </p>
             </div>
             <Button
@@ -313,6 +299,9 @@ export function ReferralDashboard() {
               {payoutLoading ? "Processing..." : `Cash out ${formatCents(data.stats.available_balance)}`}
             </Button>
           </div>
+          {payoutError && (
+            <p className="mt-2 text-xs text-red-600">{payoutError}</p>
+          )}
         </div>
       )}
 
@@ -346,55 +335,6 @@ export function ReferralDashboard() {
           </div>
         </div>
       )}
-
-      {/* Customize slug modal */}
-      <Dialog.Root open={slugModalOpen} onOpenChange={setSlugModalOpen}>
-        <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 bg-black/40 z-50" />
-          <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-xl border border-gray-200 p-6 w-full max-w-md z-50 shadow-lg">
-            <Dialog.Title className="font-display text-lg font-semibold text-slate-900 mb-1">
-              Customize your referral link
-            </Dialog.Title>
-            <Dialog.Description className="text-sm text-slate-600 mb-4">
-              Choose a custom slug for your referral URL.
-            </Dialog.Description>
-
-            <div className="mb-2">
-              <Input
-                value={newSlug}
-                onChange={(e) => {
-                  setNewSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""));
-                  setSlugError("");
-                }}
-                placeholder="your-name"
-                className="mb-1"
-              />
-              <p className="text-xs text-slate-600 font-mono">checkhire.co/ref/{newSlug || "..."}</p>
-              {slugError && <p className="text-xs text-red-600 mt-1">{slugError}</p>}
-            </div>
-
-            <div className="flex justify-end gap-2 mt-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setSlugModalOpen(false)}
-                className="cursor-pointer transition-colors duration-200"
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="default"
-                size="sm"
-                onClick={saveSlug}
-                disabled={newSlug.length < 3 || slugSaving}
-                className="cursor-pointer transition-colors duration-200"
-              >
-                {slugSaving ? "Saving..." : "Save"}
-              </Button>
-            </div>
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog.Root>
     </motion.div>
   );
 }

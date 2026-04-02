@@ -151,6 +151,26 @@ export function GigPageClient({
   const isGuestFreelancer = !!guestToken && role === "freelancer";
   const hasFreelancer = !!deal.freelancer_user_id || !!deal.guest_freelancer_email;
 
+  // Grace period: 24 hours from acceptance
+  const gracePeriodExpired = (() => {
+    if (!deal.accepted_at) return false;
+    const acceptedAt = new Date(deal.accepted_at);
+    const gracePeriodEnd = new Date(acceptedAt.getTime() + 24 * 60 * 60 * 1000);
+    return new Date() > gracePeriodEnd;
+  })();
+
+  const gracePeriodRemaining = (() => {
+    if (!deal.accepted_at) return null;
+    const acceptedAt = new Date(deal.accepted_at);
+    const gracePeriodEnd = new Date(acceptedAt.getTime() + 24 * 60 * 60 * 1000);
+    const remaining = gracePeriodEnd.getTime() - Date.now();
+    if (remaining <= 0) return null;
+    const hours = Math.floor(remaining / (1000 * 60 * 60));
+    const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+    if (hours > 0) return `${hours}h ${minutes}m left to cancel`;
+    return `${minutes}m left to cancel`;
+  })();
+
   const platformFee = Math.round(deal.total_amount * 0.05);
   const subtotalCents = deal.total_amount + platformFee;
   const totalCharge = Math.round((subtotalCents + 30) / (1 - 0.029));
@@ -1176,26 +1196,44 @@ export function GigPageClient({
                   </div>
                 )}
 
-              {/* Funded but no work started — cancel & refund */}
+              {/* Funded — cancel & refund (with grace period check) */}
               {deal.status === "funded" &&
                 deal.escrow_status === "funded" && (
-                  <CancelRefundDialog
-                    dealId={deal.id}
-                    dealTitle={deal.title}
-                    refundAmountCents={deal.total_amount}
-                    hasFreelancer={hasFreelancer}
-                    onSuccess={() => {
-                      toast("Gig cancelled — refund issued", "info");
-                      router.refresh();
-                    }}
-                  >
-                    <Button
-                      variant="ghost"
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                    >
-                      Cancel & Refund
-                    </Button>
-                  </CancelRefundDialog>
+                  <>
+                    {hasFreelancer && gracePeriodExpired ? (
+                      <div className="rounded-lg bg-slate-50 border border-gray-200 p-3">
+                        <p className="text-xs text-slate-600">
+                          Escrow is locked — the freelancer accepted more than 24 hours ago.
+                          If there&apos;s a problem, <a href={`/deal/${deal.deal_link_slug}/dispute`} className="text-brand underline cursor-pointer">open a dispute</a>.
+                        </p>
+                      </div>
+                    ) : (
+                      <>
+                        <CancelRefundDialog
+                          dealId={deal.id}
+                          dealTitle={deal.title}
+                          refundAmountCents={deal.total_amount}
+                          hasFreelancer={hasFreelancer}
+                          onSuccess={() => {
+                            toast("Gig cancelled — refund issued", "info");
+                            router.refresh();
+                          }}
+                        >
+                          <Button
+                            variant="ghost"
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            Cancel & Refund
+                          </Button>
+                        </CancelRefundDialog>
+                        {hasFreelancer && gracePeriodRemaining && (
+                          <p className="text-xs text-slate-600 mt-1">
+                            {gracePeriodRemaining}
+                          </p>
+                        )}
+                      </>
+                    )}
+                  </>
                 )}
 
               {/* Work submitted — confirm or revise */}

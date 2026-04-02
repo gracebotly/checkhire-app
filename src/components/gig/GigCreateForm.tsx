@@ -90,6 +90,42 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
         ? (initialTemplate.default_amount / 100).toString()
         : wizardData?.amount || ""
   );
+  // ── Recover wizard data from sessionStorage (Google OAuth fallback) ──
+  // The CreateWizard saves data to sessionStorage before Google OAuth redirects
+  // the user off-site. URL params are lost during the OAuth chain, but
+  // sessionStorage persists. This effect reads it back on mount.
+  useEffect(() => {
+    // Only recover if we don't already have wizard data from URL params
+    const hasWizardData = !!(wizardData?.title || wizardData?.category || wizardData?.amount);
+    if (hasWizardData) return;
+
+    try {
+      const stored = sessionStorage.getItem("checkhire_wizard_data");
+      if (!stored) return;
+
+      const params = new URLSearchParams(stored);
+      const isFromWizard = params.get("from_wizard") === "1";
+      if (!isFromWizard) return;
+
+      // Apply recovered data to form state
+      const recoveredTitle = params.get("title");
+      const recoveredCategory = params.get("category");
+      const recoveredAmount = params.get("amount");
+      const recoveredOtherDesc = params.get("other_desc");
+      const recoveredFrequency = params.get("frequency");
+
+      if (recoveredTitle) setTitle(recoveredTitle);
+      if (recoveredCategory) setCategory(recoveredCategory as DealCategory);
+      if (recoveredAmount) setAmount(recoveredAmount);
+      if (recoveredOtherDesc) setOtherCategoryDescription(recoveredOtherDesc);
+      if (recoveredFrequency) setPaymentFrequency(recoveredFrequency);
+
+      // Clear sessionStorage after recovery — one-time use
+      sessionStorage.removeItem("checkhire_wizard_data");
+    } catch {
+      // sessionStorage unavailable — no recovery possible
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const [acceptanceCriteria, setAcceptanceCriteria] = useState<
     { evidence_type: string; description: string }[]
   >([{ evidence_type: "file", description: "" }]);

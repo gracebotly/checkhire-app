@@ -79,7 +79,7 @@ function HomePageContent() {
             </div>
 
             <p className="mx-auto mt-3 max-w-md text-xs text-slate-600">
-              Free weekly newsletter — scam alerts, safe hiring tips, verified gigs. Unsubscribe anytime.
+              Get curated remote gigs, safe hiring tips, and opportunities that won't waste your time.
             </p>
 
             {/* Secondary link — not a big CTA button */}

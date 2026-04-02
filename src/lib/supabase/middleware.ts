@@ -7,6 +7,7 @@ const PUBLIC_PATHS = [
   "/auth/callback",
   "/auth/confirm",
   "/auth/auth-code-error",
+  "/auth/post-login",
   "/deal",
   "/u",
   "/deals",

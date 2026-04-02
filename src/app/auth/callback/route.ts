@@ -36,10 +36,6 @@ export async function GET(request: Request) {
   // This ensures env vars are available in Vercel's serverless environment
   const supabaseAdmin = createServiceClient();
 
-  // Detect wizard flow
-  const intent = searchParams.get("intent");
-  const isWizardFlow = intent === "signup";
-
   // Check if user_profile exists
   // The database trigger on auth.users should have already created it,
   // but we check to handle edge cases and backfill missing data
@@ -94,12 +90,13 @@ export async function GET(request: Request) {
     // Referral attribution from cookie
     await attributeReferral(supabaseAdmin, user.id, request);
 
-    // Redirect
-    if (isWizardFlow) {
-      return NextResponse.redirect(new URL("/deal/new?from_wizard=1", request.url));
+    // Redirect — check if there's a next param (e.g., from login page)
+    const next = searchParams.get("next");
+    if (next) {
+      return NextResponse.redirect(new URL(next, request.url));
     }
-    const next = searchParams.get("next") || "/dashboard";
-    return NextResponse.redirect(new URL(next, request.url));
+    // Otherwise go through post-login router to check for wizard data
+    return NextResponse.redirect(new URL("/auth/post-login", request.url));
   }
 
   // ── NEW USER — trigger failed or race condition ──
@@ -177,12 +174,12 @@ export async function GET(request: Request) {
     });
   }
 
-  // Redirect
-  if (isWizardFlow) {
-    return NextResponse.redirect(new URL("/deal/new?from_wizard=1", request.url));
-  }
-  const next = searchParams.get("next") || "/dashboard";
-  return NextResponse.redirect(new URL(next, request.url));
+  // Redirect — new users always go through post-login client router
+  // which checks sessionStorage for wizard data.
+  // We can't rely on ?intent=signup because Supabase strips custom
+  // query params from redirectTo during the OAuth chain.
+  // See: https://github.com/orgs/supabase/discussions/21110
+  return NextResponse.redirect(new URL("/auth/post-login", request.url));
 }
 
 // ── Helper: Referral Attribution ──

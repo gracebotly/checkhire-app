@@ -13,17 +13,17 @@ const plusJakarta = Plus_Jakarta_Sans({
 
 export const metadata: Metadata = {
   title: {
-    default: "CheckHire — Safe Escrow for Gig Work",
+    default: "CheckHire — The Safe Way to Work With Anyone Online",
     template: "%s | CheckHire",
   },
   description:
-    "Create a deal, fund escrow, get paid. The safe way to hire and get hired for gig work. Zero freelancer fees. 72-hour auto-release.",
+    "Never get scammed again when paying someone online. Define the work, lock the payment, get protected — before anything starts. Zero freelancer fees.",
   openGraph: {
     type: "website",
     siteName: "CheckHire",
-    title: "CheckHire — Safe Escrow for Gig Work",
+    title: "CheckHire — The Safe Way to Work With Anyone Online",
     description:
-      "You found each other. We make sure nobody gets screwed. Escrow-protected payments for freelance gigs.",
+      "Turn any online deal into a protected transaction. Define the work, lock the payment, release with confidence.",
   },
 };
 

@@ -4,9 +4,9 @@ import { Footer } from "@/components/layout/Footer";
 import { CreateWizard } from "@/components/gig/CreateWizard";
 
 export const metadata: Metadata = {
-  title: "Create a Payment Link — CheckHire",
+  title: "Create a Protected Deal — CheckHire",
   description:
-    "Create an escrow-backed payment link in under 3 minutes. Share it on Reddit, Discord, or anywhere. Freelancer keeps 100%.",
+    "Turn any online deal into a protected transaction. Define the work, lock the payment, release with confidence. Freelancer keeps 100%.",
 };
 
 export default function CreatePage() {

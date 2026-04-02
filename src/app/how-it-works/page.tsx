@@ -24,33 +24,33 @@ import { motion } from "motion/react";
 const steps = [
   {
     icon: FileText,
-    title: "Post a Gig",
+    title: "Define the Deal",
     description:
-      "Describe the work, set your budget, and share the link with your freelancer — or post it publicly for anyone to apply.",
+      "Describe the work, set your budget and deadline. Be specific — clear expectations prevent disputes before they happen.",
   },
   {
     icon: Users,
     title: "Find Your Person",
     description:
-      "Share on Reddit, Facebook, Discord, or browse open gigs. Find the right freelancer without a marketplace middleman.",
+      "Share on Reddit, Facebook, Discord, or browse open gigs. Work with anyone — no marketplace middleman required.",
   },
   {
     icon: Lock,
-    title: "Fund Escrow",
+    title: "Secure the Payment",
     description:
-      'Client pays the deal amount + fees (~7.9%). Freelancer sees "Payment Secured" before starting any work.',
+      'Client funds the deal. Freelancer sees "Payment Secured" with the exact amount locked. Nobody starts work on faith.',
   },
   {
     icon: Briefcase,
     title: "Do the Work",
     description:
-      "Freelancer delivers work and posts updates in the activity log. Both parties can communicate in one place.",
+      "Freelancer delivers and uploads evidence along the way. Everything is documented — this is your paper trail if anything goes wrong.",
   },
   {
     icon: Zap,
-    title: "Get Paid",
+    title: "Release with Confidence",
     description:
-      "Client approves delivery or 72 hours pass — money releases automatically. Freelancer keeps 100%.",
+      "Client confirms delivery — or 72 hours pass and funds auto-release. Freelancer keeps 100%. No more ghost clients.",
   },
 ];
 
@@ -73,11 +73,10 @@ export default function HowItWorksPage() {
               <Shield className="h-7 w-7 text-brand" />
             </div>
             <h1 className="font-display text-3xl font-bold text-slate-900 md:text-5xl">
-              How CheckHire Works
+              How Deal Protection Works
             </h1>
             <p className="mx-auto mt-4 max-w-2xl text-base text-slate-600 md:text-lg">
-              Safe escrow payments for freelance gig work. Post a gig, fund
-              escrow, deliver work, get paid. Both sides protected.
+              Define the work. Secure the payment. Release with confidence. Both sides protected from scams, ghosting, and broken promises.
             </p>
           </div>
         </section>
@@ -324,16 +323,16 @@ export default function HowItWorksPage() {
         <section className="border-t border-gray-100 bg-gray-50 px-6 py-16">
           <div className="mx-auto max-w-4xl text-center">
             <h2 className="font-display text-2xl font-bold text-slate-900">
-              Post Your First Gig — It&apos;s Free
+              Protect Your First Deal — It Takes 60 Seconds
             </h2>
             <p className="mx-auto mt-3 max-w-lg text-sm text-slate-600">
-              Create a gig in under 3 minutes. Zero fees for freelancers.
+              Define the work, lock the payment, share the link. Both sides protected from day one.
             </p>
             <Link
               href="/login?mode=signup&redirect=/deal/new"
               className="mt-6 inline-flex cursor-pointer items-center gap-2 rounded-lg bg-brand px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-brand-hover"
             >
-              Get Started
+              Create Protected Deal
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>

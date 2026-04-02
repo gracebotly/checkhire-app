@@ -44,6 +44,9 @@ export function Footer() {
             <p className="mt-3 text-sm text-slate-600">
               The safe way to work with anyone online.
             </p>
+            <p className="mt-2 text-xs text-slate-600">
+              Payments secured by Stripe
+            </p>
             <div className="mt-4">
               <NewsletterSignup
                 variant="compact"

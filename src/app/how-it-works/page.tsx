@@ -323,7 +323,7 @@ export default function HowItWorksPage() {
         <section className="border-t border-gray-100 bg-gray-50 px-6 py-16">
           <div className="mx-auto max-w-4xl text-center">
             <h2 className="font-display text-2xl font-bold text-slate-900">
-              Protect Your First Deal — It Takes 60 Seconds
+              Start Your First Deal — Takes 60 Seconds
             </h2>
             <p className="mx-auto mt-3 max-w-lg text-sm text-slate-600">
               Define the work, lock the payment, share the link. Both sides protected from day one.
@@ -332,7 +332,7 @@ export default function HowItWorksPage() {
               href="/login?mode=signup&redirect=/deal/new"
               className="mt-6 inline-flex cursor-pointer items-center gap-2 rounded-lg bg-brand px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-brand-hover"
             >
-              Create Protected Deal
+              Create a Deal
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>

@@ -381,7 +381,9 @@ export type NotificationType =
   | 'payout_landed'
   | 'moderation_approved'
   | 'moderation_changes_requested'
-  | 'moderation_rejected';
+  | 'moderation_rejected'
+  | 'account_suspended'
+  | 'account_unsuspended';
 
 export type EmailNotification = {
   id: string;
@@ -420,6 +422,8 @@ export type NotificationData = {
   payoutId?: string;
   rejectionCategory?: string;
   reviewStatus?: string;
+  suspensionReason?: string;
+  displayName?: string;
 };
 
 // ─── Dispute with Deal Info (Admin Views) ───

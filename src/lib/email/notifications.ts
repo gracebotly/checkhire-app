@@ -1067,6 +1067,49 @@ const NOTIFICATION_CONFIG: Record<string, NotificationConfig> = {
       );
     },
   },
+
+  // ── Template: account_suspended ──
+  account_suspended: {
+    accent: "#dc2626",
+    subject: () => "Your CheckHire account has been suspended",
+    body: (data) => {
+      const name = data.displayName ? escapeHtml(data.displayName) : "there";
+      const reason = data.suspensionReason
+        ? escapeHtml(data.suspensionReason)
+        : "a violation of our Terms of Service";
+      return (
+        `<h2 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 700; color: #991b1b;">Account Suspended</h2>` +
+        `<p style="margin: 0 0 12px 0; font-size: 14px; color: #475569;">Hi ${name},</p>` +
+        `<p style="margin: 0 0 12px 0; font-size: 14px; color: #475569;">Your CheckHire account has been suspended due to ${reason}.</p>` +
+        `<div style="margin: 0 0 16px 0; padding: 12px 16px; background-color: #fef2f2; border-radius: 8px; border-left: 4px solid #dc2626;">` +
+        `<p style="margin: 0; font-size: 14px; color: #991b1b; font-weight: 600;">What this means:</p>` +
+        `<p style="margin: 8px 0 0 0; font-size: 14px; color: #991b1b;">You cannot sign in, create or accept gigs, fund escrow, or receive payouts while your account is suspended. Any active deals have been paused.</p>` +
+        `</div>` +
+        `<p style="margin: 0 0 16px 0; font-size: 14px; color: #475569;">If you believe this is an error, please contact us at <a href="mailto:support@checkhire.co" style="color: #0d9488; text-decoration: underline;">support@checkhire.co</a> and we will review your account.</p>` +
+        `<p style="margin: 0; font-size: 13px; color: #94a3b8;">Review our <a href="${APP_URL}/terms" style="color: #64748b; text-decoration: underline;">Terms of Service</a> for details on acceptable use.</p>`
+      );
+    },
+  },
+
+  // ── Template: account_unsuspended ──
+  account_unsuspended: {
+    accent: "#16a34a",
+    subject: () => "Your CheckHire account has been restored",
+    body: (data) => {
+      const name = data.displayName ? escapeHtml(data.displayName) : "there";
+      return (
+        `<h2 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 700; color: #0f172a;">Account Restored</h2>` +
+        `<p style="margin: 0 0 12px 0; font-size: 14px; color: #475569;">Hi ${name},</p>` +
+        `<p style="margin: 0 0 12px 0; font-size: 14px; color: #475569;">Good news — your CheckHire account has been restored and is fully active again.</p>` +
+        `<div style="margin: 0 0 16px 0; padding: 12px 16px; background-color: #f0fdf4; border-radius: 8px; border-left: 4px solid #16a34a;">` +
+        `<p style="margin: 0; font-size: 14px; color: #166534; font-weight: 600;">You can now:</p>` +
+        `<p style="margin: 8px 0 0 0; font-size: 14px; color: #166534;">Sign in, create and accept gigs, fund escrow, receive payouts, and access all platform features as normal.</p>` +
+        `</div>` +
+        `<p style="margin: 0; font-size: 14px; color: #475569;">Thank you for your patience. If you have any questions, reach out to <a href="mailto:support@checkhire.co" style="color: #0d9488; text-decoration: underline;">support@checkhire.co</a>.</p>` +
+        buildCtaButton(`${APP_URL}/dashboard`, "Go to Dashboard", "success")
+      );
+    },
+  },
 };
 
 // ══════════════════════════════════════════════════════════════════════════════

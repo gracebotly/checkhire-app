@@ -36,6 +36,7 @@ export const updateDisputeStatusSchema = z.object({
 
 export const suspendUserSchema = z.object({
   action: z.enum(["suspend", "unsuspend"]),
+  reason: z.string().max(500).optional(),
 });
 
 // ─── New schemas for dispute proposals + guest flows ───

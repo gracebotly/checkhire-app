@@ -16,7 +16,7 @@ export const GET = withApiHandler(async () => {
 
   const { data: profile } = await supabase
     .from("user_profiles")
-    .select("referral_code, referral_slug, referred_by")
+    .select("referral_code, referred_by")
     .eq("id", user.id)
     .single();
 
@@ -76,13 +76,10 @@ export const GET = withApiHandler(async () => {
     .limit(10);
 
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://checkhire.co";
-  const referralLink = profile.referral_slug
-    ? `${baseUrl}/ref/${profile.referral_slug}`
-    : `${baseUrl}?ref=${referralCode}`;
+  const referralLink = `${baseUrl}?ref=${referralCode}`;
 
   return NextResponse.json({
     referral_code: referralCode,
-    referral_slug: profile.referral_slug,
     referral_link: referralLink,
     stats: {
       total_referrals: totalReferrals || 0,

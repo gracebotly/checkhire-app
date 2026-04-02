@@ -29,7 +29,8 @@ export const POST = withApiHandler(async (req: Request) => {
 
   if (dealError || !deal) return NextResponse.json({ ok: false, code: "NOT_FOUND", message: "Deal not found" }, { status: 404 });
   if (deal.client_user_id !== user.id) return NextResponse.json({ ok: false, code: "FORBIDDEN", message: "Only the client can fund escrow" }, { status: 403 });
-  if (!deal.freelancer_user_id) return NextResponse.json({ ok: false, code: "INVALID_STATUS", message: "A freelancer must accept the gig before funding" }, { status: 400 });
+  // Clients can fund escrow before or after a freelancer accepts.
+  // Funded deals are more trustworthy when shared and get more responses.
 
   let amount: number;
   let productName: string;

@@ -458,6 +458,20 @@ export function GigPageClient({
         <EscrowStatusBar status={deal.escrow_status} amount={deal.total_amount} />
       </div>
 
+      {/* Stripe Connect / Fund Escrow prompt for clients */}
+      {role === "client" && deal.escrow_status === "unfunded" && deal.status !== "cancelled" && (
+        <div className="mb-6">
+          <StripeConnectPrompt
+            dealId={deal.id}
+            dealSlug={deal.deal_link_slug}
+            totalAmountCents={deal.total_amount}
+            hasMilestones={deal.has_milestones}
+            stripeConnected={true}
+            escrowStatus={deal.escrow_status}
+          />
+        </div>
+      )}
+
       {/* 2a. Moderation Banners — only shown when deal is NOT approved */}
       {deal.review_status === "pending" && isParticipant && (
         <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4">

@@ -44,7 +44,7 @@ export function CreateWizard() {
   const [direction, setDirection] = useState(1);
   const [selectedCategory, setSelectedCategory] = useState<DealCategory | null>(null);
   const [otherDescription, setOtherDescription] = useState("");
-  const [paymentFrequency, setPaymentFrequency] = useState("one_time");
+  // Payment frequency removed from wizard — set in GigCreateForm (budget step)
   const [title, setTitle] = useState("");
   const [budget, setBudget] = useState("");
   const [email, setEmail] = useState("");
@@ -73,7 +73,6 @@ export function CreateWizard() {
     if (title) wizardParams.set("title", title);
     if (budget) wizardParams.set("amount", budget);
     if (selectedCategory === "other" && otherDescription) wizardParams.set("other_desc", otherDescription);
-    if (paymentFrequency !== "one_time") wizardParams.set("frequency", paymentFrequency);
     wizardParams.set("from_wizard", "1");
     return wizardParams;
   };
@@ -333,33 +332,6 @@ export function CreateWizard() {
                 </div>
               </div>
 
-              {/* Payment frequency */}
-              <div className="mt-4">
-                <label className="mb-1.5 block text-sm font-medium text-slate-900">Payment structure</label>
-                <div className="grid grid-cols-2 gap-2">
-                  {[
-                    { value: "one_time", label: "One-time", sub: "Single project" },
-                    { value: "weekly", label: "Weekly", sub: "Pay every week" },
-                    { value: "biweekly", label: "Biweekly", sub: "Every 2 weeks" },
-                    { value: "monthly", label: "Monthly", sub: "Once a month" },
-                  ].map((freq) => (
-                    <button
-                      key={freq.value}
-                      type="button"
-                      onClick={() => setPaymentFrequency(freq.value)}
-                      className={`cursor-pointer rounded-xl border p-3 text-left transition-colors duration-200 ${
-                        paymentFrequency === freq.value
-                          ? "border-brand bg-brand-muted"
-                          : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50"
-                      }`}
-                    >
-                      <p className="text-sm font-semibold text-slate-900">{freq.label}</p>
-                      <p className="text-xs text-slate-600">{freq.sub}</p>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
               {/* Fee breakdown */}
               {budgetNum >= 10 && (
                 <motion.div
@@ -405,11 +377,6 @@ export function CreateWizard() {
                   <p className="mt-0.5 text-xs text-slate-600">
                     {WIZARD_CATEGORIES.find((c) => c.value === selectedCategory)?.label}
                   </p>
-                  {paymentFrequency !== "one_time" && (
-                    <p className="mt-0.5 text-xs font-semibold text-slate-600">
-                      {paymentFrequency === "weekly" ? "Paid weekly" : paymentFrequency === "biweekly" ? "Paid biweekly" : "Paid monthly"}
-                    </p>
-                  )}
                   {budgetNum >= 10 && (
                     <p className="mt-1 font-mono text-lg font-semibold tabular-nums text-brand">{fmt(budgetNum)}</p>
                   )}

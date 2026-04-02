@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
-import { Pencil, X, Plus } from "lucide-react";
+import { Pencil, X, Plus, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -52,10 +52,10 @@ type Props = {
 };
 
 const STEP_TITLES = [
-  "Define Your Agreement",
+  "Set the Terms",
   "Set the Budget",
-  "Set the Timeline",
-  "Review & Create",
+  "Set the Deadline",
+  "Review & Lock It In",
 ];
 
 export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }: Props) {
@@ -374,10 +374,10 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
         {STEP_TITLES[step]}
       </h2>
       <p className="mb-6 text-center text-sm text-slate-600">
-        {step === 0 && "Clear terms protect both sides and make payouts automatic."}
-        {step === 1 && "The freelancer receives exactly what you enter. You pay a 5% platform fee on top."}
+        {step === 0 && "Everything here becomes the agreement. If there’s a dispute, this is the evidence."}
+        {step === 1 && "The freelancer receives exactly what you enter. You pay a 5% fee on top."}
         {step === 2 && "When should the freelancer deliver the final work?"}
-        {step === 3 && "This is exactly what freelancers will see on your gig link."}
+        {step === 3 && "This is exactly what the other party will see. Make sure it’s right."}
       </p>
 
       {error && (
@@ -411,6 +411,7 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
                 <label className="mb-1.5 block text-sm font-medium text-slate-900">
                   Title
                 </label>
+                <p className="mb-1.5 text-xs text-slate-600">A clear title helps both sides understand the deal at a glance.</p>
                 <Input
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
@@ -420,12 +421,13 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
               </div>
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-slate-900">
-                  Project Details
+                  What&apos;s being agreed?
                 </label>
+                <p className="mb-1.5 text-xs text-slate-600">This becomes the record if there&apos;s ever a dispute. Be specific.</p>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Outline exactly what you need — scope, timeline, and expectations. The clearer this is, the smoother the payment process."
+                  placeholder="Describe the work clearly — scope, expectations, and anything that defines 'done.' This protects both sides."
                   maxLength={2000}
                   rows={4}
                   className="flex w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-ring/40 focus:border-brand resize-none"
@@ -433,7 +435,7 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
               </div>
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-slate-900">
-                  Deliverables
+                  What must be delivered before payment is released?
                 </label>
                 <textarea
                   value={deliverables}
@@ -444,7 +446,7 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
                   className="flex w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-ring/40 focus:border-brand resize-none"
                 />
                 <p className="mt-1 text-xs text-slate-600">
-                  Be specific. This defines what must be completed before payment is released.
+                  Payment is only released when all listed deliverables are completed.
                 </p>
               </div>
               <div>
@@ -491,10 +493,10 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
               {/* Proof of Completion */}
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-slate-900">
-                  Completion Requirements
+                  How will the work be verified?
                 </label>
                 <p className="mb-3 text-xs text-slate-600">
-                  The freelancer must submit all required proof below before funds can be released.
+                  Add proof requirements so both sides agree on what &quot;completed&quot; means.
                 </p>
                 <div className="space-y-3">
                   {acceptanceCriteria.map((criteria, i) => (
@@ -553,38 +555,20 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
                     }
                   >
                     <Plus className="h-4 w-4" />
-                    Add requirement
+                    Add proof requirement
                   </button>
                 )}
                 <p className="mt-2 text-xs text-slate-600">
-                  Add all required items to avoid delays or disputes.
+                  Examples: final files uploaded, live website link, screenshots, or screen recordings.
                 </p>
               </div>
 
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-slate-900">Payment Structure</label>
-                <p className="mb-2 text-xs text-slate-600">Choose how this agreement will be paid out.</p>
-                <div className="grid grid-cols-2 gap-2">
-                  {[
-                    { value: "one_time", label: "One-time" },
-                    { value: "weekly", label: "Weekly" },
-                    { value: "biweekly", label: "Biweekly" },
-                    { value: "monthly", label: "Monthly" },
-                  ].map((freq) => (
-                    <button
-                      key={freq.value}
-                      type="button"
-                      onClick={() => setPaymentFrequency(freq.value)}
-                      className={`cursor-pointer rounded-xl border px-4 py-3 text-left transition-colors duration-200 ${
-                        paymentFrequency === freq.value
-                          ? "border-brand bg-brand-muted"
-                          : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50"
-                      }`}
-                    >
-                      <p className="text-sm font-semibold text-slate-900">{freq.label}</p>
-                    </button>
-                  ))}
-                </div>
+              {/* Trust line */}
+              <div className="flex items-center gap-2 rounded-lg bg-gray-50 px-3 py-2.5">
+                <Shield className="h-4 w-4 shrink-0 text-brand" />
+                <p className="text-xs text-slate-600">
+                  These terms are documented and timestamped. If there&apos;s a dispute, this is the evidence.
+                </p>
               </div>
             </div>
           )}
@@ -654,6 +638,34 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
                   totalAmount={totalAmountDollars}
                 />
               )}
+
+              {/* Payment frequency */}
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-slate-900">When should payment be released?</label>
+                <p className="mb-2 text-xs text-slate-600">Payment is held securely and only released when the work is done.</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { value: "one_time", label: "One-time", sub: "Release on completion" },
+                    { value: "weekly", label: "Weekly", sub: "Every week" },
+                    { value: "biweekly", label: "Biweekly", sub: "Every 2 weeks" },
+                    { value: "monthly", label: "Monthly", sub: "Once a month" },
+                  ].map((freq) => (
+                    <button
+                      key={freq.value}
+                      type="button"
+                      onClick={() => setPaymentFrequency(freq.value)}
+                      className={`cursor-pointer rounded-xl border p-3 text-left transition-colors duration-200 ${
+                        paymentFrequency === freq.value
+                          ? "border-brand bg-brand-muted"
+                          : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50"
+                      }`}
+                    >
+                      <p className="text-sm font-semibold text-slate-900">{freq.label}</p>
+                      <p className="text-xs text-slate-600">{freq.sub}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
 
@@ -846,7 +858,7 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
                   disabled={submitting}
                   className="w-full"
                 >
-                  {submitting ? "Creating..." : "Create Gig Link"}
+                  {submitting ? "Creating..." : "Create Deal Link"}
                 </Button>
                 <Button
                   variant="outline"

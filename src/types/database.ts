@@ -402,6 +402,8 @@ export type NotificationData = {
   chargebackStatus?: string;
   chargebackAmount?: number;
   payoutId?: string;
+  rejectionCategory?: string;
+  reviewStatus?: string;
 };
 
 // ─── Dispute with Deal Info (Admin Views) ───

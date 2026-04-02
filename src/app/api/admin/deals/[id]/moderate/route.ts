@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { verifyAdmin } from "@/lib/api/verifyAdmin";
 import { withApiHandler } from "@/lib/api/withApiHandler";
+import { sendAndLogNotification } from "@/lib/email/logNotification";
 import { z } from "zod";
 
 const moderateSchema = z.object({
@@ -130,6 +131,66 @@ export const POST = withApiHandler(
       entry_type: "system",
       content: systemMessages[action],
     });
+
+    // ── Send email notifications (non-blocking) ──
+    const notificationTypeMap = {
+      approved: "moderation_approved",
+      changes_requested: "moderation_changes_requested",
+      rejected: "moderation_rejected",
+    } as const;
+
+    // Notify the client
+    const { data: clientProfile } = await serviceClient
+      .from("user_profiles")
+      .select("email")
+      .eq("id", deal.client_user_id)
+      .maybeSingle();
+
+    if (clientProfile?.email) {
+      sendAndLogNotification({
+        supabase: serviceClient,
+        type: notificationTypeMap[action],
+        userId: deal.client_user_id,
+        dealId: id,
+        email: clientProfile.email,
+        data: {
+          dealTitle: deal.title,
+          dealSlug: deal.deal_link_slug,
+          amount: deal.total_amount,
+          notes: fullNotes || undefined,
+        },
+      }).catch((err) =>
+        console.error("[moderate] Failed to email client:", err)
+      );
+    }
+
+    // Notify the freelancer (if one has accepted)
+    if (deal.freelancer_user_id) {
+      const { data: freelancerProfile } = await serviceClient
+        .from("user_profiles")
+        .select("email")
+        .eq("id", deal.freelancer_user_id)
+        .maybeSingle();
+
+      if (freelancerProfile?.email) {
+        sendAndLogNotification({
+          supabase: serviceClient,
+          type: notificationTypeMap[action],
+          userId: deal.freelancer_user_id,
+          dealId: id,
+          email: freelancerProfile.email,
+          data: {
+            dealTitle: deal.title,
+            dealSlug: deal.deal_link_slug,
+            amount: deal.total_amount,
+            notes: fullNotes || undefined,
+            role: "freelancer",
+          },
+        }).catch((err) =>
+          console.error("[moderate] Failed to email freelancer:", err)
+        );
+      }
+    }
 
     return NextResponse.json({
       ok: true,

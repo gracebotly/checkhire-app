@@ -13,6 +13,10 @@ import {
   ChevronUp,
   AlertTriangle,
   DollarSign,
+  ShieldCheck,
+  ShieldAlert,
+  PenLine,
+  Ban,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -376,6 +380,21 @@ export function GigPageClient({
       transition={{ duration: 0.25, ease: "easeOut" }}
       className="mx-auto max-w-4xl px-6 py-10 pb-36 md:pb-10"
     >
+      {/* Rejected deal — visitor view */}
+      {deal.review_status === "rejected" && !isParticipant && (
+        <div className="mx-auto max-w-4xl px-6 py-16 text-center">
+          <Ban className="mx-auto h-10 w-10 text-slate-600 mb-4" />
+          <h2 className="text-xl font-semibold text-slate-900 font-display">
+            This gig is no longer available
+          </h2>
+          <p className="mt-2 text-sm text-slate-600">
+            This gig was removed by CheckHire for not meeting our safety standards.
+          </p>
+        </div>
+      )}
+
+      {!(deal.review_status === "rejected" && !isParticipant) && (
+        <>
       {error && (
         <Alert variant="danger" className="mb-4">
           {error}
@@ -415,6 +434,81 @@ export function GigPageClient({
       <div className="mb-6">
         <EscrowStatusBar status={deal.escrow_status} amount={deal.total_amount} />
       </div>
+
+      {/* 2a. Moderation Banners — only shown when deal is NOT approved */}
+      {deal.review_status === "pending" && isParticipant && (
+        <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4">
+          <div className="flex items-start gap-3">
+            <ShieldCheck className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600" />
+            <div>
+              <p className="text-sm font-medium text-amber-900">
+                Your gig is being verified by CheckHire
+              </p>
+              <p className="mt-1 text-sm text-amber-700">
+                {role === "client"
+                  ? "Funds are secured. Payouts will be enabled once verification is complete. This usually takes less than 24 hours."
+                  : "Your payment is secured. Payouts will be enabled once CheckHire completes verification."}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deal.review_status === "changes_requested" && isParticipant && (
+        <div className="mb-6 rounded-xl border border-blue-200 bg-blue-50 p-4">
+          <div className="flex items-start gap-3">
+            <PenLine className="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-600" />
+            <div>
+              <p className="text-sm font-medium text-blue-900">
+                CheckHire has requested changes to this gig
+              </p>
+              {deal.review_notes && (
+                <p className="mt-1 text-sm text-blue-700">
+                  {deal.review_notes}
+                </p>
+              )}
+              {role === "client" && (
+                <p className="mt-2 text-sm text-blue-700">
+                  Please update your gig to address the feedback above. Payouts are paused until changes are reviewed.
+                </p>
+              )}
+              {role === "freelancer" && (
+                <p className="mt-2 text-sm text-blue-700">
+                  The client has been asked to make changes. Your payment is still secured in escrow.
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deal.review_status === "rejected" && isParticipant && (
+        <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4">
+          <div className="flex items-start gap-3">
+            <Ban className="mt-0.5 h-5 w-5 flex-shrink-0 text-red-600" />
+            <div>
+              <p className="text-sm font-medium text-red-900">
+                This gig has been removed by CheckHire
+              </p>
+              {deal.review_notes && (
+                <p className="mt-1 text-sm text-red-700">
+                  Reason: {deal.review_notes}
+                </p>
+              )}
+              {role === "client" && deal.escrow_status === "frozen" && (
+                <p className="mt-2 text-sm text-red-700">
+                  Your payment is being refunded to your original payment method. This may take 5-10 business days.
+                </p>
+              )}
+              {role === "freelancer" && (
+                <p className="mt-2 text-sm text-red-700">
+                  No funds were released. If you believe this is an error, please contact support@checkhire.co.
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 2b. Dispute Banner */}
       {deal.status === "disputed" && isParticipant && disputeId && (
@@ -1020,7 +1114,7 @@ export function GigPageClient({
                 )}
 
               {/* Work submitted — confirm or revise */}
-              {deal.status === "submitted" && !deal.has_milestones && (
+              {deal.status === "submitted" && deal.review_status === "approved" && !deal.has_milestones && (
                 <>
                   <Button
                     onClick={() => setConfirmDialogOpen(true)}
@@ -1204,6 +1298,8 @@ export function GigPageClient({
           </div>
         </DialogContent>
       </Dialog>
+        </>
+      )}
     </motion.div>
   );
 }

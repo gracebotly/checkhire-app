@@ -19,7 +19,13 @@ export const POST = withApiHandler(async () => {
     .eq("id", user.id)
     .maybeSingle();
 
-  if (!profile) return NextResponse.json({ ok: false, code: "NOT_FOUND", message: "Profile not found" }, { status: 404 });
+  if (!profile) {
+    console.error("[stripe/connect POST] Profile not found for user:", user.id);
+    return NextResponse.json(
+      { ok: false, code: "NOT_FOUND", message: "Your profile is still being created. Please refresh the page and try again in a moment." },
+      { status: 404 },
+    );
+  }
 
   // Already fully connected
   if (profile.stripe_connected_account_id && profile.stripe_onboarding_complete) {

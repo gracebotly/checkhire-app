@@ -32,7 +32,6 @@ type Props = {
   description: string;
   clientName: string;
   escrowFunded: boolean;
-  onFundEscrow?: () => void;
 };
 
 const formatAmount = (cents: number) =>
@@ -50,7 +49,6 @@ export function ShareHub({
   description,
   clientName,
   escrowFunded,
-  onFundEscrow,
 }: Props) {
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
@@ -206,20 +204,9 @@ export function ShareHub({
           Payment Secured — {amount}
         </Badge>
       ) : (
-        <div className="mt-3 flex items-center gap-2 flex-wrap">
-          <Badge variant="warning">
-            Not yet funded
-          </Badge>
-          {onFundEscrow && (
-            <button
-              type="button"
-              onClick={onFundEscrow}
-              className="cursor-pointer text-xs font-medium text-brand transition-colors duration-200 hover:text-brand-hover"
-            >
-              Fund Escrow
-            </button>
-          )}
-        </div>
+        <p className="mt-3 text-xs text-slate-600">
+          Escrow not yet funded. Once a freelancer accepts, you&apos;ll be prompted to lock payment.
+        </p>
       )}
 
       {/* Section 2 — Share buttons */}

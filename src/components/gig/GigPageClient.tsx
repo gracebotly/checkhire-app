@@ -422,9 +422,7 @@ export function GigPageClient({
             </Badge>
           )}
         </div>
-        <p className={`mt-3 font-mono font-semibold tabular-nums text-slate-900 ${
-          role === "visitor" ? "text-lg" : "text-2xl"
-        }`}>
+        <p className="mt-3 font-mono text-2xl font-semibold tabular-nums text-slate-900">
           ${(deal.total_amount / 100).toFixed(2)}
         </p>
         {deal.deadline && (
@@ -435,12 +433,10 @@ export function GigPageClient({
         )}
       </div>
 
-      {/* 2. Escrow Status Bar — hide for visitors on unfunded deals (redundant with badge) */}
-      {!(role === "visitor" && deal.escrow_status === "unfunded") && (
-        <div className="mb-6">
-          <EscrowStatusBar status={deal.escrow_status} amount={deal.total_amount} />
-        </div>
-      )}
+      {/* 2. Escrow Status Bar */}
+      <div className="mb-6">
+        <EscrowStatusBar status={deal.escrow_status} amount={deal.total_amount} />
+      </div>
 
       {/* 2a. Moderation Banners — only shown when deal is NOT approved */}
       {deal.review_status === "pending" && isParticipant && (
@@ -803,7 +799,6 @@ export function GigPageClient({
               description={deal.description}
               clientName={deal.client.display_name || "Client"}
               escrowFunded={deal.escrow_status === "funded"}
-              onFundEscrow={deal.escrow_status === "unfunded" ? () => handleFundEscrow() : undefined}
             />
             <div className="rounded-lg bg-gray-50 px-3 py-2">
               {editingSlug && role === "client" ? (
@@ -1137,7 +1132,7 @@ export function GigPageClient({
                   </Button>
                 ) : (
                   <p className="text-sm text-slate-600">
-                    Escrow not yet funded. You&apos;ll be able to accept once the client locks payment.
+                    Escrow is not yet funded. Express interest below or message the client directly.
                   </p>
                 )}
               </>

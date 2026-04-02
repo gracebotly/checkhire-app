@@ -10,7 +10,7 @@ type ShareData = {
 };
 
 function getDealUrl(slug: string): string {
-  return `https://checkhire.com/deal/${slug}`;
+  return `https://checkhire.co/deal/${slug}`;
 }
 
 export function getRedditPost(data: ShareData): string {

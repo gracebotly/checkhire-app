@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   title: "For Clients — Hire with Confidence | CheckHire",
   description:
     "Funds locked before work starts. Dispute resolution by real humans. 72-hour review period. Milestone payments. Safe escrow for gig work.",
-  alternates: { canonical: "https://checkhire.com/for-clients" },
+  alternates: { canonical: "https://checkhire.co/for-clients" },
 };
 
 const benefits = [

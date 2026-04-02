@@ -667,7 +667,7 @@ export function GigPageClient({
               {editingSlug && role === "client" ? (
                 <div className="space-y-2">
                   <div className="flex items-center gap-1">
-                    <span className="font-mono text-xs text-slate-600">checkhire.com/deal/</span>
+                    <span className="font-mono text-xs text-slate-600">checkhire.co/deal/</span>
                     <input
                       type="text"
                       value={slugInput}
@@ -706,7 +706,7 @@ export function GigPageClient({
               ) : (
                 <div className="flex items-center justify-between">
                   <p className="font-mono text-xs text-slate-600">
-                    checkhire.com/deal/{deal.deal_link_slug}
+                    checkhire.co/deal/{deal.deal_link_slug}
                   </p>
                   {role === "client" && (
                     <button
@@ -729,7 +729,7 @@ export function GigPageClient({
         !["pending_acceptance", "funded", "cancelled", "refunded", "completed"].includes(deal.status) && (
           <div className="mb-6 flex items-center gap-2 rounded-xl border border-gray-200 bg-white p-4">
             <div className="flex-1 select-all font-mono text-sm text-slate-600">
-              checkhire.com/deal/{deal.deal_link_slug}
+              checkhire.co/deal/{deal.deal_link_slug}
             </div>
             <ShareButton url={dealUrl} title={deal.title} />
           </div>

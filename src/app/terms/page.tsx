@@ -61,7 +61,7 @@ export default function TermsPage() {
               You must provide accurate information when creating an account.
               You are responsible for maintaining the security of your account
               credentials. You must notify us immediately at
-              support@checkhire.com if you suspect unauthorized access to your
+              support@checkhire.co if you suspect unauthorized access to your
               account.
             </p>
           </section>
@@ -286,7 +286,7 @@ export default function TermsPage() {
               Terms. Upon termination, your data is retained for 30 days before
               deletion, except for transaction records required for legal
               compliance. You may terminate your account at any time through
-              your account settings or by contacting support@checkhire.com.
+              your account settings or by contacting support@checkhire.co.
             </p>
           </section>
 
@@ -325,10 +325,10 @@ export default function TermsPage() {
             <p className="mt-2">
               For questions about these Terms, contact us at{" "}
               <a
-                href="mailto:support@checkhire.com"
+                href="mailto:support@checkhire.co"
                 className="text-brand hover:underline"
               >
-                support@checkhire.com
+                support@checkhire.co
               </a>
               .
             </p>

@@ -19,7 +19,7 @@ export async function sendWelcomeEmail(params: WelcomeEmailParams) {
   const resend = new Resend(apiKey);
   const { to, userName } = params;
   const greeting = userName ? `Hi ${userName},` : "Hi there,";
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://checkhire.com";
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://checkhire.co";
 
   const html = `
 <!DOCTYPE html>
@@ -121,7 +121,7 @@ export async function sendWelcomeEmail(params: WelcomeEmailParams) {
                 You found each other. We make sure nobody gets screwed.
               </p>
               <p style="margin: 8px 0 0 0; font-size: 12px; color: #94a3b8;">
-                <a href="${appUrl}" style="color: #297a6d; text-decoration: none;">checkhire.com</a>
+                <a href="${appUrl}" style="color: #297a6d; text-decoration: none;">checkhire.co</a>
               </p>
             </td>
           </tr>
@@ -152,7 +152,7 @@ You found each other. We make sure nobody gets screwed.`;
 
   try {
     await resend.emails.send({
-      from: "CheckHire <no-reply@checkhire.com>",
+      from: "CheckHire <no-reply@checkhire.co>",
       to: [to],
       subject: "Welcome to CheckHire — Your account is ready",
       html,

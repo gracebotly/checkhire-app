@@ -1,6 +1,6 @@
 import { sendEmail } from "./send";
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://checkhire.com";
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://checkhire.co";
 
 /**
  * Notify the platform admin (founder) about an event that needs attention.

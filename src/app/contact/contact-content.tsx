@@ -7,20 +7,20 @@ import { Flag, Handshake, Mail } from "lucide-react";
 const contactOptions = [
   {
     title: "General Inquiries",
-    details: "hello@checkhire.com",
-    href: "mailto:hello@checkhire.com",
+    details: "hello@checkhire.co",
+    href: "mailto:hello@checkhire.co",
     icon: Mail,
   },
   {
     title: "Report a Listing",
-    details: "Use the report button on any listing, or email trust@checkhire.com",
-    href: "mailto:trust@checkhire.com",
+    details: "Use the report button on any listing, or email trust@checkhire.co",
+    href: "mailto:trust@checkhire.co",
     icon: Flag,
   },
   {
     title: "Press & Partnerships",
-    details: "partnerships@checkhire.com",
-    href: "mailto:partnerships@checkhire.com",
+    details: "partnerships@checkhire.co",
+    href: "mailto:partnerships@checkhire.co",
     icon: Handshake,
   },
 ] as const;

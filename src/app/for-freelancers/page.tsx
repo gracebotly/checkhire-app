@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   title: "For Freelancers — Keep 100% of What You Earn | CheckHire",
   description:
     "Zero freelancer fees. Payment guaranteed before work starts. 72-hour auto-release. Build your trust reputation. Get paid in minutes with instant payouts.",
-  alternates: { canonical: "https://checkhire.com/for-freelancers" },
+  alternates: { canonical: "https://checkhire.co/for-freelancers" },
 };
 
 const benefits = [

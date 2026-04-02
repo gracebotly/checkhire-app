@@ -3,7 +3,7 @@ import type { NotificationType, NotificationData } from "@/types/database";
 
 export type { NotificationData };
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://checkhire.com";
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://checkhire.co";
 
 // ── Security: sanitize ALL user-provided data before HTML interpolation ──
 
@@ -55,7 +55,7 @@ function buildEmailHtml(options: {
   <!-- Footer inside card -->
   <tr><td style="padding: 20px 32px; background-color: #f8fafc; border-top: 1px solid #f1f5f9; text-align: center;">
     <p style="margin: 0; font-size: 12px; color: #94a3b8;">CheckHire — Secure escrow for gig work</p>
-    <p style="margin: 4px 0 0 0; font-size: 12px;"><a href="${APP_URL}" style="color: #94a3b8; text-decoration: underline;">checkhire.com</a></p>
+    <p style="margin: 4px 0 0 0; font-size: 12px;"><a href="${APP_URL}" style="color: #94a3b8; text-decoration: underline;">checkhire.co</a></p>
   </td></tr>
 </table>
 

@@ -179,7 +179,7 @@ export function NewsletterSignup({
               </p>
             ) : (
               <p className="mt-3 text-xs text-slate-600">
-                Join freelancers who protect their payments
+                Get scam alerts, safe hiring tips, and verified gigs — free.
               </p>
             )}
           </>
@@ -253,7 +253,7 @@ export function NewsletterSignup({
             </p>
           ) : (
             <p className="mt-3 text-xs text-slate-600">
-              Join freelancers who protect their payments
+              Get scam alerts, safe hiring tips, and verified gigs — free.
             </p>
           )}
         </>

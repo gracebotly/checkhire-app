@@ -237,7 +237,7 @@ function HomePageContent() {
                       Instant payout
                     </p>
                     <p className="text-xs text-slate-600">
-                      Under 30 minutes to your debit card — 1% fee
+                      Straight to your debit card in seconds — 1% fee
                     </p>
                   </div>
                 </div>

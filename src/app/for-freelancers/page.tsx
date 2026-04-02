@@ -30,9 +30,9 @@ const benefits = [
   },
   {
     icon: Zap,
-    title: "Instant payouts — under 30 minutes",
+    title: "Instant payouts — seconds, not days",
     description:
-      "Get paid to your debit card in under 30 minutes, 24/7 — including weekends and holidays. Other platforms make you wait 7-14 days. Optional 1% fee (min $0.50).",
+      "Get paid to your debit card in seconds, 24/7 — including weekends and holidays. Other platforms make you wait 7-14 days. Optional 1% fee (min $0.50).",
   },
   {
     icon: Lock,

@@ -53,13 +53,13 @@ function HomePageContent() {
             <div className="mx-auto mb-6 inline-flex items-center gap-2 rounded-full border border-brand-muted bg-brand-muted px-4 py-1.5">
               <Shield className="h-4 w-4 text-brand" />
               <span className="text-xs font-semibold text-brand">
-                DEAL PROTECTION FOR THE INTERNET
+                SECURE PAYMENTS
               </span>
             </div>
 
             <h1 className="font-display text-3xl font-bold text-slate-900 md:text-5xl md:leading-tight">
-              Never get scammed again{" "}
-              <span className="text-brand">paying someone online.</span>
+              You found each other.{" "}
+              <span className="text-brand">We make sure nobody gets screwed.</span>
             </h1>
 
             <p className="mx-auto mt-4 max-w-lg text-base text-slate-600 md:text-lg">
@@ -84,12 +84,12 @@ function HomePageContent() {
 
             {/* Secondary link — not a big CTA button */}
             <p className="mt-6 text-sm text-slate-600">
-              Ready to protect a deal?{" "}
+              Ready to hire or get paid?{" "}
               <Link
                 href="/create"
                 className="cursor-pointer font-semibold text-brand transition-colors duration-200 hover:text-brand-hover"
               >
-                Create a protected deal
+                Create a deal
                 <ArrowRight className="ml-1 inline h-3.5 w-3.5" />
               </Link>
             </p>
@@ -327,16 +327,16 @@ function HomePageContent() {
                   <Shield className="h-5 w-5 text-brand" />
                 </div>
                 <h3 className="font-display text-base font-semibold text-slate-900">
-                  Ready to protect your next deal?
+                  Ready to start a deal?
                 </h3>
                 <p className="mt-1 text-sm text-slate-600">
-                  Set up deal protection in under 60 seconds. Share the link anywhere. Freelancer keeps 100%.
+                  Define the work, lock the payment, share the link. Under 60 seconds. Freelancer keeps 100%.
                 </p>
                 <Link
                   href="/create"
                   className="mt-4 inline-flex cursor-pointer items-center gap-2 rounded-lg bg-brand px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-brand-hover"
                 >
-                  Create Protected Deal
+                  Create a Deal
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </div>

@@ -23,7 +23,7 @@ export function ProductCallout() {
           href="/login?mode=signup&redirect=/deal/new"
           className="inline-flex cursor-pointer items-center justify-center px-5 py-2.5 rounded-lg bg-brand text-white text-sm font-semibold transition-colors duration-200 hover:bg-brand-hover whitespace-nowrap flex-shrink-0"
         >
-          Create Protected Deal
+          Create a Deal — Free
         </Link>
       </div>
     </div>

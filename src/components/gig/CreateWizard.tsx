@@ -192,7 +192,7 @@ export function CreateWizard() {
               </div>
 
               <h1 className="font-display text-2xl font-bold text-slate-900 md:text-3xl">
-                The safest way to pay<br />someone you met online.
+                Hire anyone online.<br />Nobody gets screwed.
               </h1>
               <p className="mt-3 text-sm text-slate-600 leading-relaxed">
                 Define what will be delivered. Secure the payment. Release when you&apos;re happy. Simple as sharing a link.
@@ -221,11 +221,11 @@ export function CreateWizard() {
               </div>
 
               <p className="mt-6 text-xs text-slate-600 leading-relaxed">
-                Freelancer keeps <span className="font-semibold text-brand">100%</span>. You pay a small protection fee. Cancel and get a full refund anytime before work starts.
+                Freelancer keeps <span className="font-semibold text-brand">100%</span>. You pay 5% + processing. Cancel and get a full refund anytime before work starts.
               </p>
 
               <Button size="lg" className="mt-6 w-full" onClick={() => goTo(1)}>
-                Create a protected deal
+                Create a deal
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
@@ -235,8 +235,8 @@ export function CreateWizard() {
           {screen === 1 && (
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">Step 1 of 3</p>
-              <h2 className="mt-1 font-display text-xl font-bold text-slate-900">What type of work are you protecting?</h2>
-              <p className="mt-1 text-sm text-slate-600">This helps us tailor the deal for both sides.</p>
+              <h2 className="mt-1 font-display text-xl font-bold text-slate-900">What kind of work?</h2>
+              <p className="mt-1 text-sm text-slate-600">Pick the category that fits your gig.</p>
 
               <div className="mt-5 grid grid-cols-3 gap-2">
                 {WIZARD_CATEGORIES.map((cat) => {
@@ -307,7 +307,7 @@ export function CreateWizard() {
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">Step 2 of 3</p>
               <h2 className="mt-1 font-display text-xl font-bold text-slate-900">Define your deal</h2>
-              <p className="mt-1 text-sm text-slate-600">This is what the other person sees when they open your deal. Be specific — it protects both of you.</p>
+              <p className="mt-1 text-sm text-slate-600">This is what the other person sees when they open your deal link. Be specific — clear terms prevent disputes.</p>
 
               <div className="mt-5">
                 <label className="mb-1.5 block text-sm font-medium text-slate-900">Deal title</label>
@@ -415,7 +415,7 @@ export function CreateWizard() {
                     <p className="mt-1 font-mono text-lg font-semibold tabular-nums text-brand">{fmt(budgetNum)}</p>
                   )}
                   <div className="mt-2 rounded-lg bg-gray-50 px-3 py-2">
-                    <p className="text-xs text-slate-600">This is how the other person will see your deal</p>
+                    <p className="text-xs text-slate-600">Preview of your deal page</p>
                   </div>
                 </motion.div>
               )}
@@ -442,8 +442,8 @@ export function CreateWizard() {
           {screen === 3 && (
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">Last step</p>
-              <h2 className="mt-1 font-display text-xl font-bold text-slate-900">Your protected deal is ready</h2>
-              <p className="mt-1 text-sm text-slate-600">Create an account to activate protection. Takes 10 seconds.</p>
+              <h2 className="mt-1 font-display text-xl font-bold text-slate-900">Your deal is almost live</h2>
+              <p className="mt-1 text-sm text-slate-600">Create an account to publish your deal. Takes 10 seconds.</p>
 
               <div className="mt-5 rounded-xl border border-gray-200 bg-white p-5">
                 {/* Google OAuth */}

@@ -1,15 +1,11 @@
-import { createClient } from "@/lib/supabase/server";
-import { createClient as createServiceClient } from "@supabase/supabase-js";
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { generateReferralCode } from "@/lib/referrals/generate-code";
 import { sendWelcomeEmail } from "@/lib/email/sendWelcomeEmail";
-
-export const runtime = "nodejs";
-
-const supabaseAdmin = createServiceClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -23,6 +19,7 @@ export async function GET(request: Request) {
   const { error } = await supabase.auth.exchangeCodeForSession(code);
 
   if (error) {
+    console.error("[auth/callback] Code exchange failed:", error.message);
     return NextResponse.redirect(new URL("/auth/auth-code-error", request.url));
   }
 
@@ -31,22 +28,31 @@ export async function GET(request: Request) {
   } = await supabase.auth.getUser();
 
   if (!user) {
+    console.error("[auth/callback] No user after code exchange");
     return NextResponse.redirect(new URL("/auth/auth-code-error", request.url));
   }
 
-  // Detect wizard flow — if the user came from CreateWizard, always go to /deal/new
+  // Create service client at REQUEST TIME (not module level)
+  // This ensures env vars are available in Vercel's serverless environment
+  const supabaseAdmin = createServiceClient();
+
+  // Detect wizard flow
   const intent = searchParams.get("intent");
   const isWizardFlow = intent === "signup";
 
   // Check if user_profile exists
+  // The database trigger on auth.users should have already created it,
+  // but we check to handle edge cases and backfill missing data
   const { data: profile } = await supabaseAdmin
     .from("user_profiles")
-    .select("id, referral_code")
+    .select("id, referral_code, email, display_name")
     .eq("id", user.id)
     .maybeSingle();
 
   if (profile) {
-    // Existing user — backfill referral code if missing
+    // ── EXISTING USER (or trigger already created the profile) ──
+
+    // Backfill referral code if missing
     if (!profile.referral_code) {
       let referralCode = generateReferralCode();
       for (let attempt = 0; attempt < 3; attempt++) {
@@ -65,8 +71,30 @@ export async function GET(request: Request) {
       }
     }
 
-    // If wizard flow, go to /deal/new so GigCreateForm can recover sessionStorage data.
-    // Otherwise, use the next param or default to dashboard.
+    // Backfill email if missing (trigger may not have had it)
+    if (!profile.email && user.email) {
+      await supabaseAdmin
+        .from("user_profiles")
+        .update({ email: user.email })
+        .eq("id", user.id);
+    }
+
+    // Backfill display_name from Google metadata if the trigger set a generic one
+    const googleName = user.user_metadata?.name || user.user_metadata?.full_name;
+    if (googleName && (!profile.display_name || profile.display_name === user.email?.split("@")[0])) {
+      await supabaseAdmin
+        .from("user_profiles")
+        .update({
+          display_name: googleName,
+          full_name: googleName,
+        })
+        .eq("id", user.id);
+    }
+
+    // Referral attribution from cookie
+    await attributeReferral(supabaseAdmin, user.id, request);
+
+    // Redirect
     if (isWizardFlow) {
       return NextResponse.redirect(new URL("/deal/new?from_wizard=1", request.url));
     }
@@ -74,7 +102,13 @@ export async function GET(request: Request) {
     return NextResponse.redirect(new URL(next, request.url));
   }
 
-  // New user — create user_profile
+  // ── NEW USER — trigger failed or race condition ──
+  // This is the fallback. The trigger should have created the profile,
+  // but if it didn't (e.g., unique constraint collision on slug/code),
+  // we create it here with upsert + retries.
+
+  console.warn("[auth/callback] No profile found after trigger — creating via fallback");
+
   const displayName =
     user.user_metadata?.name ||
     user.user_metadata?.full_name ||
@@ -82,79 +116,104 @@ export async function GET(request: Request) {
     "User";
 
   const profileSlug =
-    displayName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") +
+    displayName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "") +
     "-" +
     user.id.substring(0, 8);
 
-  // Generate referral code
   let referralCode = generateReferralCode();
+  let profileCreated = false;
 
-  await supabaseAdmin.from("user_profiles").insert({
-    id: user.id,
-    full_name: user.user_metadata?.name || user.user_metadata?.full_name || null,
-    display_name: displayName,
-    email: user.email || null,
-    profile_slug: profileSlug,
-    referral_code: referralCode,
-  });
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const { error: upsertError } = await supabaseAdmin
+      .from("user_profiles")
+      .upsert(
+        {
+          id: user.id,
+          full_name: user.user_metadata?.name || user.user_metadata?.full_name || null,
+          display_name: displayName,
+          email: user.email || null,
+          profile_slug: attempt === 0 ? profileSlug : `${profileSlug}-${attempt}`,
+          referral_code: referralCode,
+        },
+        { onConflict: "id" }
+      );
 
-  // Retry with new code if unique constraint violation
-  const { data: createdProfile } = await supabaseAdmin
-    .from("user_profiles")
-    .select("referral_code")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (createdProfile && !createdProfile.referral_code) {
-    for (let attempt = 0; attempt < 3; attempt++) {
-      referralCode = generateReferralCode();
-      const { error: codeError } = await supabaseAdmin
-        .from("user_profiles")
-        .update({ referral_code: referralCode })
-        .eq("id", user.id);
-
-      if (!codeError) break;
-      if (codeError.code !== "23505") {
-        console.error("[auth/callback] Failed to set referral code:", codeError);
-        break;
-      }
+    if (!upsertError) {
+      profileCreated = true;
+      break;
     }
+
+    console.error(`[auth/callback] Fallback upsert attempt ${attempt + 1} failed:`, upsertError);
+
+    // Retry with new referral code on unique constraint violation
+    if (upsertError.code === "23505") {
+      if (upsertError.message?.includes("referral_code")) {
+        referralCode = generateReferralCode();
+      }
+      // If slug collision, the next iteration appends the attempt number
+      continue;
+    }
+
+    // Non-retryable error
+    break;
   }
 
-  // --- REFERRAL ATTRIBUTION: Check for referral cookie ---
-  const cookieHeader = request.headers.get("cookie") || "";
-  const refMatch = cookieHeader.match(/checkhire_ref=(REF-[A-Z0-9]{6})/);
-  const refCookie = refMatch ? refMatch[1] : null;
+  if (!profileCreated) {
+    console.error("[auth/callback] CRITICAL: Failed to create profile for user:", user.id);
+    // Still redirect — the user has an auth session, they'll just have a degraded experience
+    // until the profile is manually created
+  }
 
-  if (refCookie) {
+  // Referral attribution from cookie
+  await attributeReferral(supabaseAdmin, user.id, request);
+
+  // Send welcome email for genuinely new users
+  if (user.email) {
+    sendWelcomeEmail({ to: user.email, userName: displayName }).catch((err) => {
+      console.error("[auth/callback] Welcome email failed:", err);
+    });
+  }
+
+  // Redirect
+  if (isWizardFlow) {
+    return NextResponse.redirect(new URL("/deal/new?from_wizard=1", request.url));
+  }
+  const next = searchParams.get("next") || "/dashboard";
+  return NextResponse.redirect(new URL(next, request.url));
+}
+
+// ── Helper: Referral Attribution ──
+async function attributeReferral(
+  supabaseAdmin: ReturnType<typeof createServiceClient>,
+  userId: string,
+  request: Request
+) {
+  try {
+    const cookieHeader = request.headers.get("cookie") || "";
+    const refMatch = cookieHeader.match(/checkhire_ref=(REF-[A-Z0-9]{6})/);
+    const refCookie = refMatch ? refMatch[1] : null;
+
+    if (!refCookie) return;
+
     const { data: referrer } = await supabaseAdmin
       .from("user_profiles")
       .select("id, referral_code")
       .eq("referral_code", refCookie)
       .single();
 
-    if (referrer && referrer.id !== user.id) {
+    if (referrer && referrer.id !== userId) {
       await supabaseAdmin
         .from("user_profiles")
         .update({ referred_by: referrer.id })
-        .eq("id", user.id)
+        .eq("id", userId)
         .is("referred_by", null);
 
-      console.log(`[Referral] User ${user.id} referred by ${referrer.id} (Google OAuth)`);
+      console.log(`[Referral] User ${userId} referred by ${referrer.id} (Google OAuth)`);
     }
+  } catch (err) {
+    console.error("[auth/callback] Referral attribution error:", err);
   }
-  // --- END REFERRAL ATTRIBUTION ---
-
-  // Send welcome email for new users (fire-and-forget — never blocks the redirect)
-  if (user.email) {
-    sendWelcomeEmail({ to: user.email, userName: displayName }).catch(() => {});
-  }
-
-  // For new users from wizard flow, go to /deal/new.
-  // GigCreateForm will recover the wizard data from sessionStorage.
-  if (isWizardFlow) {
-    return NextResponse.redirect(new URL("/deal/new?from_wizard=1", request.url));
-  }
-  const next = searchParams.get("next") || "/dashboard";
-  return NextResponse.redirect(new URL(next, request.url));
 }

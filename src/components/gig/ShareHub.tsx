@@ -173,7 +173,7 @@ export function ShareHub({
     <div className="rounded-xl border border-gray-200 bg-white p-6">
       {/* Section 1 — The Link */}
       <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">
-        Your payment link
+        Your gig link
       </p>
       <div className="mt-2 flex items-center gap-2">
         <div className="flex-1 select-all rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 font-mono text-sm text-slate-900">
@@ -204,17 +204,9 @@ export function ShareHub({
           Payment Secured — {amount}
         </Badge>
       ) : (
-        <div className="mt-3">
-          <Badge variant="warning">
-            Fund escrow to show &ldquo;Payment Secured&rdquo; on your link
-          </Badge>
-          <a
-            href="#fund"
-            className="ml-2 cursor-pointer text-xs font-medium text-brand transition-colors duration-200 hover:text-brand-hover"
-          >
-            Fund Now
-          </a>
-        </div>
+        <p className="mt-3 text-xs text-slate-600">
+          Escrow not yet funded. Once a freelancer accepts, you&apos;ll be prompted to lock payment.
+        </p>
       )}
 
       {/* Section 2 — Share buttons */}
@@ -245,12 +237,12 @@ export function ShareHub({
           {truncatedTitle}
         </p>
         <p className="text-xs text-slate-600">
-          Escrow-protected gig — {amount}
+          Escrow-protected — {amount}
         </p>
         <p className="text-xs text-slate-600">checkhire.co</p>
       </div>
       <p className="mt-2 text-xs text-slate-600">
-        This is how your link appears when shared on social platforms
+        This is how your gig link appears when shared
       </p>
     </div>
   );

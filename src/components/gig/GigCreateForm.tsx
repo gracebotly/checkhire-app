@@ -52,10 +52,10 @@ type Props = {
 };
 
 const STEP_TITLES = [
-  "What's the gig?",
-  "How much?",
-  "When?",
-  "Review & Post",
+  "Define Your Agreement",
+  "Set the Budget",
+  "Set the Timeline",
+  "Review & Create",
 ];
 
 export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }: Props) {
@@ -334,9 +334,15 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
         ))}
       </div>
 
-      <h2 className="mb-6 text-center font-display text-xl font-bold text-slate-900">
+      <h2 className="mb-1 text-center font-display text-xl font-bold text-slate-900">
         {STEP_TITLES[step]}
       </h2>
+      <p className="mb-6 text-center text-sm text-slate-600">
+        {step === 0 && "Clear terms protect both sides and make payouts automatic."}
+        {step === 1 && "The freelancer receives exactly what you enter. You pay a 5% platform fee on top."}
+        {step === 2 && "When should the freelancer deliver the final work?"}
+        {step === 3 && "This is exactly what freelancers will see on your gig link."}
+      </p>
 
       {error && (
         <Alert variant="danger" className="mb-4">
@@ -372,18 +378,18 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
                 <Input
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g., Design a logo for my podcast"
+                  placeholder="e.g., Logo design for podcast brand (3 concepts + final files)"
                   maxLength={100}
                 />
               </div>
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-slate-900">
-                  Description
+                  Project Details
                 </label>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Describe the gig in detail..."
+                  placeholder="Outline exactly what you need — scope, timeline, and expectations. The clearer this is, the smoother the payment process."
                   maxLength={2000}
                   rows={4}
                   className="flex w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-ring/40 focus:border-brand resize-none"
@@ -391,18 +397,18 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
               </div>
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-slate-900">
-                  What will you receive?
+                  Deliverables
                 </label>
                 <textarea
                   value={deliverables}
                   onChange={(e) => setDeliverables(e.target.value)}
-                  placeholder="e.g., 3 logo concepts in AI + PNG, 2 rounds of revisions"
+                  placeholder="e.g., 3 logo concepts, 2 revision rounds, final files in AI + PNG"
                   maxLength={1000}
                   rows={3}
                   className="flex w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-ring/40 focus:border-brand resize-none"
                 />
                 <p className="mt-1 text-xs text-slate-600">
-                  Be specific — this is what counts if there&apos;s a dispute.
+                  Be specific. This defines what must be completed before payment is released.
                 </p>
               </div>
               <div>
@@ -449,10 +455,10 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
               {/* Proof of Completion */}
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-slate-900">
-                  Proof of completion
+                  Completion Requirements
                 </label>
                 <p className="mb-3 text-xs text-slate-600">
-                  What evidence must the freelancer provide? They can&apos;t submit without fulfilling every item.
+                  The freelancer must submit all required proof below before funds can be released.
                 </p>
                 <div className="space-y-3">
                   {acceptanceCriteria.map((criteria, i) => (
@@ -473,7 +479,7 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
                           <SelectItem value="screenshot">Screenshot</SelectItem>
                           <SelectItem value="link">Link / URL</SelectItem>
                           <SelectItem value="video">Video</SelectItem>
-                          <SelectItem value="text">Text proof</SelectItem>
+                          <SelectItem value="text">Text</SelectItem>
                         </SelectContent>
                       </Select>
                       <Input
@@ -483,7 +489,7 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
                           updated[i] = { ...updated[i], description: e.target.value };
                           setAcceptanceCriteria(updated);
                         }}
-                        placeholder="e.g., Final logo files in PNG + SVG"
+                        placeholder="e.g., Final logo files (PNG + SVG), project files, or delivery link"
                         maxLength={200}
                         className="flex-1"
                       />
@@ -514,10 +520,14 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
                     Add requirement
                   </button>
                 )}
+                <p className="mt-2 text-xs text-slate-600">
+                  Add all required items to avoid delays or disputes.
+                </p>
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-slate-900">Payment frequency</label>
+                <label className="mb-1.5 block text-sm font-medium text-slate-900">Payment Structure</label>
+                <p className="mb-2 text-xs text-slate-600">Choose how this agreement will be paid out.</p>
                 <div className="grid grid-cols-2 gap-2">
                   {[
                     { value: "one_time", label: "One-time" },
@@ -563,9 +573,6 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
                     className="w-40"
                   />
                 </div>
-                <p className="mt-1 text-xs text-slate-600">
-                  Minimum $10, maximum $10,000
-                </p>
               </div>
 
               <div>
@@ -619,7 +626,7 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
             <div className="space-y-4">
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-slate-900">
-                  Deadline
+                  Work completion deadline
                 </label>
                 <Input
                   type="date"
@@ -627,7 +634,7 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
                   onChange={(e) => setDeadline(e.target.value)}
                 />
                 <p className="mt-1 text-xs text-slate-600">
-                  Leave blank if there&apos;s no fixed deadline
+                  When should the freelancer deliver the final work? Leave blank if flexible.
                 </p>
               </div>
             </div>
@@ -656,7 +663,7 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
 
                 {/* Description */}
                 <div>
-                  <p className="text-xs text-slate-600">Description</p>
+                  <p className="text-xs text-slate-600">Project Details</p>
                   <p className="text-sm text-slate-900 whitespace-pre-wrap">
                     {description}
                   </p>
@@ -709,7 +716,7 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
 
                 {/* Acceptance Criteria */}
                 <div>
-                  <p className="text-xs text-slate-600 mb-2">Proof of completion required</p>
+                  <p className="text-xs text-slate-600 mb-2">Completion requirements</p>
                   {acceptanceCriteria.map((c, i) => (
                     <div key={i} className="flex items-center gap-2 py-1">
                       <span className="text-xs font-semibold text-slate-600 bg-gray-100 rounded px-1.5 py-0.5 shrink-0">
@@ -751,7 +758,7 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
                 {/* Deadline */}
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="text-xs text-slate-600">Deadline</p>
+                    <p className="text-xs text-slate-600">Work completion deadline</p>
                     <p className="text-sm text-slate-900">
                       {deadline
                         ? new Date(deadline).toLocaleDateString()
@@ -803,7 +810,7 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
                   disabled={submitting}
                   className="w-full"
                 >
-                  {submitting ? "Posting..." : "Post Gig"}
+                  {submitting ? "Creating..." : "Create Gig Link"}
                 </Button>
                 <Button
                   variant="outline"

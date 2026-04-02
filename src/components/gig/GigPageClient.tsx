@@ -425,12 +425,12 @@ export function GigPageClient({
         <p className="mt-3 font-mono text-2xl font-semibold tabular-nums text-slate-900">
           ${(deal.total_amount / 100).toFixed(2)}
         </p>
-        <div className="mt-1 flex items-center gap-1 text-sm text-slate-600">
-          <Calendar className="h-4 w-4" />
-          {deal.deadline
-            ? new Date(deal.deadline).toLocaleDateString()
-            : "No deadline"}
-        </div>
+        {deal.deadline && (
+          <div className="mt-1 flex items-center gap-1 text-sm text-slate-600">
+            <Calendar className="h-4 w-4" />
+            Due {new Date(deal.deadline).toLocaleDateString()}
+          </div>
+        )}
       </div>
 
       {/* 2. Escrow Status Bar */}
@@ -546,26 +546,12 @@ export function GigPageClient({
           </div>
         )}
 
-      {/* 3. Deal Terms Card — collapsible */}
+      {/* 3. Agreement Details — open for visitors, collapsible for participants */}
       <div className="mb-6 rounded-xl border border-gray-200 bg-white">
-        <button
-          type="button"
-          onClick={() => setTermsExpanded(!termsExpanded)}
-          className="flex w-full cursor-pointer items-center justify-between p-5 text-left transition-colors duration-200 hover:bg-gray-50/50"
-        >
-          <span className="text-sm font-semibold text-slate-900">
-            Deal Terms
-          </span>
-          {termsExpanded ? (
-            <ChevronUp className="h-4 w-4 text-slate-600" />
-          ) : (
-            <ChevronDown className="h-4 w-4 text-slate-600" />
-          )}
-        </button>
-        {termsExpanded && (
-          <div className="border-t border-gray-100 p-5 space-y-4">
+        {role === "visitor" ? (
+          <div className="p-5 space-y-4">
             <div>
-              <h3 className="text-sm font-semibold text-slate-900">Description</h3>
+              <h3 className="text-sm font-semibold text-slate-900">Project Details</h3>
               <p className="mt-1 text-sm text-slate-600 whitespace-pre-wrap">
                 {deal.description}
               </p>
@@ -598,6 +584,60 @@ export function GigPageClient({
               </div>
             )}
           </div>
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={() => setTermsExpanded(!termsExpanded)}
+              className="flex w-full cursor-pointer items-center justify-between p-5 text-left transition-colors duration-200 hover:bg-gray-50/50"
+            >
+              <span className="text-sm font-semibold text-slate-900">
+                Agreement Details
+              </span>
+              {termsExpanded ? (
+                <ChevronUp className="h-4 w-4 text-slate-600" />
+              ) : (
+                <ChevronDown className="h-4 w-4 text-slate-600" />
+              )}
+            </button>
+            {termsExpanded && (
+              <div className="border-t border-gray-100 p-5 space-y-4">
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-900">Project Details</h3>
+                  <p className="mt-1 text-sm text-slate-600 whitespace-pre-wrap">
+                    {deal.description}
+                  </p>
+                </div>
+                <Separator />
+                {deal.deliverables && (
+                  <>
+                    <div>
+                      <h3 className="text-sm font-semibold text-slate-900">
+                        Deliverables
+                      </h3>
+                      <p className="mt-1 text-sm text-slate-600 whitespace-pre-wrap">
+                        {deal.deliverables}
+                      </p>
+                    </div>
+                    <Separator />
+                  </>
+                )}
+                {deal.has_milestones && initialMilestones.length > 0 && (
+                  <div>
+                    <h3 className="mb-2 text-sm font-semibold text-slate-900">
+                      Milestones
+                    </h3>
+                    <MilestoneTracker
+                      milestones={initialMilestones}
+                      dealId={deal.id}
+                      role={role}
+                      onAction={() => router.refresh()}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+          </>
         )}
       </div>
 
@@ -870,7 +910,7 @@ export function GigPageClient({
       {acceptanceCriteria.length > 0 && (
         <div className="mb-6 rounded-xl border border-gray-200 bg-white p-5">
           <h3 className="text-sm font-semibold text-slate-900 mb-3">
-            Proof of completion required
+            Completion requirements
           </h3>
           <div className="space-y-2">
             {acceptanceCriteria.map((criteria) => {
@@ -1091,19 +1131,9 @@ export function GigPageClient({
                     {actionLoading ? "Accepting..." : "Accept Gig"}
                   </Button>
                 ) : (
-                  <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-                    <div className="flex items-start gap-3">
-                      <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
-                      <div>
-                        <p className="text-sm font-semibold text-slate-900">
-                          Payment not yet secured
-                        </p>
-                        <p className="mt-1 text-sm text-slate-600">
-                          The client hasn&apos;t funded escrow yet. You can&apos;t accept this gig until the payment is locked. Message the client to let them know you&apos;re interested.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+                  <p className="text-sm text-slate-600">
+                    Escrow is not yet funded. Express interest below or message the client directly.
+                  </p>
                 )}
               </>
             )}

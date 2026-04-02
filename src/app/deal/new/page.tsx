@@ -112,7 +112,7 @@ export default async function NewDealPage({
           ) : (
             <div className="mx-auto max-w-4xl px-6 py-10">
               <h1 className="mb-8 text-center font-display text-2xl font-bold text-slate-900">
-                {fromWizard ? "Finish Your Payment Link" : "Create a Payment Link"}
+                {fromWizard ? "Finish Your Gig Link" : "Create Your Gig Link"}
               </h1>
               <GigCreateForm
                 initialTemplate={initialTemplate}

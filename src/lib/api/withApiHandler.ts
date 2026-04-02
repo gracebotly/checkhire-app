@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 
 type ApiErrorBody = {
   ok: false;
@@ -37,11 +38,71 @@ async function extractUserHint(req: Request): Promise<string> {
   }
 }
 
+/**
+ * Check if the current user is suspended.
+ * Returns null if no user session or user is not suspended.
+ * Returns a 403 Response if the user is suspended.
+ *
+ * Skips for: admin routes, auth routes, GET requests (read-only).
+ */
+async function checkSuspension(req: Request): Promise<Response | null> {
+  const url = new URL(req.url);
+
+  // Skip admin routes — admins manage suspended users
+  if (url.pathname.startsWith("/api/admin")) return null;
+
+  // Skip auth routes — login/signup/logout need to work
+  if (url.pathname.startsWith("/api/auth")) return null;
+
+  // Skip GET — reading deal pages, profiles is fine
+  if (req.method === "GET") return null;
+
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) return null;
+
+    const { data: profile } = await supabase
+      .from("user_profiles")
+      .select("suspended")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (profile?.suspended) {
+      return NextResponse.json(
+        {
+          ok: false,
+          code: "ACCOUNT_SUSPENDED",
+          message:
+            "Your account has been suspended. Please contact support@checkhire.co for assistance.",
+          userAction: "contact_support" as const,
+        },
+        { status: 403 }
+      );
+    }
+  } catch {
+    // If check fails, don't block — Auth-level ban is the primary layer
+    console.error("[withApiHandler] Suspension check failed, proceeding");
+  }
+
+  return null;
+}
+
 export function withApiHandler<TArgs extends unknown[]>(
   handler: ApiHandler<TArgs>,
 ): ApiHandler<TArgs> {
   return async (...args: TArgs): Promise<Response> => {
     try {
+      // Suspension check (Layer 2 — app level)
+      const maybeReq = args[0];
+      if (maybeReq instanceof Request) {
+        const suspensionResponse = await checkSuspension(maybeReq);
+        if (suspensionResponse) return suspensionResponse;
+      }
+
       return await handler(...args);
     } catch (err) {
       const maybeReq = args[0];

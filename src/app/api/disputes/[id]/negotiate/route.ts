@@ -4,6 +4,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { withApiHandler } from "@/lib/api/withApiHandler";
 import { disputeNegotiateSchema } from "@/lib/validation/disputes";
 import { sendAndLogNotification } from "@/lib/email/logNotification";
+import { notifyAdmin } from "@/lib/email/adminNotify";
 import { verifyGuestToken } from "@/lib/deals/guestToken";
 
 export const POST = withApiHandler(
@@ -136,6 +137,19 @@ export const POST = withApiHandler(
           negotiation_round: 2,
           status: "under_review",
         }).eq("id", id);
+
+        // Notify admin that dispute needs human review
+        await notifyAdmin({
+          subject: `⚠️ Dispute escalated — needs your review`,
+          body: `
+            <h2 style="color: #dc2626; font-size: 20px;">Dispute Escalated to Human Review</h2>
+            <p style="color: #475569; font-size: 14px;">
+              Both negotiation rounds failed to reach agreement on <strong>${dealTitle}</strong> ($${(totalAmount / 100).toFixed(2)}).
+            </p>
+            <p style="color: #475569; font-size: 14px;">This dispute requires your manual review and resolution in the admin panel.</p>
+          `,
+          dealSlug: dealSlug,
+        }).catch((err: unknown) => console.error("[negotiate] Failed to notify admin:", err));
 
         // Email both
         const { data: cp } = await serviceClient.from("user_profiles").select("email").eq("id", clientUserId).maybeSingle();

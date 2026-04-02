@@ -129,6 +129,24 @@ export const POST = withApiHandler(async (req: Request) => {
     );
   }
 
+  // Insert acceptance criteria
+  if (data.acceptance_criteria && data.acceptance_criteria.length > 0) {
+    const criteriaRows = data.acceptance_criteria.map((c, i) => ({
+      deal_id: deal.id,
+      evidence_type: c.evidence_type,
+      description: c.description,
+      position: i,
+    }));
+
+    const { error: criteriaError } = await supabase
+      .from("acceptance_criteria")
+      .insert(criteriaRows);
+
+    if (criteriaError) {
+      console.error("Acceptance criteria insert error:", criteriaError);
+    }
+  }
+
   // Insert milestones if applicable
   if (data.has_milestones && data.milestones && data.milestones.length > 0) {
     const milestoneRows = data.milestones.map((m, i) => ({

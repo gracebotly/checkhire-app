@@ -59,6 +59,7 @@ import type {
   Rating,
   DealInterest,
   DealInterestWithUser,
+  AcceptanceCriteria,
 } from "@/types/database";
 
 type Props = {
@@ -75,6 +76,7 @@ type Props = {
   disputeId: string | null;
   guestFreelancerName?: string | null;
   guestToken?: string | null;
+  acceptanceCriteria: AcceptanceCriteria[];
 };
 
 const statusMap: Record<
@@ -118,6 +120,7 @@ export function GigPageClient({
   disputeId,
   guestFreelancerName = null,
   guestToken: initialGuestToken = null,
+  acceptanceCriteria,
 }: Props) {
   const router = useRouter();
   const { toast } = useToast();
@@ -860,6 +863,58 @@ export function GigPageClient({
             isResolved={false}
             negotiationRound={0}
           />
+        </div>
+      )}
+
+      {/* Acceptance Criteria Checklist */}
+      {acceptanceCriteria.length > 0 && (
+        <div className="mb-6 rounded-xl border border-gray-200 bg-white p-5">
+          <h3 className="text-sm font-semibold text-slate-900 mb-3">
+            Proof of completion required
+          </h3>
+          <div className="space-y-2">
+            {acceptanceCriteria.map((criteria) => {
+              const isFulfilled = activityEntries.some(
+                (a) => a.criteria_id === criteria.id && a.is_submission_evidence
+              );
+              return (
+                <div
+                  key={criteria.id}
+                  className={`flex items-start gap-3 rounded-lg border p-3 ${
+                    isFulfilled
+                      ? "border-green-200 bg-green-50"
+                      : "border-gray-200 bg-white"
+                  }`}
+                >
+                  <div className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${
+                    isFulfilled ? "bg-green-600" : "bg-gray-200"
+                  }`}>
+                    {isFulfilled && (
+                      <CheckCircle className="h-3.5 w-3.5 text-white" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold text-slate-600 bg-gray-100 rounded px-1.5 py-0.5 shrink-0">
+                        {criteria.evidence_type === "file"
+                          ? "File"
+                          : criteria.evidence_type === "screenshot"
+                          ? "Screenshot"
+                          : criteria.evidence_type === "link"
+                          ? "Link"
+                          : criteria.evidence_type === "video"
+                          ? "Video"
+                          : "Text"}
+                      </span>
+                      <span className={`text-sm ${isFulfilled ? "text-green-900" : "text-slate-900"}`}>
+                        {criteria.description}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 

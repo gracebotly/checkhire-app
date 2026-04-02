@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
-import { Pencil } from "lucide-react";
+import { Pencil, X, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -90,6 +90,9 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
         ? (initialTemplate.default_amount / 100).toString()
         : wizardData?.amount || ""
   );
+  const [acceptanceCriteria, setAcceptanceCriteria] = useState<
+    { evidence_type: string; description: string }[]
+  >([{ evidence_type: "file", description: "" }]);
   const [hasMilestones, setHasMilestones] = useState(
     initialTemplate?.has_milestones || false
   );
@@ -154,6 +157,14 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
         if (!deliverables.trim()) { setError("Deliverables are required"); return false; }
         if (category === "other" && otherCategoryDescription.trim().length < 10) {
           setError("Please describe the type of work (at least 10 characters)");
+          return false;
+        }
+        if (acceptanceCriteria.length === 0) {
+          setError("At least one proof of completion requirement is needed");
+          return false;
+        }
+        if (acceptanceCriteria.some((c) => c.description.trim().length < 3)) {
+          setError("All proof of completion items need a description (at least 3 characters)");
           return false;
         }
         return true;
@@ -227,6 +238,10 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
       deadline: deadline || null,
       deal_type: "public",
       has_milestones: hasMilestones,
+      acceptance_criteria: acceptanceCriteria.map((c) => ({
+        evidence_type: c.evidence_type,
+        description: c.description.trim(),
+      })),
       milestones: hasMilestones
         ? milestones.map((m) => ({
             title: m.title.trim(),
@@ -431,6 +446,76 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
                   </motion.div>
                 )}
               </div>
+              {/* Proof of Completion */}
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-slate-900">
+                  Proof of completion
+                </label>
+                <p className="mb-3 text-xs text-slate-600">
+                  What evidence must the freelancer provide? They can&apos;t submit without fulfilling every item.
+                </p>
+                <div className="space-y-3">
+                  {acceptanceCriteria.map((criteria, i) => (
+                    <div key={i} className="flex items-start gap-2">
+                      <Select
+                        value={criteria.evidence_type}
+                        onValueChange={(v) => {
+                          const updated = [...acceptanceCriteria];
+                          updated[i] = { ...updated[i], evidence_type: v };
+                          setAcceptanceCriteria(updated);
+                        }}
+                      >
+                        <SelectTrigger className="w-36 shrink-0">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="file">File upload</SelectItem>
+                          <SelectItem value="screenshot">Screenshot</SelectItem>
+                          <SelectItem value="link">Link / URL</SelectItem>
+                          <SelectItem value="video">Video</SelectItem>
+                          <SelectItem value="text">Text proof</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Input
+                        value={criteria.description}
+                        onChange={(e) => {
+                          const updated = [...acceptanceCriteria];
+                          updated[i] = { ...updated[i], description: e.target.value };
+                          setAcceptanceCriteria(updated);
+                        }}
+                        placeholder="e.g., Final logo files in PNG + SVG"
+                        maxLength={200}
+                        className="flex-1"
+                      />
+                      {acceptanceCriteria.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => setAcceptanceCriteria(acceptanceCriteria.filter((_, idx) => idx !== i))}
+                          className="shrink-0 h-10 w-10 flex items-center justify-center rounded-lg text-slate-600 cursor-pointer transition-colors duration-200 hover:bg-gray-100 hover:text-slate-900"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                {acceptanceCriteria.length < 10 && (
+                  <button
+                    type="button"
+                    className="mt-2 flex items-center gap-1.5 text-sm text-brand cursor-pointer transition-colors duration-200 hover:text-brand-hover"
+                    onClick={() =>
+                      setAcceptanceCriteria([
+                        ...acceptanceCriteria,
+                        { evidence_type: "file", description: "" },
+                      ])
+                    }
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add requirement
+                  </button>
+                )}
+              </div>
+
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-slate-900">Payment frequency</label>
                 <div className="grid grid-cols-2 gap-2">
@@ -621,6 +706,19 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
                     ))}
                   </div>
                 )}
+
+                {/* Acceptance Criteria */}
+                <div>
+                  <p className="text-xs text-slate-600 mb-2">Proof of completion required</p>
+                  {acceptanceCriteria.map((c, i) => (
+                    <div key={i} className="flex items-center gap-2 py-1">
+                      <span className="text-xs font-semibold text-slate-600 bg-gray-100 rounded px-1.5 py-0.5 shrink-0">
+                        {c.evidence_type === "file" ? "File" : c.evidence_type === "screenshot" ? "Screenshot" : c.evidence_type === "link" ? "Link" : c.evidence_type === "video" ? "Video" : "Text"}
+                      </span>
+                      <span className="text-sm text-slate-900">{c.description}</span>
+                    </div>
+                  ))}
+                </div>
 
                 {/* Category */}
                 {category && (

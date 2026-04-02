@@ -176,11 +176,27 @@ export type DealActivityLogEntry = {
   file_size_bytes: number | null;
   milestone_id: string | null;
   is_submission_evidence: boolean;
+  criteria_id: string | null;
   created_at: string;
 };
 
 export type ActivityLogEntryWithUser = DealActivityLogEntry & {
   user: Pick<UserProfile, 'display_name' | 'avatar_url'> | null;
+};
+
+// ─── Acceptance Criteria ───
+
+export type AcceptanceCriteriaType = 'file' | 'screenshot' | 'link' | 'video' | 'text';
+
+export type AcceptanceCriteria = {
+  id: string;
+  deal_id: string;
+  evidence_type: AcceptanceCriteriaType;
+  description: string;
+  position: number;
+  fulfilled: boolean;
+  fulfilled_at: string | null;
+  created_at: string;
 };
 
 // ─── Deal Interest (Public Deals) ───

@@ -6,7 +6,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { ToastProvider } from "@/components/ui/toast";
 import { verifyGuestToken } from "@/lib/deals/guestToken";
 import type { Metadata } from "next";
-import type { ActivityLogEntryWithUser, Milestone, Rating, DealInterest, DealInterestWithUser } from "@/types/database";
+import type { ActivityLogEntryWithUser, Milestone, Rating, DealInterest, DealInterestWithUser, AcceptanceCriteria } from "@/types/database";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -87,7 +87,16 @@ export default async function DealPage({ params, searchParams }: Props) {
   }
 
   let milestones: Milestone[] = [];
+  let acceptanceCriteria: AcceptanceCriteria[] = [];
   let activity: ActivityLogEntryWithUser[] = [];
+
+  // Fetch acceptance criteria
+  const { data: criteria } = await supabase
+    .from("acceptance_criteria")
+    .select("*")
+    .eq("deal_id", deal.id)
+    .order("position", { ascending: true });
+  acceptanceCriteria = (criteria || []) as AcceptanceCriteria[];
 
   if (role !== "visitor") {
     // Use service client for guest freelancers (no auth session)
@@ -198,6 +207,7 @@ export default async function DealPage({ params, searchParams }: Props) {
             disputeId={disputeId}
             guestFreelancerName={guestFreelancerName}
             guestToken={validGuestToken}
+            acceptanceCriteria={acceptanceCriteria || []}
           />
         </main>
       </div>

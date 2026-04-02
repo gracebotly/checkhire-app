@@ -11,6 +11,7 @@ type Props = {
   guestToken: string | null;
   onUploaded: () => void;
   dealStatus: string;
+  acceptanceCriteria?: Array<{ id: string; evidence_type: string; description: string }>;
 };
 
 const MAX_SIZE = 10 * 1024 * 1024;
@@ -21,6 +22,7 @@ export function EvidenceUploadCard({
   guestToken,
   onUploaded,
   dealStatus,
+  acceptanceCriteria,
 }: Props) {
   const [file, setFile] = useState<File | null>(null);
   const [isEvidence, setIsEvidence] = useState(
@@ -28,6 +30,7 @@ export function EvidenceUploadCard({
   );
   const [uploading, setUploading] = useState(false);
   const [content, setContent] = useState("");
+  const [criteriaId, setCriteriaId] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -49,6 +52,7 @@ export function EvidenceUploadCard({
       const formData = new FormData();
       formData.append("file", file);
       formData.append("is_submission_evidence", String(isEvidence));
+      if (criteriaId) formData.append("criteria_id", criteriaId);
       if (guestToken) formData.append("guest_token", guestToken);
 
       const url = guestToken
@@ -76,6 +80,7 @@ export function EvidenceUploadCard({
       toast("Evidence uploaded", "success");
       setFile(null);
       setContent("");
+      setCriteriaId(null);
       if (fileRef.current) fileRef.current.value = "";
       onUploaded();
     } catch (err) {
@@ -119,6 +124,26 @@ export function EvidenceUploadCard({
               {(file.size / 1024).toFixed(0)} KB
             </span>
           </div>
+
+          {acceptanceCriteria && acceptanceCriteria.length > 0 && (
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-slate-900">
+                This evidence is for:
+              </label>
+              <select
+                value={criteriaId || ""}
+                onChange={(e) => setCriteriaId(e.target.value || null)}
+                className="flex h-10 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-slate-900 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-ring/40 focus:border-brand cursor-pointer"
+              >
+                <option value="">General evidence</option>
+                {acceptanceCriteria.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    [{c.evidence_type}] {c.description}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <input
             type="text"

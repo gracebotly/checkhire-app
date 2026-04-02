@@ -369,7 +369,7 @@ export function ReferralDashboard() {
                 placeholder="your-name"
                 className="mb-1"
               />
-              <p className="text-xs text-slate-600 font-mono">checkhire.com/ref/{newSlug || "..."}</p>
+              <p className="text-xs text-slate-600 font-mono">checkhire.co/ref/{newSlug || "..."}</p>
               {slugError && <p className="text-xs text-red-600 mt-1">{slugError}</p>}
             </div>
 

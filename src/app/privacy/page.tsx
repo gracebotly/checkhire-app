@@ -27,7 +27,7 @@ export default function PrivacyPage() {
             </h2>
             <p className="mt-2">
               CheckHire (&quot;we,&quot; &quot;us,&quot; or &quot;our&quot;)
-              operates the website at checkhire.com (the &quot;Platform&quot;).
+              operates the website at checkhire.co (the &quot;Platform&quot;).
               This Privacy Policy explains how we collect, use, disclose, and
               protect information from users of our escrow-based gig work
               platform, including both clients and freelancers.
@@ -64,7 +64,7 @@ export default function PrivacyPage() {
                 (screenshots, documents, videos)
               </li>
               <li>
-                Communications sent to support@checkhire.com
+                Communications sent to support@checkhire.co
               </li>
             </ul>
 
@@ -220,7 +220,7 @@ export default function PrivacyPage() {
             </ul>
             <p className="mt-3">
               California residents have additional rights under the CCPA. To
-              exercise any privacy right, contact us at support@checkhire.com.
+              exercise any privacy right, contact us at support@checkhire.co.
               We will respond within 45 days.
             </p>
           </section>
@@ -257,10 +257,10 @@ export default function PrivacyPage() {
             <p className="mt-2">
               For privacy questions or data requests, contact us at{" "}
               <a
-                href="mailto:support@checkhire.com"
+                href="mailto:support@checkhire.co"
                 className="text-brand hover:underline"
               >
-                support@checkhire.com
+                support@checkhire.co
               </a>
               .
             </p>

@@ -124,6 +124,7 @@ export const POST = withApiHandler(
         file_name: file.name,
         file_size_bytes: file.size,
         is_submission_evidence: isSubmissionEvidence,
+        criteria_id: (formData.get("criteria_id") as string) || null,
       })
       .select()
       .single();

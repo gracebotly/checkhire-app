@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: `${post.title} | CheckHire Blog`,
     description: post.description,
     keywords: post.keywords,
-    alternates: { canonical: `https://checkhire.com/blog/${post.slug}` },
+    alternates: { canonical: `https://checkhire.co/blog/${post.slug}` },
     openGraph: {
       title: post.title,
       description: post.description,
@@ -71,12 +71,12 @@ export default async function BlogPostPage({ params }: Props) {
     author: {
       "@type": "Organization",
       name: "CheckHire",
-      url: "https://checkhire.com",
+      url: "https://checkhire.co",
     },
     publisher: {
       "@type": "Organization",
       name: "CheckHire",
-      url: "https://checkhire.com",
+      url: "https://checkhire.co",
     },
   };
 

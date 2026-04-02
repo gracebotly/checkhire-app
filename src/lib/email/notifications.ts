@@ -3,7 +3,7 @@ import type { NotificationType, NotificationData } from "@/types/database";
 
 export type { NotificationData };
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://checkhire.com";
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://checkhire.co";
 
 // ── Security: sanitize ALL user-provided data before HTML interpolation ──
 
@@ -55,7 +55,7 @@ function buildEmailHtml(options: {
   <!-- Footer inside card -->
   <tr><td style="padding: 20px 32px; background-color: #f8fafc; border-top: 1px solid #f1f5f9; text-align: center;">
     <p style="margin: 0; font-size: 12px; color: #94a3b8;">CheckHire — Secure escrow for gig work</p>
-    <p style="margin: 4px 0 0 0; font-size: 12px;"><a href="${APP_URL}" style="color: #94a3b8; text-decoration: underline;">checkhire.com</a></p>
+    <p style="margin: 4px 0 0 0; font-size: 12px;"><a href="${APP_URL}" style="color: #94a3b8; text-decoration: underline;">checkhire.co</a></p>
   </td></tr>
 </table>
 
@@ -78,13 +78,14 @@ function buildEmailHtml(options: {
 function buildCtaButton(
   href: string,
   label: string,
-  variant?: "primary" | "urgent" | "success" | "neutral"
+  variant?: "primary" | "urgent" | "success" | "neutral" | "brand"
 ): string {
   const colors: Record<string, string> = {
     primary: "#0d9488",
     urgent: "#d97706",
     success: "#16a34a",
     neutral: "#475569",
+    brand: "#0d9488",
   };
   const bgColor = colors[variant || "primary"] || variant || "#0d9488";
   return buildCtaButtonRaw(href, label, bgColor);
@@ -996,6 +997,73 @@ const NOTIFICATION_CONFIG: Record<string, NotificationConfig> = {
       return (
         `<p style="margin: 0; font-size: 14px; color: #475569;">Milestone <strong>${msTitle}</strong> on <strong>${title}</strong> has been submitted for review. You have 72 hours to approve.</p>` +
         buildCtaButton(link, "Review Now", "urgent")
+      );
+    },
+  },
+
+  // ── Moderation: Deal Approved ──
+  moderation_approved: {
+    accent: "#16a34a",
+    subject: (data) => `Your gig "${escapeHtml(data.dealTitle)}" has been verified`,
+    body: (data) => {
+      const title = escapeHtml(data.dealTitle);
+      const link = dealUrl(data.dealSlug);
+      const isFreelancer = data.role === "freelancer";
+      return (
+        `<h2 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 700; color: #0f172a;">Gig Verified</h2>` +
+        `<p style="margin: 0 0 12px 0; font-size: 14px; color: #475569;"><strong>${title}</strong> has been reviewed and approved by CheckHire.</p>` +
+        (isFreelancer
+          ? `<p style="margin: 0 0 16px 0; font-size: 14px; color: #475569;">Payouts are now enabled. When work is confirmed or the 72-hour review period ends, funds will be released to your account.</p>`
+          : `<p style="margin: 0 0 16px 0; font-size: 14px; color: #475569;">Everything looks good. Your gig is live and payouts are enabled.</p>`) +
+        buildCtaButton(link, "View Gig", "brand")
+      );
+    },
+  },
+
+  // ── Moderation: Changes Requested ──
+  moderation_changes_requested: {
+    accent: "#2563eb",
+    subject: (data) => `Changes needed on your gig "${escapeHtml(data.dealTitle)}"`,
+    body: (data) => {
+      const title = escapeHtml(data.dealTitle);
+      const link = dealUrl(data.dealSlug);
+      const notes = data.notes ? escapeHtml(data.notes) : "Please review your gig details.";
+      const isFreelancer = data.role === "freelancer";
+      return (
+        `<h2 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 700; color: #0f172a;">Changes Requested</h2>` +
+        `<p style="margin: 0 0 12px 0; font-size: 14px; color: #475569;">CheckHire has reviewed <strong>${title}</strong> and is requesting changes before it can be fully approved.</p>` +
+        `<div style="margin: 0 0 16px 0; padding: 12px 16px; background-color: #eff6ff; border-radius: 8px; border-left: 4px solid #2563eb;">` +
+        `<p style="margin: 0; font-size: 14px; color: #1e40af;">${notes}</p>` +
+        `</div>` +
+        (isFreelancer
+          ? `<p style="margin: 0 0 16px 0; font-size: 14px; color: #475569;">The client has been asked to update this gig. Your payment remains secured in escrow.</p>`
+          : `<p style="margin: 0 0 16px 0; font-size: 14px; color: #475569;">Please update your gig to address the feedback above. Payouts are paused until the changes are reviewed.</p>`) +
+        buildCtaButton(link, "View Gig", "brand")
+      );
+    },
+  },
+
+  // ── Moderation: Deal Rejected ──
+  moderation_rejected: {
+    accent: "#dc2626",
+    subject: (data) => `Your gig "${escapeHtml(data.dealTitle)}" has been removed`,
+    body: (data) => {
+      const title = escapeHtml(data.dealTitle);
+      const notes = data.notes ? escapeHtml(data.notes) : "This gig does not comply with our terms of service.";
+      const isFreelancer = data.role === "freelancer";
+      const amount = data.amount ? formatAmount(data.amount) : null;
+      return (
+        `<h2 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 700; color: #0f172a;">Gig Removed</h2>` +
+        `<p style="margin: 0 0 12px 0; font-size: 14px; color: #475569;"><strong>${title}</strong> has been removed by CheckHire for not meeting our safety and content standards.</p>` +
+        `<div style="margin: 0 0 16px 0; padding: 12px 16px; background-color: #fef2f2; border-radius: 8px; border-left: 4px solid #dc2626;">` +
+        `<p style="margin: 0; font-size: 14px; color: #991b1b;">${notes}</p>` +
+        `</div>` +
+        (isFreelancer
+          ? `<p style="margin: 0 0 16px 0; font-size: 14px; color: #475569;">No funds were released for this gig. If you have questions, please contact support@checkhire.co.</p>`
+          : (amount
+            ? `<p style="margin: 0 0 16px 0; font-size: 14px; color: #475569;">If you funded escrow, your payment of <strong>${amount}</strong> is being refunded to your original payment method. Refunds typically take 5-10 business days.</p>`
+            : `<p style="margin: 0 0 16px 0; font-size: 14px; color: #475569;">If you believe this is an error, please contact support@checkhire.co.</p>`)) +
+        `<p style="margin: 0; font-size: 13px; color: #94a3b8;">Review our <a href="${APP_URL}/terms" style="color: #64748b; text-decoration: underline;">Terms of Service</a> for details on acceptable gig content.</p>`
       );
     },
   },

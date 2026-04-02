@@ -48,7 +48,7 @@ export const GET = withApiHandler(async () => {
     .order("created_at", { ascending: false })
     .limit(10);
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://checkhire.com";
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://checkhire.co";
   const referralLink = profile.referral_slug
     ? `${baseUrl}/ref/${profile.referral_slug}`
     : `${baseUrl}?ref=${profile.referral_code}`;

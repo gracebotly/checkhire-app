@@ -40,6 +40,15 @@ export const createDealSchema = z
       .default("one_time"),
     deadline: z.string().nullable(),
     deal_type: z.enum(["private", "public"]).default("public"),
+    acceptance_criteria: z
+      .array(
+        z.object({
+          evidence_type: z.enum(["file", "screenshot", "link", "video", "text"]),
+          description: z.string().min(3, "Description too short").max(200, "Description too long"),
+        })
+      )
+      .min(1, "At least one proof of completion requirement is needed")
+      .max(10, "Maximum 10 requirements"),
     has_milestones: z.boolean(),
     milestones: z
       .array(

@@ -49,7 +49,7 @@ export const PATCH = withApiHandler(async (request: NextRequest) => {
     return NextResponse.json({ error: "Failed to update slug" }, { status: 500 });
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://checkhire.com";
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://checkhire.co";
 
   return NextResponse.json({
     referral_slug: slug,

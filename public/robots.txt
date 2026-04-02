@@ -6,4 +6,4 @@ Disallow: /settings/
 Disallow: /templates/
 Disallow: /dashboard/
 
-Sitemap: https://checkhire.com/sitemap.xml
+Sitemap: https://checkhire.co/sitemap.xml

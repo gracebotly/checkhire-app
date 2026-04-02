@@ -1,6 +1,6 @@
 import { Resend } from "resend";
 
-const FROM = "CheckHire <no-reply@checkhire.com>";
+const FROM = "CheckHire <no-reply@checkhire.co>";
 
 interface SendEmailParams {
   to: string;
@@ -27,7 +27,7 @@ export async function sendEmail({ to, subject, html }: SendEmailParams): Promise
       subject,
       html,
       headers: {
-        'List-Unsubscribe': `<${process.env.NEXT_PUBLIC_APP_URL || 'https://checkhire.com'}/settings>`,
+        'List-Unsubscribe': `<${process.env.NEXT_PUBLIC_APP_URL || 'https://checkhire.co'}/settings>`,
         'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
       },
     });

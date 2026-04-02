@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   title: "Blog — Safety Guides & Resources | CheckHire",
   description:
     "Scam teardowns, escrow guides, and everything you need to hire and get hired safely online.",
-  alternates: { canonical: "https://checkhire.com/blog" },
+  alternates: { canonical: "https://checkhire.co/blog" },
 };
 
 function PostImagePlaceholder({ category }: { category: string }) {

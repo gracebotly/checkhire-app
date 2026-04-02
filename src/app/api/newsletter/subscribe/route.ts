@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
           utm_source: "checkhire",
           utm_medium: "website",
           utm_campaign: utmCampaign,
-          referring_site: "https://checkhire.com",
+          referring_site: "https://checkhire.co",
         }),
       }
     );

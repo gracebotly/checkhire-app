@@ -379,7 +379,7 @@ export function SettingsContent() {
                   Profile URL
                 </label>
                 <div className="flex items-center gap-1">
-                  <span className="text-sm text-slate-600">checkhire.com/u/</span>
+                  <span className="text-sm text-slate-600">checkhire.co/u/</span>
                   <Input
                     value={profileSlug}
                     onChange={(e) =>

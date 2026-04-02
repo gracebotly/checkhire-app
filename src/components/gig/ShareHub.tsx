@@ -53,7 +53,7 @@ export function ShareHub({
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
 
-  const dealUrl = `https://checkhire.com/deal/${dealSlug}`;
+  const dealUrl = `https://checkhire.co/deal/${dealSlug}`;
   const amount = formatAmount(amountCents);
 
   const shareData = {
@@ -177,7 +177,7 @@ export function ShareHub({
       </p>
       <div className="mt-2 flex items-center gap-2">
         <div className="flex-1 select-all rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 font-mono text-sm text-slate-900">
-          checkhire.com/deal/{dealSlug}
+          checkhire.co/deal/{dealSlug}
         </div>
         <Button
           variant="default"
@@ -247,7 +247,7 @@ export function ShareHub({
         <p className="text-xs text-slate-600">
           Escrow-protected gig — {amount}
         </p>
-        <p className="text-xs text-slate-600">checkhire.com</p>
+        <p className="text-xs text-slate-600">checkhire.co</p>
       </div>
       <p className="mt-2 text-xs text-slate-600">
         This is how your link appears when shared on social platforms

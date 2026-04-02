@@ -18,7 +18,7 @@ export const GET = withApiHandler(async (req: Request) => {
   let query = serviceClient
     .from("deals")
     .select(
-      `*, client:user_profiles!deals_client_user_id_profile_fkey(display_name, email), freelancer:user_profiles!deals_freelancer_user_id_profile_fkey(display_name, email)`,
+      `*, client:user_profiles!deals_client_user_id_profile_fkey(display_name, email), freelancer:user_profiles!deals_freelancer_user_id_profile_fkey(display_name, email), moderation_log:deal_moderation_log(action, notes, created_at)`,
       { count: "exact" }
     );
 
@@ -30,6 +30,10 @@ export const GET = withApiHandler(async (req: Request) => {
     query = query.in("escrow_status", ["funded", "partially_released"]);
   } else if (filter === "flagged") {
     query = query.eq("flagged_for_review", true);
+  } else if (filter === "pending_review") {
+    query = query.eq("review_status", "pending");
+  } else if (filter === "changes_requested") {
+    query = query.eq("review_status", "changes_requested");
   }
 
   const { data: deals, count, error } = await query

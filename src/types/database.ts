@@ -80,6 +80,11 @@ export type Deal = {
   payment_frequency: PaymentFrequency;
   flagged_for_review: boolean;
   flagged_reason: string | null;
+  review_status: "pending" | "approved" | "changes_requested" | "rejected";
+  review_notes: string | null;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  risk_score: number;
   client_user_id: string;
   freelancer_user_id: string | null;
   status: DealStatus;
@@ -171,11 +176,27 @@ export type DealActivityLogEntry = {
   file_size_bytes: number | null;
   milestone_id: string | null;
   is_submission_evidence: boolean;
+  criteria_id: string | null;
   created_at: string;
 };
 
 export type ActivityLogEntryWithUser = DealActivityLogEntry & {
   user: Pick<UserProfile, 'display_name' | 'avatar_url'> | null;
+};
+
+// ─── Acceptance Criteria ───
+
+export type AcceptanceCriteriaType = 'file' | 'screenshot' | 'link' | 'video' | 'text';
+
+export type AcceptanceCriteria = {
+  id: string;
+  deal_id: string;
+  evidence_type: AcceptanceCriteriaType;
+  description: string;
+  position: number;
+  fulfilled: boolean;
+  fulfilled_at: string | null;
+  created_at: string;
 };
 
 // ─── Deal Interest (Public Deals) ───
@@ -357,7 +378,10 @@ export type NotificationType =
   | 'chargeback_opened'
   | 'chargeback_closed'
   | 'payout_delayed'
-  | 'payout_landed';
+  | 'payout_landed'
+  | 'moderation_approved'
+  | 'moderation_changes_requested'
+  | 'moderation_rejected';
 
 export type EmailNotification = {
   id: string;
@@ -394,6 +418,8 @@ export type NotificationData = {
   chargebackStatus?: string;
   chargebackAmount?: number;
   payoutId?: string;
+  rejectionCategory?: string;
+  reviewStatus?: string;
 };
 
 // ─── Dispute with Deal Info (Admin Views) ───
@@ -480,3 +506,26 @@ export interface AdminReferralOverview {
   total_clicks: number;
   conversion_rate: number;
 }
+
+
+// ─── Deal Moderation Log ───
+export type DealModerationLog = {
+  id: string;
+  deal_id: string;
+  admin_user_id: string;
+  action: "approved" | "changes_requested" | "rejected" | "escalated";
+  previous_status: string | null;
+  new_status: string;
+  notes: string | null;
+  created_at: string;
+};
+
+export type ModerationAction = "approved" | "changes_requested" | "rejected";
+
+export type RejectionCategory =
+  | "violates_terms"
+  | "suspected_scam"
+  | "prohibited_content"
+  | "duplicate_deal"
+  | "insufficient_detail"
+  | "other";

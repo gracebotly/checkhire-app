@@ -164,6 +164,7 @@ export async function sendScamCheckConfirmation(params: {
     to: params.to,
     subject: `We received your submission — we're reviewing it now (${caseId})`,
     html: buildScamCheckEmailHtml({ body, accentColor: "#0d9488" }),
+    from: "CheckHire SafeGuard <investigations@checkhire.co>",
   });
 }
 
@@ -291,6 +292,7 @@ export async function sendScamCheckVerdict(params: {
   return sendEmail({
     to: params.to,
     subject: subjectMap[params.status],
+    from: "CheckHire SafeGuard <investigations@checkhire.co>",
     html: buildScamCheckEmailHtml({
       body,
       accentColor: header.color,

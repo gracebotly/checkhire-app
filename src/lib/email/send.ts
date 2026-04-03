@@ -6,13 +6,14 @@ interface SendEmailParams {
   to: string;
   subject: string;
   html: string;
+  from?: string;
 }
 
 /**
  * Send an email via Resend. Non-fatal: logs errors but never throws.
  * Returns true if sent successfully, false otherwise.
  */
-export async function sendEmail({ to, subject, html }: SendEmailParams): Promise<boolean> {
+export async function sendEmail({ to, subject, html, from }: SendEmailParams): Promise<boolean> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
     console.warn("[sendEmail] RESEND_API_KEY not set — skipping");
@@ -22,7 +23,7 @@ export async function sendEmail({ to, subject, html }: SendEmailParams): Promise
   try {
     const resend = new Resend(apiKey);
     await resend.emails.send({
-      from: FROM,
+      from: from || FROM,
       to: [to],
       subject,
       html,

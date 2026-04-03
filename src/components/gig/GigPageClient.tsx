@@ -554,7 +554,7 @@ export function GigPageClient({
               )}
               {role === "freelancer" && (
                 <p className="mt-2 text-sm text-red-700">
-                  No funds were released. If you believe this is an error, please contact support@checkhire.co.
+                  No funds were released. If you believe this is an error, please contact hello@checkhire.co.
                 </p>
               )}
             </div>

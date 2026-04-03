@@ -6,7 +6,7 @@ import { BrowseGigsContent } from "@/components/gig/BrowseGigsContent";
 export const metadata: Metadata = {
   title: "Browse Gigs — Open Freelance Work",
   description:
-    "Browse open gig opportunities with escrow-protected payments. Express interest and get paid safely.",
+    "Browse open gig opportunities with escrow-protected payments. Apply and get paid safely.",
 };
 
 export default function BrowseGigsPage() {

@@ -124,7 +124,7 @@ export function GigCard({ deal, index, currentUserId }: Props) {
               </>
             ) : (
               <span className="text-sm text-slate-600">
-                Waiting for someone to accept
+                Waiting for applicants
               </span>
             )}
           </div>

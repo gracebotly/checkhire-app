@@ -749,16 +749,16 @@ export function GigPageClient({
             </div>
           ) : (
             <p className="text-sm text-slate-600">
-              Waiting for someone to accept
+              Waiting for applicants
             </p>
           )}
         </div>
       </div>
 
-      {/* Interest Section for Public Deals */}
+      {/* Application Section for Public Deals */}
       {deal.deal_type === "public" && (
         <div className="mb-6">
-          {/* Client sees interest list */}
+          {/* Client sees applicant list */}
           {role === "client" && (
             <InterestList
               dealId={deal.id}
@@ -776,7 +776,7 @@ export function GigPageClient({
             />
           )}
 
-          {/* Visitor (authenticated, not client) sees interest form */}
+          {/* Visitor (authenticated, not client) sees application form */}
           {role === "visitor" &&
             currentUserId &&
             deal.status === "pending_acceptance" &&
@@ -1192,7 +1192,7 @@ export function GigPageClient({
                   </Button>
                 ) : (
                   <p className="text-sm text-slate-600">
-                    This gig hasn&apos;t been funded yet. You can express interest below — the client will see your pitch and can fund escrow when ready.
+                    This gig hasn&apos;t been funded yet. You can apply below — the client will review your application and can fund escrow when ready.
                   </p>
                 )}
               </>

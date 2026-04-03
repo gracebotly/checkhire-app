@@ -192,7 +192,7 @@ export function InterestForm({
 
   const handleSubmit = async () => {
     if (pitch.trim().length < 20) {
-      setError("Pitch must be at least 20 characters");
+      setError("Cover message must be at least 20 characters");
       return;
     }
 
@@ -312,11 +312,11 @@ export function InterestForm({
       )}
 
       <div className="mt-4">
-        <label className="mb-1.5 block text-sm font-medium text-slate-900">Pitch</label>
+        <label className="mb-1.5 block text-sm font-medium text-slate-900">Cover message</label>
         <textarea
           value={pitch}
           onChange={(e) => setPitch(e.target.value)}
-          placeholder="Why are you a good fit? Mention relevant experience..."
+          placeholder="Introduce yourself — why are you a great fit for this gig?"
           maxLength={1000}
           rows={5}
           className="flex w-full resize-none rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-600 transition-colors duration-200 focus:border-brand focus:outline-none focus:ring-2 focus:ring-ring/40"

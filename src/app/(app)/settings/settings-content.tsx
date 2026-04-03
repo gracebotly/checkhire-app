@@ -511,15 +511,18 @@ export function SettingsContent() {
             </div>
           </section>
 
-          {/* ═══════════════ PAYOUTS ═══════════════ */}
+          {/* ═══════════════ GET PAID ═══════════════ */}
           <section>
             <div className="flex items-center gap-2 mb-4">
               <CreditCard className="h-4 w-4 text-slate-600" />
-              <h2 className="text-base font-semibold text-slate-900">Payouts</h2>
+              <h2 className="text-base font-semibold text-slate-900">Get Paid for Freelance Work</h2>
             </div>
             <div className="rounded-xl border border-gray-200 bg-white p-5">
               <p className="text-sm text-slate-600">
-                Connect your bank account to receive payments from gig work.
+                Connect your bank account through Stripe to receive payments when gigs you work on are completed.
+              </p>
+              <p className="mt-1 text-xs text-slate-600">
+                Only needed if you&apos;re accepting gigs as a freelancer. If you&apos;re only posting gigs as a client, you don&apos;t need this — you&apos;ll pay directly when funding escrow.
               </p>
 
               <div className="mt-4">
@@ -537,7 +540,7 @@ export function SettingsContent() {
                         Stripe Connected
                       </p>
                       <p className="text-xs text-slate-600">
-                        Your bank account is linked. You can receive payouts.
+                        Your bank account is linked. You&apos;ll receive payouts when gigs are completed.
                       </p>
                     </div>
                   </div>
@@ -546,7 +549,7 @@ export function SettingsContent() {
                 {stripeStatus === "not_connected" && (
                   <div>
                     <p className="text-sm text-slate-600 mb-3">
-                      You haven&apos;t connected a bank account yet. This is required to receive payments.
+                      You haven&apos;t connected a bank account yet. Set this up before accepting any gigs so you can get paid.
                     </p>
                     <Button
                       onClick={handleConnectStripe}
@@ -561,7 +564,7 @@ export function SettingsContent() {
                 {stripeStatus === "pending" && (
                   <div>
                     <p className="text-sm text-slate-600 mb-3">
-                      Your Stripe onboarding is incomplete. Please finish setting up your account.
+                      Your Stripe setup is incomplete. Finish onboarding so you can receive payments for gigs.
                     </p>
                     <Button
                       onClick={handleConnectStripe}

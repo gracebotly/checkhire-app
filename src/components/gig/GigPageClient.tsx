@@ -34,6 +34,7 @@ import { TrustBadge } from "@/components/gig/TrustBadge";
 import { EvidenceTimeline } from "@/components/gig/EvidenceTimeline";
 import { EvidenceUploadCard } from "@/components/gig/EvidenceUploadCard";
 import { GuestAcceptCard } from "@/components/gig/GuestAcceptCard";
+import { SignInToApplyCard } from "@/components/gig/SignInToApplyCard";
 import { AccountNudgeBanner } from "@/components/gig/AccountNudgeBanner";
 import { CancelRefundDialog } from "@/components/gig/CancelRefundDialog";
 import { ShareButton } from "@/components/gig/ShareButton";
@@ -837,23 +838,32 @@ export function GigPageClient({
         </div>
       )}
 
-      {/* 4b. Guest Accept Card */}
+      {/* 4b. Unauthenticated visitor CTA — different for public vs private deals */}
       {role === "visitor" &&
         !currentUserId &&
         deal.status === "pending_acceptance" &&
         !hasFreelancer && (
           <div className="mb-6">
-            <GuestAcceptCard
-              dealId={deal.id}
-              dealSlug={deal.deal_link_slug}
-              escrowFunded={deal.escrow_status === "funded"}
-              amountCents={deal.total_amount}
-              onAccepted={(token) => {
-                setGuestToken(token);
-                refreshActivity();
-                router.refresh();
-              }}
-            />
+            {deal.deal_type === "public" ? (
+              <SignInToApplyCard
+                dealSlug={deal.deal_link_slug}
+                escrowFunded={deal.escrow_status === "funded"}
+                amountCents={deal.total_amount}
+                dealTitle={deal.title}
+              />
+            ) : (
+              <GuestAcceptCard
+                dealId={deal.id}
+                dealSlug={deal.deal_link_slug}
+                escrowFunded={deal.escrow_status === "funded"}
+                amountCents={deal.total_amount}
+                onAccepted={(token) => {
+                  setGuestToken(token);
+                  refreshActivity();
+                  router.refresh();
+                }}
+              />
+            )}
           </div>
         )}
 

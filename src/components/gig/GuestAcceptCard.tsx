@@ -215,7 +215,7 @@ export function GuestAcceptCard({
                 <div className="flex items-center gap-3">
                   <div className="h-px flex-1 bg-gray-300" />
                   <span className="text-xs text-slate-600">
-                    or accept without an account
+                    or verify with email
                   </span>
                   <div className="h-px flex-1 bg-gray-300" />
                 </div>
@@ -336,7 +336,7 @@ export function GuestAcceptCard({
               You&apos;re in!
             </h3>
             <p className="text-sm text-slate-600">
-              Start uploading evidence of your work.
+              Start uploading your work to the Deal Timeline.
             </p>
           </motion.div>
         )}

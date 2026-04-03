@@ -120,7 +120,7 @@ export function PublicGigCard({ deal, index }: Props) {
           {deal.interested_count > 0 && (
             <div className="flex items-center gap-1 text-xs text-slate-600">
               <Users className="h-3.5 w-3.5" />
-              {deal.interested_count} interested
+              {deal.interested_count} {deal.interested_count === 1 ? "applicant" : "applicants"}
             </div>
           )}
         </div>

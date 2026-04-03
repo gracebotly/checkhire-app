@@ -105,7 +105,7 @@ export function BrowseGigsContent() {
           Browse Gigs
         </h1>
         <p className="mt-1 text-sm text-slate-600">
-          Open gigs looking for freelancers. Express interest to get started.
+          Open gigs looking for freelancers. Apply to get started.
         </p>
 
         {/* Filter bar */}

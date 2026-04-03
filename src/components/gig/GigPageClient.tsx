@@ -181,6 +181,9 @@ export function GigPageClient({
     if (fundedStatus === "true") {
       toast("Payment secured! The freelancer can start work.", "success");
       window.history.replaceState(null, "", `/deal/${deal.deal_link_slug}`);
+      // Refresh server data so the page reflects the funded escrow status
+      const timer = setTimeout(() => router.refresh(), 1500);
+      return () => clearTimeout(timer);
     } else if (fundedStatus === "cancelled") {
       toast("Checkout cancelled — escrow not funded.", "info");
       window.history.replaceState(null, "", `/deal/${deal.deal_link_slug}`);
@@ -1166,7 +1169,7 @@ export function GigPageClient({
                   </Button>
                 ) : (
                   <p className="text-sm text-slate-600">
-                    Escrow is not yet funded. Express interest below or message the client directly.
+                    This gig hasn&apos;t been funded yet. You can express interest below — the client will see your pitch and can fund escrow when ready.
                   </p>
                 )}
               </>

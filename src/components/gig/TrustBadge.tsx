@@ -8,7 +8,7 @@ type Props = {
 
 export function TrustBadge({ badge, size = "sm" }: Props) {
   if (badge === "new") {
-    return <span className="text-xs text-slate-600">New</span>;
+    return null;
   }
 
   const iconClass = size === "sm" ? "h-3 w-3" : "h-3.5 w-3.5";

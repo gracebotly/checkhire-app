@@ -90,9 +90,9 @@ export default function DashboardPage() {
 
           <TabsContent value={filter}>
             {loading ? (
-              <div className="space-y-4 mt-4">
+              <div className="space-y-3 mt-4">
                 {[0, 1, 2].map((i) => (
-                  <Skeleton key={i} className="h-32 w-full rounded-xl" />
+                  <Skeleton key={i} className="h-20 w-full rounded-xl" />
                 ))}
               </div>
             ) : deals.length === 0 ? (
@@ -101,14 +101,14 @@ export default function DashboardPage() {
                   <Briefcase className="h-7 w-7 text-brand" />
                 </div>
                 <p className="text-base font-semibold text-slate-900">
-                  Welcome to CheckHire
+                  No deals yet
                 </p>
                 <p className="mt-1 max-w-sm text-sm text-slate-600">
-                  Create a payment link, share it anywhere, and get paid safely
-                  with escrow protection. Your gigs will appear here.
+                  Create a protected deal, share the link anywhere, and get paid
+                  safely. Your deals will appear here.
                 </p>
                 <Link href="/deal/new" className="mt-5">
-                  <Button size="lg">Create Your First Payment Link</Button>
+                  <Button size="lg">Create Your First Deal</Button>
                 </Link>
                 <Link
                   href="/how-it-works"
@@ -118,7 +118,7 @@ export default function DashboardPage() {
                 </Link>
               </div>
             ) : (
-              <div className="mt-4 space-y-4">
+              <div className="mt-4 space-y-3">
                 {deals.map((deal, i) => (
                   <GigCard
                     key={deal.id}

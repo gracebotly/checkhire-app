@@ -81,10 +81,10 @@ export function GigCard({ deal, index, currentUserId }: Props) {
       transition={{ duration: 0.25, ease: "easeOut", delay: index * 0.04 }}
     >
       <Link href={`/deal/${deal.deal_link_slug}`}>
-        <div className="cursor-pointer rounded-xl border border-gray-200 bg-white p-5 transition-colors duration-200 hover:border-gray-300 hover:bg-gray-50/50">
+        <div className="cursor-pointer rounded-xl border border-gray-200 bg-white px-4 py-3 transition-colors duration-200 hover:border-gray-300 hover:bg-gray-50/50">
           {/* Row 1: Title + Status badges */}
-          <div className="flex items-start justify-between gap-3">
-            <h3 className="text-base font-semibold text-slate-900">
+          <div className="flex items-center justify-between gap-3">
+            <h3 className="min-w-0 truncate text-sm font-semibold text-slate-900">
               {deal.title}
             </h3>
             <div className="flex shrink-0 items-center gap-1.5">
@@ -103,38 +103,29 @@ export function GigCard({ deal, index, currentUserId }: Props) {
             </div>
           </div>
 
-          {/* Row 2: Amount + Category */}
-          <div className="mt-2 flex items-center gap-3">
+          {/* Row 2: Amount + Category + Other party + Deadline + Time — all on one line */}
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-600">
             <span className="font-mono text-sm font-semibold tabular-nums text-slate-900">
               ${(deal.total_amount / 100).toFixed(2)}
             </span>
             {deal.category && (
-              <Badge variant="outline">{categoryLabels[deal.category]}</Badge>
+              <span>{categoryLabels[deal.category]}</span>
             )}
-          </div>
-
-          {/* Row 3: Other party */}
-          <div className="mt-2 flex items-center gap-2">
             {otherParty ? (
-              <>
-                <span className="text-sm text-slate-600">
-                  {otherPartyLabel}: {otherParty.display_name || "Unknown"}
-                </span>
+              <span className="flex items-center gap-1">
+                {otherPartyLabel}: {otherParty.display_name || "Unknown"}
                 <TrustBadge badge={otherParty.trust_badge} size="sm" />
-              </>
-            ) : (
-              <span className="text-sm text-slate-600">
-                Waiting for applicants
               </span>
+            ) : (
+              <span>Waiting for applicants</span>
             )}
-          </div>
-
-          {/* Row 4: Deadline + Updated */}
-          <div className="mt-2 flex items-center gap-3 text-xs text-slate-600">
             {deal.deadline && (
               <span className="flex items-center gap-1">
                 <Calendar className="h-3 w-3" />
-                {new Date(deal.deadline).toLocaleDateString()}
+                {new Date(deal.deadline).toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                })}
               </span>
             )}
             <span>{formatRelativeTime(deal.updated_at)}</span>

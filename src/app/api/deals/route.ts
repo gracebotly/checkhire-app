@@ -8,6 +8,9 @@ import { checkBlocklist } from "@/lib/validation/blocklist";
 import { sendAndLogNotification } from "@/lib/email/logNotification";
 import { calculateRiskScore } from "@/lib/moderation/riskScore";
 
+const MAX_UNFUNDED_DEALS = 3;
+const UNFUNDED_EXPIRY_DAYS = 14;
+
 export const POST = withApiHandler(async (req: Request) => {
   const supabase = await createClient();
   const {
@@ -28,6 +31,32 @@ export const POST = withApiHandler(async (req: Request) => {
         message: "Please verify your email before creating a gig. Check your inbox for a confirmation link.",
       },
       { status: 403 }
+    );
+  }
+
+  // ── Unfunded deal limit check ──
+  // Count active unfunded deals (not completed, cancelled, refunded, or expired)
+  const now = new Date();
+  const { count: unfundedCount, error: countError } = await supabase
+    .from("deals")
+    .select("id", { count: "exact", head: true })
+    .eq("client_user_id", user.id)
+    .eq("escrow_status", "unfunded")
+    .not("status", "in", "(completed,cancelled,refunded)")
+    .or(`expires_at.is.null,expires_at.gt.${now.toISOString()}`);
+
+  if (countError) {
+    console.error("[deals/create] Failed to count unfunded deals:", countError);
+  }
+
+  if ((unfundedCount ?? 0) >= MAX_UNFUNDED_DEALS) {
+    return NextResponse.json(
+      {
+        ok: false,
+        code: "UNFUNDED_LIMIT_REACHED",
+        message: `You have ${MAX_UNFUNDED_DEALS} active unfunded deals. Fund, complete, or cancel an existing deal before creating a new one.`,
+      },
+      { status: 429 }
     );
   }
 
@@ -96,6 +125,9 @@ export const POST = withApiHandler(async (req: Request) => {
 
   const slug = await generateSlug(supabase, data.title);
 
+  // Set expires_at: unfunded deals expire in 14 days
+  const expiresAt = new Date(now.getTime() + UNFUNDED_EXPIRY_DAYS * 24 * 60 * 60 * 1000).toISOString();
+
   const { data: deal, error: dealError } = await supabase
     .from("deals")
     .insert({
@@ -116,12 +148,9 @@ export const POST = withApiHandler(async (req: Request) => {
       client_user_id: user.id,
       has_milestones: data.has_milestones,
       template_id: data.template_id || null,
-      screening_questions:
-        data.screening_questions && data.screening_questions.length > 0
-          ? data.screening_questions
-          : [],
       status: "pending_acceptance",
       escrow_status: "unfunded",
+      expires_at: expiresAt,
     })
     .select()
     .single();

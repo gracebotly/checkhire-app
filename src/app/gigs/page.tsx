@@ -4,9 +4,9 @@ import { Footer } from "@/components/layout/Footer";
 import { BrowseGigsContent } from "@/components/gig/BrowseGigsContent";
 
 export const metadata: Metadata = {
-  title: "Browse Gigs — Open Freelance Work",
+  title: "Browse Gigs — Protected Freelance Work",
   description:
-    "Browse open gig opportunities with escrow-protected payments. Apply and get paid safely.",
+    "Browse open gigs with deal protection. Funded gigs have payment secured before work starts. Apply and get paid safely.",
 };
 
 export default function BrowseGigsPage() {

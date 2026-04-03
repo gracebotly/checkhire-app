@@ -11,6 +11,7 @@ import { FeeCalculator } from "@/components/gig/FeeCalculator";
 import { PaymentMethodsBar } from "@/components/gig/PaymentMethodsBar";
 import { PayoutSpeedComparison } from "@/components/gig/PayoutSpeedComparison";
 import { ReferralWelcomeBanner } from "@/components/referral/ReferralWelcomeBanner";
+import { ScamCheckForm } from "@/components/scam-check/ScamCheckForm";
 import {
   RedditIcon,
   WhatsAppIcon,
@@ -28,7 +29,6 @@ import {
   Share2,
   Zap,
   Building2,
-  Mail,
 } from "lucide-react";
 
 const section = (delay: number) => ({
@@ -53,7 +53,7 @@ function HomePageContent() {
             <div className="mx-auto mb-6 inline-flex items-center gap-2 rounded-full border border-brand-muted bg-brand-muted px-4 py-1.5">
               <Shield className="h-4 w-4 text-brand" />
               <span className="text-xs font-semibold text-brand">
-                SECURE PAYMENTS
+                FREE SCAM INVESTIGATIONS
               </span>
             </div>
 
@@ -63,24 +63,13 @@ function HomePageContent() {
             </h1>
 
             <p className="mx-auto mt-4 max-w-lg text-base text-slate-600 md:text-lg">
-              Define the work. Secure the payment. Stay protected.
+              Found a suspicious job posting? Paste the link — our team investigates it for free.
             </p>
 
-            {/* Email capture — the primary CTA */}
-            <div className="mx-auto mt-8 max-w-md">
-              <NewsletterSignup
-                variant="inline"
-                utmCampaign="hero"
-                placeholder="Enter your email"
-                buttonText="Join Free"
-                heading=""
-                description=""
-              />
+            {/* Scam Check — the primary CTA */}
+            <div className="mx-auto mt-8 max-w-lg">
+              <ScamCheckForm />
             </div>
-
-            <p className="mx-auto mt-3 max-w-md text-xs text-slate-600">
-              Get curated remote gigs, safe hiring tips, and opportunities that won't waste your time.
-            </p>
 
             {/* Secondary link — not a big CTA button */}
             <p className="mt-6 text-sm text-slate-600">
@@ -316,12 +305,19 @@ function HomePageContent() {
         <motion.section className="px-6 py-16" {...section(0.14)}>
           <div className="mx-auto max-w-6xl">
             <div className="grid items-start gap-8 md:grid-cols-2">
-              <NewsletterSignup
-                variant="card"
-                utmCampaign="bottom_cta"
-                heading="Stay protected — scam alerts delivered weekly"
-                description="Verified gigs, scam breakdowns, and safe hiring tips — straight from the communities where it happens."
-              />
+              <div>
+                <NewsletterSignup
+                  variant="inline"
+                  utmCampaign="bottom"
+                  placeholder="Enter your email"
+                  buttonText="Subscribe"
+                  heading=""
+                  description=""
+                />
+                <p className="mt-2 text-xs text-slate-600">
+                  Get curated remote gigs, safe hiring tips, and opportunities that won&apos;t waste your time.
+                </p>
+              </div>
               <div className="rounded-xl border border-gray-200 bg-white p-6">
                 <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-brand-muted">
                   <Shield className="h-5 w-5 text-brand" />

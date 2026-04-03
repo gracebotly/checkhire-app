@@ -150,7 +150,6 @@ export type ProposalStatus = 'pending' | 'approved' | 'rejected';
 
 export type MilestoneChangeProposal = {
   id: string;
-  milestone_id: string | null;
   deal_id: string;
   proposed_by: string;
   proposal_type: ProposalType;
@@ -164,7 +163,7 @@ export type MilestoneChangeProposal = {
 
 // ─── Deal Activity Log ───
 
-export type ActivityEntryType = 'text' | 'file' | 'system' | 'milestone_note';
+export type ActivityEntryType = 'text' | 'file' | 'system' | 'milestone_note' | 'message';
 
 export type DealActivityLogEntry = {
   id: string;
@@ -176,6 +175,7 @@ export type DealActivityLogEntry = {
   file_name: string | null;
   file_size_bytes: number | null;
   milestone_id: string | null;
+  interest_id: string | null;
   is_submission_evidence: boolean;
   criteria_id: string | null;
   created_at: string;
@@ -202,7 +202,7 @@ export type AcceptanceCriteria = {
 
 // ─── Deal Interest (Public Deals) ───
 
-export type InterestStatus = 'pending' | 'accepted' | 'rejected' | 'withdrawn';
+export type InterestStatus = 'pending' | 'in_conversation' | 'accepted' | 'rejected' | 'withdrawn';
 
 export type DealInterest = {
   id: string;

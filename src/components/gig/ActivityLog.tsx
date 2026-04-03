@@ -43,7 +43,9 @@ function isImageFile(name: string): boolean {
 }
 
 export function ActivityLog({ entries }: Props) {
-  if (entries.length === 0) {
+  const filteredActivity = entries.filter((entry) => entry.entry_type !== "message");
+
+  if (filteredActivity.length === 0) {
     return (
       <p className="text-sm text-slate-600">No activity yet.</p>
     );
@@ -51,7 +53,7 @@ export function ActivityLog({ entries }: Props) {
 
   return (
     <div className="space-y-3">
-      {entries.map((entry, i) => (
+      {filteredActivity.map((entry, i) => (
         <motion.div
           key={entry.id}
           initial={{ opacity: 0, y: 8 }}

@@ -760,7 +760,7 @@ export function GigPageClient({
         <div className="mb-6">
           {/* Client sees interest list */}
           {role === "client" && (
-            <InterestList dealId={deal.id} interests={interests} />
+            <InterestList dealId={deal.id} interests={interests} currentUserId={currentUserId || ""} />
           )}
 
           {/* Visitor (authenticated, not client) sees interest form */}
@@ -772,6 +772,7 @@ export function GigPageClient({
                 dealId={deal.id}
                 existingInterest={userInterest}
                 onSubmitted={() => router.refresh()}
+                currentUserId={currentUserId || ""}
               />
             )}
         </div>

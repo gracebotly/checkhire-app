@@ -115,6 +115,7 @@ export default async function DealPage({ params, searchParams }: Props) {
         `*, user:user_profiles!deal_activity_log_user_id_profile_fkey(display_name, avatar_url)`
       )
       .eq("deal_id", deal.id)
+      .is("interest_id", null)
       .order("created_at", { ascending: true });
     activity = (acts || []) as ActivityLogEntryWithUser[];
 

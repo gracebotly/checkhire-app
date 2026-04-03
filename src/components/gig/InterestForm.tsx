@@ -5,28 +5,38 @@ import { CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { ConversationThread } from "@/components/gig/ConversationThread";
 import type { DealInterest } from "@/types/database";
 
 type Props = {
   dealId: string;
   existingInterest: DealInterest | null;
   onSubmitted: () => void;
+  currentUserId: string;
 };
 
-const statusLabels: Record<string, { label: string; variant: "default" | "success" | "warning" | "danger" }> = {
+const statusLabels: Record<
+  string,
+  { label: string; variant: "default" | "success" | "warning" | "danger" }
+> = {
   pending: { label: "Pending Review", variant: "warning" },
+  in_conversation: { label: "In Conversation", variant: "default" },
   accepted: { label: "Accepted", variant: "success" },
   rejected: { label: "Not Selected", variant: "default" },
   withdrawn: { label: "Withdrawn", variant: "default" },
 };
 
-export function InterestForm({ dealId, existingInterest, onSubmitted }: Props) {
+export function InterestForm({
+  dealId,
+  existingInterest,
+  onSubmitted,
+  currentUserId,
+}: Props) {
   const [pitch, setPitch] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
-  // Show existing interest
   if (existingInterest) {
     const statusInfo = statusLabels[existingInterest.status] || statusLabels.pending;
     return (
@@ -36,18 +46,29 @@ export function InterestForm({ dealId, existingInterest, onSubmitted }: Props) {
           <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
         </div>
         <p className="mt-2 text-sm text-slate-600">{existingInterest.pitch_text}</p>
+
+        {(existingInterest.status === "pending" ||
+          existingInterest.status === "in_conversation" ||
+          existingInterest.status === "accepted") &&
+          currentUserId && (
+            <div className="mt-4">
+              <ConversationThread
+                dealId={dealId}
+                interestId={existingInterest.id}
+                currentUserId={currentUserId}
+                threadClosed={false}
+              />
+            </div>
+          )}
       </div>
     );
   }
 
-  // Show success state
   if (submitted) {
     return (
       <div className="rounded-xl border border-gray-200 bg-white p-5 text-center">
         <CheckCircle className="mx-auto h-8 w-8 text-brand" />
-        <p className="mt-2 text-sm font-semibold text-slate-900">
-          Interest submitted!
-        </p>
+        <p className="mt-2 text-sm font-semibold text-slate-900">Interest submitted!</p>
         <p className="mt-1 text-xs text-slate-600">
           The client will review your pitch and get back to you.
         </p>
@@ -82,11 +103,9 @@ export function InterestForm({ dealId, existingInterest, onSubmitted }: Props) {
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-5">
-      <h3 className="text-sm font-semibold text-slate-900">
-        Interested in this gig?
-      </h3>
+      <h3 className="text-sm font-semibold text-slate-900">Interested in this gig?</h3>
       <p className="mt-1 text-xs text-slate-600">
-        Write a short pitch explaining why you're a good fit.
+        Write a short pitch explaining why you&apos;re a good fit.
       </p>
 
       {error && (
@@ -101,7 +120,7 @@ export function InterestForm({ dealId, existingInterest, onSubmitted }: Props) {
         placeholder="Why are you a good fit? Mention relevant experience..."
         maxLength={500}
         rows={4}
-        className="mt-3 flex w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-ring/40 focus:border-brand resize-none"
+        className="mt-3 flex w-full resize-none rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-600 transition-colors duration-200 focus:border-brand focus:outline-none focus:ring-2 focus:ring-ring/40"
       />
       <div className="mt-1 flex items-center justify-between">
         <span

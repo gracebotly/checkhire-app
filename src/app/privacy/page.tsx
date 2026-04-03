@@ -64,7 +64,7 @@ export default function PrivacyPage() {
                 (screenshots, documents, videos)
               </li>
               <li>
-                Communications sent to support@checkhire.co
+                Communications sent to hello@checkhire.co
               </li>
             </ul>
 
@@ -220,7 +220,7 @@ export default function PrivacyPage() {
             </ul>
             <p className="mt-3">
               California residents have additional rights under the CCPA. To
-              exercise any privacy right, contact us at support@checkhire.co.
+              exercise any privacy right, contact us at hello@checkhire.co.
               We will respond within 45 days.
             </p>
           </section>
@@ -257,10 +257,10 @@ export default function PrivacyPage() {
             <p className="mt-2">
               For privacy questions or data requests, contact us at{" "}
               <a
-                href="mailto:support@checkhire.co"
+                href="mailto:hello@checkhire.co"
                 className="text-brand hover:underline"
               >
-                support@checkhire.co
+                hello@checkhire.co
               </a>
               .
             </p>

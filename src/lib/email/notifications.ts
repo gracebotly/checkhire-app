@@ -1059,10 +1059,10 @@ const NOTIFICATION_CONFIG: Record<string, NotificationConfig> = {
         `<p style="margin: 0; font-size: 14px; color: #991b1b;">${notes}</p>` +
         `</div>` +
         (isFreelancer
-          ? `<p style="margin: 0 0 16px 0; font-size: 14px; color: #475569;">No funds were released for this gig. If you have questions, please contact support@checkhire.co.</p>`
+          ? `<p style="margin: 0 0 16px 0; font-size: 14px; color: #475569;">No funds were released for this gig. If you have questions, please contact hello@checkhire.co.</p>`
           : (amount
             ? `<p style="margin: 0 0 16px 0; font-size: 14px; color: #475569;">If you funded escrow, your payment of <strong>${amount}</strong> is being refunded to your original payment method. Refunds typically take 5-10 business days.</p>`
-            : `<p style="margin: 0 0 16px 0; font-size: 14px; color: #475569;">If you believe this is an error, please contact support@checkhire.co.</p>`)) +
+            : `<p style="margin: 0 0 16px 0; font-size: 14px; color: #475569;">If you believe this is an error, please contact hello@checkhire.co.</p>`)) +
         `<p style="margin: 0; font-size: 13px; color: #94a3b8;">Review our <a href="${APP_URL}/terms" style="color: #64748b; text-decoration: underline;">Terms of Service</a> for details on acceptable gig content.</p>`
       );
     },
@@ -1085,7 +1085,7 @@ const NOTIFICATION_CONFIG: Record<string, NotificationConfig> = {
         `<p style="margin: 0; font-size: 14px; color: #991b1b; font-weight: 600;">What this means:</p>` +
         `<p style="margin: 8px 0 0 0; font-size: 14px; color: #991b1b;">You cannot sign in, create or accept gigs, fund escrow, or receive payouts while your account is suspended. Any active deals have been paused.</p>` +
         `</div>` +
-        `<p style="margin: 0 0 16px 0; font-size: 14px; color: #475569;">If you believe this is an error, please contact us at <a href="mailto:support@checkhire.co" style="color: #0d9488; text-decoration: underline;">support@checkhire.co</a> and we will review your account.</p>` +
+        `<p style="margin: 0 0 16px 0; font-size: 14px; color: #475569;">If you believe this is an error, please contact us at <a href="mailto:hello@checkhire.co" style="color: #0d9488; text-decoration: underline;">hello@checkhire.co</a> and we will review your account.</p>` +
         `<p style="margin: 0; font-size: 13px; color: #94a3b8;">Review our <a href="${APP_URL}/terms" style="color: #64748b; text-decoration: underline;">Terms of Service</a> for details on acceptable use.</p>`
       );
     },
@@ -1105,7 +1105,7 @@ const NOTIFICATION_CONFIG: Record<string, NotificationConfig> = {
         `<p style="margin: 0; font-size: 14px; color: #166534; font-weight: 600;">You can now:</p>` +
         `<p style="margin: 8px 0 0 0; font-size: 14px; color: #166534;">Sign in, create and accept gigs, fund escrow, receive payouts, and access all platform features as normal.</p>` +
         `</div>` +
-        `<p style="margin: 0; font-size: 14px; color: #475569;">Thank you for your patience. If you have any questions, reach out to <a href="mailto:support@checkhire.co" style="color: #0d9488; text-decoration: underline;">support@checkhire.co</a>.</p>` +
+        `<p style="margin: 0; font-size: 14px; color: #475569;">Thank you for your patience. If you have any questions, reach out to <a href="mailto:hello@checkhire.co" style="color: #0d9488; text-decoration: underline;">hello@checkhire.co</a>.</p>` +
         buildCtaButton(`${APP_URL}/dashboard`, "Go to Dashboard", "success")
       );
     },

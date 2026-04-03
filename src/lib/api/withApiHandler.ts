@@ -77,7 +77,7 @@ async function checkSuspension(req: Request): Promise<Response | null> {
           ok: false,
           code: "ACCOUNT_SUSPENDED",
           message:
-            "Your account has been suspended. Please contact support@checkhire.co for assistance.",
+            "Your account has been suspended. Please contact hello@checkhire.co for assistance.",
           userAction: "contact_support" as const,
         },
         { status: 403 }

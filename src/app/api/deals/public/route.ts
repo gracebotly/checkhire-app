@@ -31,7 +31,7 @@ export const GET = withApiHandler(async (req: Request) => {
   let query = supabase
     .from("deals")
     .select(
-      `id, title, description, total_amount, currency, deadline, deal_link_slug, category, created_at,
+      `id, title, description, total_amount, currency, deadline, deal_link_slug, category, escrow_status, created_at,
        client:user_profiles!deals_client_user_id_profile_fkey(display_name, avatar_url, trust_badge, completed_deals_count, average_rating, profile_slug)`,
       { count: "exact" }
     )
@@ -75,7 +75,7 @@ export const GET = withApiHandler(async (req: Request) => {
 
   // Get interest counts for each deal
   const dealIds = (deals || []).map((d) => d.id);
-  let interestCounts: Record<string, number> = {};
+  const interestCounts: Record<string, number> = {};
 
   if (dealIds.length > 0) {
     const { data: interests } = await supabase

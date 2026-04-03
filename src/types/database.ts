@@ -44,6 +44,15 @@ export type DealCategory =
   | 'other';
 
 export type PaymentFrequency = 'one_time' | 'weekly' | 'biweekly' | 'monthly';
+export type ScreeningQuestionType = 'yes_no' | 'short_text' | 'multiple_choice';
+
+export type ScreeningQuestion = {
+  id: string;
+  type: ScreeningQuestionType;
+  text: string;
+  options?: string[];
+  dealbreaker_answer?: string;
+};
 
 export type DealStatus =
   | 'draft'
@@ -94,6 +103,7 @@ export type Deal = {
   auto_release_at: string | null;
   revision_count: number;
   template_id: string | null;
+  screening_questions: ScreeningQuestion[];
   guest_freelancer_email: string | null;
   guest_freelancer_name: string | null;
   guest_freelancer_stripe_account_id: string | null;
@@ -150,7 +160,6 @@ export type ProposalStatus = 'pending' | 'approved' | 'rejected';
 
 export type MilestoneChangeProposal = {
   id: string;
-  milestone_id: string | null;
   deal_id: string;
   proposed_by: string;
   proposal_type: ProposalType;
@@ -164,7 +173,7 @@ export type MilestoneChangeProposal = {
 
 // ─── Deal Activity Log ───
 
-export type ActivityEntryType = 'text' | 'file' | 'system' | 'milestone_note';
+export type ActivityEntryType = 'text' | 'file' | 'system' | 'milestone_note' | 'message';
 
 export type DealActivityLogEntry = {
   id: string;
@@ -176,6 +185,7 @@ export type DealActivityLogEntry = {
   file_name: string | null;
   file_size_bytes: number | null;
   milestone_id: string | null;
+  interest_id: string | null;
   is_submission_evidence: boolean;
   criteria_id: string | null;
   created_at: string;
@@ -202,20 +212,35 @@ export type AcceptanceCriteria = {
 
 // ─── Deal Interest (Public Deals) ───
 
-export type InterestStatus = 'pending' | 'accepted' | 'rejected' | 'withdrawn';
+export type InterestStatus = 'pending' | 'in_conversation' | 'accepted' | 'rejected' | 'withdrawn';
 
 export type DealInterest = {
   id: string;
   deal_id: string;
   user_id: string;
   pitch_text: string;
+  portfolio_urls: string[];
+  screening_answers: { question_id: string; answer: string }[];
   status: InterestStatus;
   created_at: string;
   responded_at: string | null;
+  application_files?: ApplicationFile[];
 };
 
 export type DealInterestWithUser = DealInterest & {
   user: Pick<UserProfile, 'display_name' | 'avatar_url' | 'trust_badge' | 'completed_deals_count' | 'average_rating' | 'profile_slug'>;
+};
+
+export type ApplicationFile = {
+  id: string;
+  interest_id: string;
+  deal_id: string;
+  user_id: string;
+  file_url: string;
+  file_name: string;
+  file_size_bytes: number;
+  file_type: string;
+  created_at: string;
 };
 
 // ─── Deal Templates ───

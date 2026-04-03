@@ -78,6 +78,14 @@ export async function updateSession(request: NextRequest) {
     (p) => pathname === p || pathname.startsWith(p + "/")
   );
 
+  // Authenticated user on landing page → redirect to dashboard
+  if (user && pathname === "/") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/dashboard";
+    url.search = "";
+    return NextResponse.redirect(url);
+  }
+
   // Unauthenticated user on a protected page → redirect to login
   if (!user && (!isPublic || isProtectedOverride)) {
     const url = request.nextUrl.clone();

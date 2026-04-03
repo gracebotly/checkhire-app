@@ -24,6 +24,7 @@ type PublicDeal = {
   deadline: string | null;
   deal_link_slug: string;
   category: string | null;
+  escrow_status: string;
   created_at: string;
   client: {
     display_name: string | null;

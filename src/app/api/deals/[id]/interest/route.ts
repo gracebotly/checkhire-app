@@ -26,7 +26,7 @@ export const POST = withApiHandler(
         { status: 400 }
       );
 
-    const { pitch_text } = parsed.data;
+    const { pitch_text, portfolio_urls, screening_answers, file_urls } = parsed.data;
 
     // Fetch deal
     const { data: deal } = await supabase
@@ -42,13 +42,13 @@ export const POST = withApiHandler(
       return NextResponse.json({ ok: false, code: "INVALID_TYPE", message: "This is not a public gig" }, { status: 400 });
 
     if (deal.status !== "pending_acceptance")
-      return NextResponse.json({ ok: false, code: "INVALID_STATUS", message: "This gig is no longer accepting interest" }, { status: 400 });
+      return NextResponse.json({ ok: false, code: "INVALID_STATUS", message: "This gig is no longer accepting applications" }, { status: 400 });
 
     if (deal.freelancer_user_id)
       return NextResponse.json({ ok: false, code: "ALREADY_FILLED", message: "This gig already has a freelancer" }, { status: 400 });
 
     if (deal.client_user_id === user.id)
-      return NextResponse.json({ ok: false, code: "SELF_INTEREST", message: "You cannot express interest in your own gig" }, { status: 400 });
+      return NextResponse.json({ ok: false, code: "SELF_INTEREST", message: "You cannot apply to your own gig" }, { status: 400 });
 
     // Check existing interest
     const { data: existing } = await supabase
@@ -59,17 +59,40 @@ export const POST = withApiHandler(
       .maybeSingle();
 
     if (existing)
-      return NextResponse.json({ ok: false, code: "ALREADY_INTERESTED", message: "You have already expressed interest in this gig" }, { status: 400 });
+      return NextResponse.json({ ok: false, code: "ALREADY_INTERESTED", message: "You have already applied to this gig" }, { status: 400 });
 
     // Insert interest
     const { data: interest, error: insertError } = await supabase
       .from("deal_interest")
-      .insert({ deal_id: id, user_id: user.id, pitch_text })
+      .insert({
+        deal_id: id,
+        user_id: user.id,
+        pitch_text,
+        portfolio_urls: portfolio_urls || [],
+        screening_answers:
+          screening_answers && screening_answers.length > 0
+            ? screening_answers
+            : [],
+      })
       .select()
       .single();
 
     if (insertError)
       return NextResponse.json({ ok: false, code: "DB_ERROR", message: insertError.message }, { status: 500 });
+
+    // Associate pre-uploaded application files
+    if (file_urls && file_urls.length > 0 && interest) {
+      const fileRows = file_urls.map((f) => ({
+        interest_id: interest.id,
+        deal_id: id,
+        user_id: user.id,
+        file_url: f.file_url,
+        file_name: f.file_name,
+        file_size_bytes: f.file_size_bytes,
+      }));
+
+      await supabase.from("application_files").insert(fileRows);
+    }
 
     // Activity log
     const { data: profile } = await supabase
@@ -83,7 +106,7 @@ export const POST = withApiHandler(
       deal_id: id,
       user_id: null,
       entry_type: "system",
-      content: `${profile?.display_name || "Someone"} expressed interest`,
+      content: `${profile?.display_name || "Someone"} applied`,
     });
 
     // Notify client

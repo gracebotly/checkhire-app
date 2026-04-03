@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { screeningQuestionsArraySchema } from "@/lib/validation/interest";
 
 export const createDealSchema = z
   .object({
@@ -60,6 +61,8 @@ export const createDealSchema = z
       )
       .nullable(),
     template_id: z.string().uuid().nullable().optional(),
+    screening_questions: screeningQuestionsArraySchema.optional().default([]),
+    referral_code: z.string().max(20).optional(),
   })
   .refine(
     (data) =>

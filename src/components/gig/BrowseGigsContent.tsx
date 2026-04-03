@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import Link from "next/link";
-import { Briefcase, Lock } from "lucide-react";
+import { Briefcase, Lock, Search } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -11,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { PublicGigCard } from "@/components/gig/PublicGigCard";
@@ -48,10 +49,18 @@ export function BrowseGigsContent() {
   const [budget, setBudget] = useState("all");
   const [sort, setSort] = useState("newest");
   const [fundedOnly, setFundedOnly] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchQuery), 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   useEffect(() => {
     setPage(1);
-  }, [category, budget, sort, fundedOnly]);
+  }, [category, budget, sort, fundedOnly, debouncedSearch]);
 
   useEffect(() => {
     async function fetchDeals() {
@@ -71,19 +80,31 @@ export function BrowseGigsContent() {
             params.set("min_amount", "200000");
           }
         }
-        if (fundedOnly) params.set("funded_only", "true");
+        if (fundedOnly) params.set("escrow", "funded");
         params.set("sort", sort);
         params.set("page", page.toString());
 
         const res = await fetch(`/api/deals/public?${params.toString()}`);
         const data = await res.json();
         if (data.ok) {
-          if (page === 1) {
-            setDeals(data.deals);
-          } else {
-            setDeals((prev) => [...prev, ...data.deals]);
+          let filteredDeals = data.deals;
+
+          // Client-side search filter (title match)
+          if (debouncedSearch.trim()) {
+            const q = debouncedSearch.toLowerCase();
+            filteredDeals = filteredDeals.filter(
+              (d: PublicDeal) =>
+                d.title.toLowerCase().includes(q) ||
+                d.description.toLowerCase().includes(q)
+            );
           }
-          setTotal(data.total);
+
+          if (page === 1) {
+            setDeals(filteredDeals);
+          } else {
+            setDeals((prev) => [...prev, ...filteredDeals]);
+          }
+          setTotal(debouncedSearch.trim() ? filteredDeals.length : (data.total || 0));
         }
       } catch {
         // silent
@@ -92,9 +113,9 @@ export function BrowseGigsContent() {
       }
     }
     fetchDeals();
-  }, [category, budget, sort, fundedOnly, page]);
+  }, [category, budget, sort, fundedOnly, debouncedSearch, page]);
 
-  const hasMore = deals.length < total;
+  const hasMore = !debouncedSearch.trim() && deals.length < total;
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-10">
@@ -112,7 +133,18 @@ export function BrowseGigsContent() {
 
         {/* Filter bar */}
         <div className="mt-6 rounded-xl border border-gray-200 bg-white p-4">
-          <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+            {/* Search input */}
+            <div className="relative sm:w-52">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-600" />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search gigs..."
+                className="pl-9"
+              />
+            </div>
+
             <Select value={category} onValueChange={setCategory}>
               <SelectTrigger className="sm:w-44">
                 <SelectValue placeholder="Category" />
@@ -170,8 +202,17 @@ export function BrowseGigsContent() {
           </div>
         </div>
 
+        {/* Result count */}
+        {!loading && deals.length > 0 && (
+          <p className="mt-4 text-sm text-slate-600">
+            {total} {total === 1 ? "gig" : "gigs"} found
+            {fundedOnly && " — showing funded only"}
+            {debouncedSearch.trim() && ` matching "${debouncedSearch.trim()}"`}
+          </p>
+        )}
+
         {/* Gig grid */}
-        <div className="mt-6">
+        <div className="mt-4">
           {loading && page === 1 ? (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {[0, 1, 2, 3, 4, 5].map((i) => (
@@ -184,14 +225,20 @@ export function BrowseGigsContent() {
                 <Briefcase className="h-7 w-7 text-brand" />
               </div>
               <p className="text-base font-semibold text-slate-900">
-                No open gigs right now
+                {debouncedSearch.trim() || fundedOnly || category !== "all" || budget !== "all"
+                  ? "No gigs match your filters"
+                  : "No open gigs right now"}
               </p>
               <p className="mt-1 text-sm text-slate-600">
-                Check back soon or post your own!
+                {debouncedSearch.trim() || fundedOnly || category !== "all" || budget !== "all"
+                  ? "Try adjusting your filters or check back later."
+                  : "Check back soon or create your own!"}
               </p>
-              <Link href="/deal/new" className="mt-4">
-                <Button>Post a Gig</Button>
-              </Link>
+              {!debouncedSearch.trim() && !fundedOnly && category === "all" && budget === "all" && (
+                <Link href="/deal/new" className="mt-4">
+                  <Button>Create a Deal</Button>
+                </Link>
+              )}
             </div>
           ) : (
             <>

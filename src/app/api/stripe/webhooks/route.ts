@@ -172,6 +172,29 @@ export async function POST(req: Request) {
         const expiresAt = new Date(new Date(fundedAt).getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
         await supabase.from("deals").update({ expires_at: expiresAt }).eq("id", dealId);
 
+        // Email CLIENT confirming their payment was processed
+        {
+          const { data: clientProfile } = await supabase
+            .from("user_profiles")
+            .select("email")
+            .eq("id", deal.client_user_id)
+            .maybeSingle();
+          if (clientProfile?.email) {
+            await sendAndLogNotification({
+              supabase,
+              type: "payment_confirmed",
+              userId: deal.client_user_id,
+              dealId,
+              email: clientProfile.email,
+              data: {
+                dealTitle: deal.title,
+                dealSlug: deal.deal_link_slug,
+                amount: escrowAmount,
+              },
+            });
+          }
+        }
+
         // Email freelancer about escrow funding (non-milestone or fund-all)
         if (!milestoneId || milestoneId === "" || milestoneId === "all") {
           const hasFreelancer = deal.freelancer_user_id || deal.guest_freelancer_email;

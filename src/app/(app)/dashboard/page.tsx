@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import Link from "next/link";
-import { Briefcase, Search, ArrowLeftRight, Users, PlusCircle } from "lucide-react";
+import { Search, ArrowLeftRight, PlusCircle } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -12,52 +12,6 @@ import { createClient } from "@/lib/supabase/client";
 import type { DealWithParticipants } from "@/types/database";
 
 type Mode = "client" | "freelancer" | null;
-
-function ModePicker({ onSelect }: { onSelect: (mode: Mode) => void }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25, ease: "easeOut" }}
-      className="mt-12 flex flex-col items-center text-center"
-    >
-      <h1 className="font-display text-2xl font-bold text-slate-900">
-        What brings you to CheckHire?
-      </h1>
-      <p className="mt-2 max-w-sm text-sm text-slate-600">
-        You can always switch later. This just sets your default view.
-      </p>
-      <div className="mt-8 grid w-full max-w-sm gap-3">
-        <button
-          type="button"
-          onClick={() => onSelect("client")}
-          className="flex cursor-pointer items-center gap-4 rounded-xl border border-gray-200 bg-white p-5 text-left transition-colors duration-200 hover:border-brand hover:bg-brand-muted"
-        >
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-muted">
-            <Users className="h-5 w-5 text-brand" />
-          </div>
-          <div>
-            <p className="text-sm font-semibold text-slate-900">I&apos;m hiring</p>
-            <p className="mt-0.5 text-xs text-slate-600">Post gigs and find freelancers</p>
-          </div>
-        </button>
-        <button
-          type="button"
-          onClick={() => onSelect("freelancer")}
-          className="flex cursor-pointer items-center gap-4 rounded-xl border border-gray-200 bg-white p-5 text-left transition-colors duration-200 hover:border-brand hover:bg-brand-muted"
-        >
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-muted">
-            <Briefcase className="h-5 w-5 text-brand" />
-          </div>
-          <div>
-            <p className="text-sm font-semibold text-slate-900">I&apos;m looking for work</p>
-            <p className="mt-0.5 text-xs text-slate-600">Browse gigs and apply</p>
-          </div>
-        </button>
-      </div>
-    </motion.div>
-  );
-}
 
 export default function DashboardPage() {
   const [deals, setDeals] = useState<DealWithParticipants[]>([]);
@@ -94,7 +48,7 @@ export default function DashboardPage() {
     async function fetchDeals() {
       setLoading(true);
       try {
-        const roleParam = mode ? `&role=${mode}` : "";
+        const roleParam = `&role=${mode || "client"}`;
         const res = await fetch(`/api/deals/mine?filter=${filter}${roleParam}`);
         const data = await res.json();
         if (data.ok) setDeals(data.deals);
@@ -121,19 +75,13 @@ export default function DashboardPage() {
   };
 
   const handleToggleMode = () => {
-    handleSetMode(mode === "freelancer" ? "client" : "freelancer");
+    const effectiveMode = mode || "client";
+    handleSetMode(effectiveMode === "freelancer" ? "client" : "freelancer");
   };
 
-  // Show mode picker if not set yet
-  if (!modeLoading && mode === null) {
-    return (
-      <div className="mx-auto max-w-4xl px-6 py-10">
-        <ModePicker onSelect={handleSetMode} />
-      </div>
-    );
-  }
-
-  const isFreelancer = mode === "freelancer";
+  // Default to client mode when mode is null (never show a mode picker)
+  const effectiveMode = mode || "client";
+  const isFreelancer = effectiveMode === "freelancer";
 
   const counts = {
     active: deals.filter(

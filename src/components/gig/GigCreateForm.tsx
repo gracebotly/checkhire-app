@@ -451,7 +451,7 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
                   placeholder="Describe the work clearly — scope, expectations, and anything that defines 'done.' This protects both sides."
                   maxLength={2000}
                   rows={4}
-                  className="flex w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-ring/40 focus:border-brand resize-none"
+                  className="flex w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-base md:text-sm text-slate-900 placeholder:text-slate-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-ring/40 focus:border-brand resize-none"
                 />
               </div>
               <div>
@@ -464,7 +464,7 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
                   placeholder="e.g., 3 logo concepts, 2 revision rounds, final files in AI + PNG"
                   maxLength={1000}
                   rows={3}
-                  className="flex w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-ring/40 focus:border-brand resize-none"
+                  className="flex w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-base md:text-sm text-slate-900 placeholder:text-slate-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-ring/40 focus:border-brand resize-none"
                 />
                 <p className="mt-1 text-xs text-slate-600">
                   Payment is only released when all listed deliverables are completed.
@@ -521,7 +521,7 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
                 </p>
                 <div className="space-y-3">
                   {acceptanceCriteria.map((criteria, i) => (
-                    <div key={i} className="flex items-start gap-2">
+                    <div key={i} className="flex flex-col gap-2 sm:flex-row sm:items-start">
                       <Select
                         value={criteria.evidence_type}
                         onValueChange={(v) => {
@@ -530,7 +530,7 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
                           setAcceptanceCriteria(updated);
                         }}
                       >
-                        <SelectTrigger className="w-36 shrink-0">
+                        <SelectTrigger className="w-full sm:w-36 sm:shrink-0">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -778,7 +778,7 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
                     min={10}
                     max={10000}
                     step="0.01"
-                    className="w-40"
+                    className="w-full sm:w-40"
                   />
                 </div>
               </div>
@@ -787,7 +787,7 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
                 <label className="mb-1.5 block text-sm font-medium text-slate-900">
                   Payment structure
                 </label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   <button
                     type="button"
                     onClick={() => setHasMilestones(false)}
@@ -831,7 +831,7 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-slate-900">When should payment be released?</label>
                 <p className="mb-2 text-xs text-slate-600">Payment is held securely and only released when the work is done.</p>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   {[
                     { value: "one_time", label: "One-time", sub: "Release on completion" },
                     { value: "weekly", label: "Weekly", sub: "Every week" },
@@ -1085,7 +1085,7 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
 
       {/* Navigation buttons */}
       {step < 3 && (
-        <div className="mt-8 flex items-center justify-between">
+        <div className="mt-8 mb-6 flex items-center justify-between">
           {step > 0 ? (
             <Button variant="ghost" onClick={goBack}>
               Back
@@ -1098,7 +1098,7 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
       )}
 
       {step === 3 && step > 0 && (
-        <div className="mt-4">
+        <div className="mt-4 mb-6">
           <Button variant="ghost" onClick={goBack}>
             Back
           </Button>

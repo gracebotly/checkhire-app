@@ -84,7 +84,7 @@ export function SignInToApplyCard({
     }
   };
 
-  const loginUrl = `/login?mode=signup&next=/deal/${dealSlug}?submit_pitch=true`;
+  const loginUrl = `/login?mode=signup&next=/deal/${dealSlug}`;
 
   return (
     <motion.div

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { ExternalLink, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -18,6 +19,14 @@ import type {
   TrustBadge as TrustBadgeType,
 } from "@/types/database";
 
+type ScreeningQuestionLite = {
+  id: string;
+  type: string;
+  text: string;
+  options?: string[];
+  dealbreaker_answer?: string;
+};
+
 function getInitials(name: string | null): string {
   if (!name) return "?";
   return name
@@ -28,10 +37,19 @@ function getInitials(name: string | null): string {
     .slice(0, 2);
 }
 
+function safeHostname(url: string): string {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return url;
+  }
+}
+
 type Props = {
   dealId: string;
   interests: DealInterestWithUser[];
   currentUserId: string;
+  screeningQuestions?: ScreeningQuestionLite[];
 };
 
 const statusLabels: Record<
@@ -45,7 +63,12 @@ const statusLabels: Record<
   withdrawn: { label: "Withdrawn", variant: "default" },
 };
 
-export function InterestList({ dealId, interests, currentUserId }: Props) {
+export function InterestList({
+  dealId,
+  interests,
+  currentUserId,
+  screeningQuestions = [],
+}: Props) {
   const router = useRouter();
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean;
@@ -103,8 +126,7 @@ export function InterestList({ dealId, interests, currentUserId }: Props) {
     return (
       <div className="rounded-xl border border-gray-200 bg-white p-5 text-center">
         <p className="text-sm text-slate-600">
-          No one has expressed interest yet. Share the gig link to attract
-          freelancers!
+          No applications yet. Share the gig link to attract freelancers!
         </p>
       </div>
     );
@@ -113,7 +135,7 @@ export function InterestList({ dealId, interests, currentUserId }: Props) {
   return (
     <div className="space-y-3">
       <h3 className="text-sm font-semibold text-slate-900">
-        Interested ({pendingInterests.length} pending)
+        Applicants ({pendingInterests.length} pending)
       </h3>
 
       {pendingInterests.map((interest) => (
@@ -169,7 +191,79 @@ export function InterestList({ dealId, interests, currentUserId }: Props) {
               </Badge>
             </div>
 
-            <p className="mt-3 text-sm text-slate-600">{interest.pitch_text}</p>
+            <p className="mt-3 text-sm text-slate-600 whitespace-pre-wrap">{interest.pitch_text}</p>
+
+            {interest.portfolio_urls && interest.portfolio_urls.length > 0 && (
+              <div className="mt-2">
+                <p className="mb-1 text-xs font-medium text-slate-600">Portfolio</p>
+                <div className="flex flex-wrap gap-2">
+                  {interest.portfolio_urls.map((url, i) => (
+                    <a
+                      key={i}
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-xs text-brand transition-colors duration-200 hover:bg-gray-50"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      <span className="max-w-[200px] truncate">{safeHostname(url)}</span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {interest.application_files && interest.application_files.length > 0 && (
+              <div className="mt-2">
+                <p className="mb-1 text-xs font-medium text-slate-600">Files</p>
+                <div className="flex flex-wrap gap-2">
+                  {interest.application_files.map((file) => (
+                    <a
+                      key={file.id}
+                      href={file.file_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-xs text-brand transition-colors duration-200 hover:bg-gray-50"
+                    >
+                      <FileText className="h-3 w-3" />
+                      <span className="max-w-[200px] truncate">{file.file_name}</span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {interest.screening_answers &&
+              Array.isArray(interest.screening_answers) &&
+              interest.screening_answers.length > 0 &&
+              screeningQuestions.length > 0 && (
+                <div className="mt-2">
+                  <p className="mb-1 text-xs font-medium text-slate-600">Screening</p>
+                  <div className="space-y-1">
+                    {screeningQuestions.map((q) => {
+                      const answer = interest.screening_answers?.find(
+                        (a) => a.question_id === q.id
+                      );
+                      const isDealbreaker =
+                        q.dealbreaker_answer && answer?.answer === q.dealbreaker_answer;
+
+                      return (
+                        <div key={q.id} className="flex items-start gap-2 text-xs">
+                          <span className="shrink-0 text-slate-600">{q.text}:</span>
+                          <span
+                            className={`font-medium ${
+                              isDealbreaker ? "text-red-600" : "text-slate-900"
+                            }`}
+                          >
+                            {answer?.answer || "—"}
+                            {isDealbreaker && " ⚑"}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
             <div className="mt-3 flex items-center gap-2">
               <Button
@@ -251,7 +345,7 @@ export function InterestList({ dealId, interests, currentUserId }: Props) {
         <DialogContent>
           <DialogHeader
             title="Select Freelancer"
-            description={`Select ${confirmDialog.name} for this gig? All other interested freelancers will be notified that the gig has been filled.`}
+            description={`Select ${confirmDialog.name} for this gig? All other applicants will be notified that the gig has been filled.`}
           />
           <div className="mt-4 flex justify-end gap-2">
             <DialogClose asChild>

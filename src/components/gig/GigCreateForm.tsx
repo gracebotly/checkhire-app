@@ -129,6 +129,15 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
   const [acceptanceCriteria, setAcceptanceCriteria] = useState<
     { evidence_type: string; description: string }[]
   >([{ evidence_type: "file", description: "" }]);
+  const [screeningQuestions, setScreeningQuestions] = useState<
+    {
+      id: string;
+      type: "yes_no" | "short_text" | "multiple_choice";
+      text: string;
+      options: string[];
+      dealbreaker_answer: string;
+    }[]
+  >([]);
   const [hasMilestones, setHasMilestones] = useState(
     initialTemplate?.has_milestones || false
   );
@@ -287,6 +296,18 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
         : null,
       template_id: initialTemplate?.id || null,
       referral_code: referralCodeInput || undefined,
+      screening_questions: screeningQuestions
+        .filter((q) => q.text.trim())
+        .map((q) => ({
+          id: q.id,
+          type: q.type,
+          text: q.text.trim(),
+          options:
+            q.type === "multiple_choice"
+              ? q.options.filter((o) => o.trim())
+              : undefined,
+          dealbreaker_answer: q.dealbreaker_answer || undefined,
+        })),
     };
 
     try {
@@ -563,6 +584,173 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
                 </p>
               </div>
 
+              {/* Screening Questions (optional) */}
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-slate-900">
+                  Screening questions <span className="font-normal text-slate-600">(optional)</span>
+                </label>
+                <p className="mb-3 text-xs text-slate-600">
+                  Add up to 5 questions to filter applicants. Mark dealbreaker answers to flag mismatches.
+                </p>
+
+                {screeningQuestions.length > 0 && (
+                  <div className="mb-3 space-y-3">
+                    {screeningQuestions.map((q, i) => (
+                      <div key={q.id} className="rounded-lg border border-gray-200 bg-white p-3">
+                        <div className="flex items-start gap-2">
+                          <div className="flex-1 space-y-2">
+                            <Input
+                              value={q.text}
+                              onChange={(e) => {
+                                const updated = [...screeningQuestions];
+                                updated[i] = { ...updated[i], text: e.target.value };
+                                setScreeningQuestions(updated);
+                              }}
+                              placeholder="e.g., Are you available to start within 7 days?"
+                              maxLength={200}
+                            />
+                            <div className="flex items-center gap-2">
+                              <Select
+                                value={q.type}
+                                onValueChange={(v) => {
+                                  const updated = [...screeningQuestions];
+                                  updated[i] = {
+                                    ...updated[i],
+                                    type: v as "yes_no" | "short_text" | "multiple_choice",
+                                    options: v === "multiple_choice" ? ["", ""] : [],
+                                    dealbreaker_answer: "",
+                                  };
+                                  setScreeningQuestions(updated);
+                                }}
+                              >
+                                <SelectTrigger className="w-44">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="yes_no">Yes / No</SelectItem>
+                                  <SelectItem value="short_text">Short Text</SelectItem>
+                                  <SelectItem value="multiple_choice">Multiple Choice</SelectItem>
+                                </SelectContent>
+                              </Select>
+
+                              {q.type === "yes_no" && (
+                                <Select
+                                  value={q.dealbreaker_answer || "__none__"}
+                                  onValueChange={(v) => {
+                                    const updated = [...screeningQuestions];
+                                    updated[i] = {
+                                      ...updated[i],
+                                      dealbreaker_answer: v === "__none__" ? "" : v,
+                                    };
+                                    setScreeningQuestions(updated);
+                                  }}
+                                >
+                                  <SelectTrigger className="w-44">
+                                    <SelectValue placeholder="Dealbreaker?" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="__none__">No dealbreaker</SelectItem>
+                                    <SelectItem value="yes">Flag if \"Yes\"</SelectItem>
+                                    <SelectItem value="no">Flag if \"No\"</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              )}
+                            </div>
+
+                            {q.type === "multiple_choice" && (
+                              <div className="space-y-1.5">
+                                {q.options.map((opt, oi) => (
+                                  <div key={oi} className="flex items-center gap-2">
+                                    <Input
+                                      value={opt}
+                                      onChange={(e) => {
+                                        const updated = [...screeningQuestions];
+                                        const opts = [...updated[i].options];
+                                        opts[oi] = e.target.value;
+                                        updated[i] = { ...updated[i], options: opts };
+                                        setScreeningQuestions(updated);
+                                      }}
+                                      placeholder={`Option ${oi + 1}`}
+                                      maxLength={100}
+                                      className="flex-1"
+                                    />
+                                    {q.options.length > 2 && (
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const updated = [...screeningQuestions];
+                                          updated[i] = {
+                                            ...updated[i],
+                                            options: updated[i].options.filter((_, idx) => idx !== oi),
+                                          };
+                                          setScreeningQuestions(updated);
+                                        }}
+                                        className="shrink-0 cursor-pointer text-slate-600 transition-colors duration-200 hover:text-slate-900"
+                                      >
+                                        <X className="h-4 w-4" />
+                                      </button>
+                                    )}
+                                  </div>
+                                ))}
+                                {q.options.length < 4 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const updated = [...screeningQuestions];
+                                      updated[i] = {
+                                        ...updated[i],
+                                        options: [...updated[i].options, ""],
+                                      };
+                                      setScreeningQuestions(updated);
+                                    }}
+                                    className="cursor-pointer text-xs text-brand transition-colors duration-200 hover:text-brand-hover"
+                                  >
+                                    + Add option
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setScreeningQuestions(
+                                screeningQuestions.filter((_, idx) => idx !== i)
+                              )
+                            }
+                            className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-slate-600 transition-colors duration-200 hover:bg-gray-100 hover:text-slate-900"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {screeningQuestions.length < 5 && (
+                  <button
+                    type="button"
+                    className="flex cursor-pointer items-center gap-1.5 text-sm text-brand transition-colors duration-200 hover:text-brand-hover"
+                    onClick={() =>
+                      setScreeningQuestions([
+                        ...screeningQuestions,
+                        {
+                          id: `q${Date.now()}`,
+                          type: "yes_no",
+                          text: "",
+                          options: [],
+                          dealbreaker_answer: "",
+                        },
+                      ])
+                    }
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add screening question
+                  </button>
+                )}
+              </div>
+
               {/* Trust line */}
               <div className="flex items-center gap-2 rounded-lg bg-gray-50 px-3 py-2.5">
                 <Shield className="h-4 w-4 shrink-0 text-brand" />
@@ -782,6 +970,28 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
                     <Badge variant="outline">
                       {DEAL_CATEGORIES.find((c) => c.value === category)?.label}
                     </Badge>
+                  </div>
+                )}
+
+                {screeningQuestions.filter((q) => q.text.trim()).length > 0 && (
+                  <div>
+                    <p className="mb-2 text-xs text-slate-600">Screening Questions</p>
+                    {screeningQuestions
+                      .filter((q) => q.text.trim())
+                      .map((q, i) => (
+                        <div key={q.id} className="flex items-center justify-between py-1">
+                          <span className="text-sm text-slate-900">
+                            {i + 1}. {q.text}
+                          </span>
+                          <Badge variant="outline">
+                            {q.type === "yes_no"
+                              ? "Yes/No"
+                              : q.type === "short_text"
+                                ? "Text"
+                                : "Choice"}
+                          </Badge>
+                        </div>
+                      ))}
                   </div>
                 )}
 

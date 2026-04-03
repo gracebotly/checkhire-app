@@ -4,61 +4,55 @@ import Link from "next/link";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import {
-  Shield,
   FileText,
-  Users,
   Lock,
-  Briefcase,
+  Share2,
+  CheckCircle,
   Zap,
   ArrowRight,
-  AlertTriangle,
-  Scale,
 } from "lucide-react";
-import { NewsletterSignup } from "@/components/newsletter/NewsletterSignup";
-import { FeeCalculator } from "@/components/gig/FeeCalculator";
-import { WaysToGetPaid } from "@/components/gig/WaysToGetPaid";
-import { StripeOnboardingExplainer } from "@/components/gig/StripeOnboardingExplainer";
-import { PayoutSpeedComparison } from "@/components/gig/PayoutSpeedComparison";
-import { motion } from "motion/react";
 
 const steps = [
   {
     icon: FileText,
-    title: "Define the Deal",
+    title: "Define the agreement",
     description:
-      "Describe the work, set your budget and deadline. Be specific — clear expectations prevent disputes before they happen.",
-  },
-  {
-    icon: Users,
-    title: "Find Your Person",
-    description:
-      "Share on Reddit, Facebook, Discord, or browse open gigs. Work with anyone — no marketplace middleman required.",
+      "The client creates a gig on CheckHire — title, deliverables, deadline, and budget. Clear terms protect both sides and make payouts automatic.",
   },
   {
     icon: Lock,
-    title: "Secure the Payment",
+    title: "Fund escrow",
     description:
-      'Client funds the deal. Freelancer sees "Payment Secured" with the exact amount locked. Nobody starts work on faith.',
+      'The client pays the gig amount plus a 5% platform fee. Funds are held securely by Stripe — not by CheckHire. The freelancer can see "Payment Secured" with the exact amount before they commit.',
   },
   {
-    icon: Briefcase,
-    title: "Do the Work",
+    icon: Share2,
+    title: "Share the link anywhere",
     description:
-      "Freelancer delivers and uploads evidence along the way. Everything is documented — this is your paper trail if anything goes wrong.",
+      "The client gets a unique payment link (e.g., checkhire.co/deal/abc123) and shares it on Reddit, Discord, Facebook, WhatsApp, Twitter, email, or text. The link works everywhere — no app download required.",
+  },
+  {
+    icon: CheckCircle,
+    title: "Freelancer delivers",
+    description:
+      "The freelancer accepts the gig with just their name and email — no CheckHire account required. As they work, they upload evidence (screenshots, files, links) to the deal's activity log. When the work is done, they mark it complete.",
   },
   {
     icon: Zap,
-    title: "Release with Confidence",
+    title: "Funds release",
     description:
-      "Client confirms delivery — or 72 hours pass and funds auto-release. Freelancer keeps 100%. No more ghost clients.",
+      "The client has 72 hours to confirm delivery. If they confirm — funds release to the freelancer's bank account (2 business days) or debit card (instantly). If the client doesn't respond within 72 hours — funds auto-release. No more ghost clients.",
   },
 ];
 
-const comparison = [
-  { platform: "CheckHire", freelancerFee: "0%", clientFee: "~7.9% + $0.30", payoutSpeed: "Seconds or 2 days", highlight: true },
-  { platform: "Upwork", freelancerFee: "10–20%", clientFee: "3.4%", payoutSpeed: "7–10 business days", highlight: false },
-  { platform: "Fiverr", freelancerFee: "20%", clientFee: "5.5%", payoutSpeed: "Up to 14 days", highlight: false },
-  { platform: "PayPal", freelancerFee: "No escrow", clientFee: "N/A", payoutSpeed: "Instant (no protection)", highlight: false },
+const comparisonRows = [
+  ["Freelancer fee", "0%", "10%", "20%", "0% (no protection)"],
+  ["Client cost", "~8% total", "5% + freelancer markup", "Built into inflated pricing", "0% (no protection)"],
+  ["Escrow protection", "Yes — funds locked before work starts", "Yes", "Yes", "No"],
+  ["Auto-release if client ghosts", "Yes — 72 hours", "No", "No", "N/A"],
+  ["Dispute resolution", "Yes — human review", "Yes — platform decides", "Yes — platform decides", "Buyer protection only"],
+  ["Works outside the platform", "Yes — share the link anywhere", "No — must use Upwork", "No — must use Fiverr", "Yes — but zero protection"],
+  ["Freelancer gets paid exactly the posted amount", "Yes", "No — 10% deducted", "No — 20% deducted", "N/A"],
 ];
 
 export default function HowItWorksPage() {
@@ -66,41 +60,33 @@ export default function HowItWorksPage() {
     <div className="min-h-screen bg-white">
       <Navbar />
       <main>
-        {/* Hero */}
         <section className="px-6 py-20">
           <div className="mx-auto max-w-4xl text-center">
-            <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-muted">
-              <Shield className="h-7 w-7 text-brand" />
-            </div>
             <h1 className="font-display text-3xl font-bold text-slate-900 md:text-5xl">
-              How Deal Protection Works
+              How CheckHire Works
             </h1>
             <p className="mx-auto mt-4 max-w-2xl text-base text-slate-600 md:text-lg">
-              Define the work. Secure the payment. Release with confidence. Both sides protected from scams, ghosting, and broken promises.
+              Create a payment link. Share it anywhere. Get paid — or get your money back.
             </p>
           </div>
         </section>
 
-        {/* 5-Step Flow */}
-        <section className="px-6 py-16">
-          <div className="mx-auto max-w-4xl">
-            <div className="space-y-6 md:space-y-0 md:grid md:grid-cols-5 md:gap-4">
-              {steps.map((step, i) => {
+        <section className="px-6 pb-16">
+          <div className="mx-auto max-w-5xl">
+            <h2 className="mb-8 text-center font-display text-2xl font-bold text-slate-900">
+              From handshake to payout in five steps.
+            </h2>
+            <div className="grid gap-4 md:grid-cols-5">
+              {steps.map((step, index) => {
                 const Icon = step.icon;
                 return (
-                  <div key={step.title} className="text-center">
-                    <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-muted">
+                  <div key={step.title} className="rounded-xl border border-gray-200 bg-white p-4">
+                    <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-brand-muted">
                       <Icon className="h-5 w-5 text-brand" />
                     </div>
-                    <div className="mb-1 text-xs font-semibold text-brand uppercase tracking-wider">
-                      Step {i + 1}
-                    </div>
-                    <h3 className="text-sm font-semibold text-slate-900">
-                      {step.title}
-                    </h3>
-                    <p className="mt-1 text-xs text-slate-600 leading-relaxed">
-                      {step.description}
-                    </p>
+                    <div className="text-xs font-semibold uppercase tracking-wider text-brand">Step {index + 1}</div>
+                    <h3 className="mt-1 text-sm font-semibold text-slate-900">{step.title}</h3>
+                    <p className="mt-2 text-xs leading-relaxed text-slate-600">{step.description}</p>
                   </div>
                 );
               })}
@@ -108,209 +94,88 @@ export default function HowItWorksPage() {
           </div>
         </section>
 
-        {/* Fee Calculator */}
-        <section className="px-6 py-16">
-          <div className="mx-auto max-w-4xl">
+        <section className="border-t border-gray-100 px-6 py-16">
+          <div className="mx-auto max-w-5xl">
             <h2 className="mb-8 text-center font-display text-2xl font-bold text-slate-900">
-              Know exactly what you&apos;ll pay
+              Transparent pricing. No hidden fees.
             </h2>
-            <div className="mx-auto max-w-md">
-              <FeeCalculator />
-            </div>
-          </div>
-        </section>
-
-        {/* Full Pricing Breakdown */}
-        <section className="px-6 py-16 border-t border-gray-100">
-          <div className="mx-auto max-w-4xl">
-            <h2 className="mb-3 text-center font-display text-2xl font-bold text-slate-900">
-              Pricing — No Hidden Fees
-            </h2>
-            <p className="mx-auto mb-8 max-w-xl text-center text-sm text-slate-600">
-              Here&apos;s exactly what every transaction costs. No surprises.
-            </p>
-
-            <div className="grid gap-4 md:grid-cols-2">
-              {/* Client fees */}
+            <div className="grid gap-6 md:grid-cols-2">
               <div className="rounded-xl border border-gray-200 bg-white p-6">
-                <h3 className="font-semibold text-slate-900 mb-4">What clients pay</h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between border-b border-gray-100 pb-2">
-                    <span className="text-sm text-slate-600">Gig amount</span>
-                    <span className="text-sm font-mono tabular-nums text-slate-900">Set by you</span>
-                  </div>
-                  <div className="flex justify-between border-b border-gray-100 pb-2">
-                    <span className="text-sm text-slate-600">CheckHire platform fee</span>
-                    <span className="text-sm font-mono tabular-nums text-slate-900">5%</span>
-                  </div>
-                  <div className="flex justify-between border-b border-gray-100 pb-2">
-                    <span className="text-sm text-slate-600">Stripe card processing</span>
-                    <span className="text-sm font-mono tabular-nums text-slate-600">2.9% + $0.30</span>
-                  </div>
-                  <div className="flex justify-between border-b border-gray-100 pb-2">
-                    <span className="text-sm text-slate-600">International cards</span>
-                    <span className="text-sm font-mono tabular-nums text-slate-600">+1.5% if applicable</span>
-                  </div>
-                  <div className="flex justify-between pt-1">
-                    <span className="text-sm font-semibold text-slate-900">Effective total (US cards)</span>
-                    <span className="text-sm font-semibold font-mono tabular-nums text-slate-900">~7.9% + $0.30</span>
-                  </div>
-                </div>
-                <p className="mt-3 text-xs text-slate-600">
-                  The 2.9% + $0.30 is Stripe&apos;s standard fee. CheckHire does not mark this up.
+                <h3 className="mb-4 text-lg font-semibold text-slate-900">For Clients</h3>
+                <table className="w-full text-left text-sm">
+                  <tbody>
+                    <tr className="border-b border-gray-100">
+                      <td className="py-2 pr-3 text-slate-600">Gig amount (what the freelancer receives)</td>
+                      <td className="py-2 font-medium text-slate-900">You set this</td>
+                    </tr>
+                    <tr className="border-b border-gray-100">
+                      <td className="py-2 pr-3 text-slate-600">CheckHire platform fee</td>
+                      <td className="py-2 font-medium text-slate-900">5% of gig amount</td>
+                    </tr>
+                    <tr className="border-b border-gray-100">
+                      <td className="py-2 pr-3 text-slate-600">Stripe payment processing</td>
+                      <td className="py-2 font-medium text-slate-900">~2.9% + $0.30</td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 pr-3 font-semibold text-slate-900">Your total cost</td>
+                      <td className="py-2 font-semibold text-slate-900">~7.9% above the gig amount</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <p className="mt-4 text-sm text-slate-600">
+                  Example: You&apos;re hiring a designer for $300. The designer receives exactly $300. You pay approximately $324 total — $15 CheckHire fee + ~$9.14 Stripe processing.
                 </p>
               </div>
 
-              {/* Freelancer fees */}
               <div className="rounded-xl border border-gray-200 bg-white p-6">
-                <h3 className="font-semibold text-slate-900 mb-4">What freelancers pay</h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between border-b border-gray-100 pb-2">
-                    <span className="text-sm text-slate-600">Platform fee</span>
-                    <span className="text-sm font-mono tabular-nums text-green-600 font-semibold">$0 — always</span>
-                  </div>
-                  <div className="flex justify-between border-b border-gray-100 pb-2">
-                    <span className="text-sm text-slate-600">Standard payout (2 days)</span>
-                    <span className="text-sm font-mono tabular-nums text-green-600 font-semibold">Free</span>
-                  </div>
-                  <div className="flex justify-between border-b border-gray-100 pb-2">
-                    <span className="text-sm text-slate-600">Instant payout (seconds)</span>
-                    <span className="text-sm font-mono tabular-nums text-slate-900">1% (min $0.50)</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-slate-600">Dispute fee (if you lose)</span>
-                    <span className="text-sm font-mono tabular-nums text-slate-600">5% of disputed amount</span>
-                  </div>
-                </div>
-                <p className="mt-3 text-xs text-slate-600">
-                  Freelancers receive exactly the posted gig amount. Instant payout is optional.
-                </p>
+                <h3 className="mb-4 text-lg font-semibold text-slate-900">For Freelancers</h3>
+                <table className="w-full text-left text-sm">
+                  <tbody>
+                    <tr className="border-b border-gray-100">
+                      <td className="py-2 pr-3 text-slate-600">Your fee</td>
+                      <td className="py-2 font-medium text-slate-900">$0 — you keep 100% of the posted amount</td>
+                    </tr>
+                    <tr className="border-b border-gray-100">
+                      <td className="py-2 pr-3 text-slate-600">Standard payout (bank transfer)</td>
+                      <td className="py-2 font-medium text-slate-900">Free — arrives in 2 business days</td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 pr-3 text-slate-600">Instant payout (debit card)</td>
+                      <td className="py-2 font-medium text-slate-900">$1 or 1%, whichever is greater — arrives in seconds, 24/7</td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
-          </div>
-        </section>
 
-        {/* Payout Options */}
-        <section className="px-6 py-16 border-t border-gray-100">
-          <div className="mx-auto max-w-4xl">
-            <h2 className="mb-8 text-center font-display text-2xl font-bold text-slate-900">
-              How freelancers get paid
-            </h2>
-            <WaysToGetPaid />
-            <div className="mt-8 mx-auto max-w-md">
-              <PayoutSpeedComparison />
-            </div>
-          </div>
-        </section>
-
-        {/* What Stripe Needs */}
-        <section className="px-6 py-10">
-          <div className="mx-auto max-w-4xl">
-            <StripeOnboardingExplainer />
-          </div>
-        </section>
-
-        {/* Dispute Resolution */}
-        <section className="border-t border-gray-100 bg-gray-50 px-6 py-16">
-          <div className="mx-auto max-w-4xl">
-            <div className="flex items-start gap-4 mb-6">
-              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-red-50">
-                <AlertTriangle className="h-5 w-5 text-red-600" />
-              </div>
-              <div>
-                <h2 className="font-display text-2xl font-bold text-slate-900">
-                  What if something goes wrong?
-                </h2>
-                <p className="mt-2 text-sm text-slate-600">
-                  Either party can open a dispute at any time. Here&apos;s what
-                  happens:
-                </p>
-              </div>
-            </div>
-            <div className="grid gap-4 md:grid-cols-3">
-              <div className="rounded-xl border border-gray-200 bg-white p-5">
-                <Scale className="mb-3 h-5 w-5 text-brand" />
-                <h3 className="text-sm font-semibold text-slate-900">
-                  Funds freeze instantly
-                </h3>
-                <p className="mt-1 text-xs text-slate-600">
-                  The moment a dispute is opened, all funds are frozen. No one
-                  can withdraw until it&apos;s resolved.
-                </p>
-              </div>
-              <div className="rounded-xl border border-gray-200 bg-white p-5">
-                <FileText className="mb-3 h-5 w-5 text-brand" />
-                <h3 className="text-sm font-semibold text-slate-900">
-                  Both sides submit evidence
-                </h3>
-                <p className="mt-1 text-xs text-slate-600">
-                  Upload screenshots, files, screen recordings, and written
-                  descriptions. 48-hour evidence window.
-                </p>
-              </div>
-              <div className="rounded-xl border border-gray-200 bg-white p-5">
-                <Users className="mb-3 h-5 w-5 text-brand" />
-                <h3 className="text-sm font-semibold text-slate-900">
-                  A real human reviews
-                </h3>
-                <p className="mt-1 text-xs text-slate-600">
-                  Within 48 hours, a human reviews all evidence and makes a
-                  binding decision: release, refund, or split.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Cost Comparison */}
-        <section className="px-6 py-16">
-          <div className="mx-auto max-w-4xl">
-            <h2 className="mb-8 text-center font-display text-2xl font-bold text-slate-900">
-              What does it cost?
-            </h2>
-            <p className="mx-auto mb-8 max-w-xl text-center text-sm text-slate-600">
-              5% platform fee + Stripe processing. 0% freelancer fee. Full transparency.
+            <p className="mx-auto mt-6 max-w-4xl text-sm text-slate-600">
+              <span className="font-semibold text-slate-900">Where does the 5% go?</span> CheckHire&apos;s 5% covers the platform, dispute resolution, fraud monitoring, and the free scam investigation service. Stripe&apos;s ~2.9% + $0.30 is Stripe&apos;s standard payment processing fee — CheckHire doesn&apos;t mark it up or touch it. We show you both fees upfront because you deserve to know exactly what you&apos;re paying.
             </p>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="pb-3 text-left font-semibold text-slate-900">
-                      Platform
-                    </th>
-                    <th className="pb-3 text-left font-semibold text-slate-900">
-                      Freelancer Fee
-                    </th>
-                    <th className="pb-3 text-left font-semibold text-slate-900">
-                      Client Fee
-                    </th>
-                    <th className="pb-3 text-left font-semibold text-slate-900">
-                      Payout Speed
-                    </th>
+          </div>
+        </section>
+
+        <section className="border-t border-gray-100 px-6 py-16">
+          <div className="mx-auto max-w-5xl">
+            <h2 className="mb-6 text-center font-display text-2xl font-bold text-slate-900">How CheckHire compares</h2>
+            <div className="overflow-x-auto rounded-xl border border-gray-200">
+              <table className="min-w-full text-left text-sm">
+                <thead className="bg-gray-50 text-slate-900">
+                  <tr>
+                    <th className="px-4 py-3 font-semibold">Feature</th>
+                    <th className="px-4 py-3 font-semibold">CheckHire</th>
+                    <th className="px-4 py-3 font-semibold">Upwork</th>
+                    <th className="px-4 py-3 font-semibold">Fiverr</th>
+                    <th className="px-4 py-3 font-semibold">PayPal / Venmo</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {comparison.map((row) => (
-                    <tr
-                      key={row.platform}
-                      className={`border-b border-gray-100 ${
-                        row.highlight ? "bg-brand-muted" : ""
-                      }`}
-                    >
-                      <td className="py-3 font-medium text-slate-900">
-                        {row.platform}
-                      </td>
-                      <td
-                        className={`py-3 ${
-                          row.highlight
-                            ? "font-semibold text-brand"
-                            : "text-slate-600"
-                        }`}
-                      >
-                        {row.freelancerFee}
-                      </td>
-                      <td className="py-3 text-slate-600">{row.clientFee}</td>
-                      <td className="py-3 text-slate-600">{row.payoutSpeed}</td>
+                  {comparisonRows.map((row) => (
+                    <tr key={row[0]} className="border-t border-gray-100 align-top">
+                      {row.map((cell, i) => (
+                        <td key={`${row[0]}-${i}`} className={`px-4 py-3 ${i === 0 ? "font-medium text-slate-900" : "text-slate-600"}`}>
+                          {cell}
+                        </td>
+                      ))}
                     </tr>
                   ))}
                 </tbody>
@@ -319,33 +184,86 @@ export default function HowItWorksPage() {
           </div>
         </section>
 
-        {/* CTA */}
-        <section className="border-t border-gray-100 bg-gray-50 px-6 py-16">
-          <div className="mx-auto max-w-4xl text-center">
-            <h2 className="font-display text-2xl font-bold text-slate-900">
-              Start Your First Deal — Takes 60 Seconds
-            </h2>
-            <p className="mx-auto mt-3 max-w-lg text-sm text-slate-600">
-              Define the work, lock the payment, share the link. Both sides protected from day one.
-            </p>
-            <Link
-              href="/login?mode=signup&redirect=/deal/new"
-              className="mt-6 inline-flex cursor-pointer items-center gap-2 rounded-lg bg-brand px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-brand-hover"
-            >
-              Create a Deal
-              <ArrowRight className="h-4 w-4" />
-            </Link>
+        <section className="border-t border-gray-100 px-6 py-16">
+          <div className="mx-auto max-w-4xl space-y-8">
+            <div>
+              <h2 className="font-display text-2xl font-bold text-slate-900">
+                Built on the same infrastructure behind Shopify, Lyft, and DoorDash.
+              </h2>
+              <p className="mt-3 text-sm leading-relaxed text-slate-600">
+                CheckHire doesn&apos;t hold your money — Stripe does. Stripe Connect processes billions of dollars annually for platforms you already trust. Your payment card details, bank account numbers, and tax information go directly to Stripe. CheckHire never sees them.
+              </p>
+              <p className="mt-3 text-sm text-slate-600">
+                <span className="font-semibold text-slate-900">For Clients:</span> Fund escrow with Visa, Mastercard, Amex, Discover, Apple Pay, Google Pay, PayPal, Cash App Pay, or ACH bank transfer.
+              </p>
+              <p className="mt-2 text-sm text-slate-600">
+                <span className="font-semibold text-slate-900">For Freelancers:</span> Receive payouts to your bank account (2 business days, free) or debit card (seconds, 24/7 — including weekends and holidays).
+              </p>
+            </div>
+
+            <div>
+              <h2 className="font-display text-2xl font-bold text-slate-900">How getting paid works</h2>
+              <p className="mt-3 text-sm leading-relaxed text-slate-600">
+                When you accept a gig on CheckHire, you go through a quick Stripe verification (1–3 minutes). Your information goes directly to Stripe — CheckHire never sees your bank details or tax information.
+              </p>
+              <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-slate-600">
+                <li>Your legal name and date of birth</li>
+                <li>Your address</li>
+                <li>A bank account or debit card for receiving payouts</li>
+                <li>Your SSN or ITIN (for 1099 tax reporting)</li>
+              </ul>
+              <p className="mt-3 text-sm text-slate-600">
+                <span className="font-semibold text-slate-900">Tax reporting:</span> If you earn $600 or more through CheckHire in a calendar year, you&apos;ll receive a 1099 tax form. Stripe handles this automatically — they&apos;ll email you when your form is ready.
+              </p>
+              <p className="mt-2 text-sm text-slate-600">
+                <span className="font-semibold text-slate-900">Already have a Stripe account?</span> The onboarding is even faster. Stripe can pre-fill your information from your existing account. You&apos;ll still create a new connected account linked to CheckHire, but the process takes under a minute.
+              </p>
+              <p className="mt-2 text-sm text-slate-600">
+                <span className="font-semibold text-slate-900">No CheckHire account required.</span> Freelancers can accept a gig and get paid with just their name and email. If you want to build a reputation, track your deals, and earn trust badges — create a free account.
+              </p>
+            </div>
           </div>
         </section>
-        {/* Newsletter */}
-        <section className="px-6 py-12 border-t border-gray-100">
+
+        <section className="border-t border-gray-100 bg-gray-50 px-6 py-16">
           <div className="mx-auto max-w-4xl">
-            <NewsletterSignup
-              variant="inline"
-              utmCampaign="how_it_works"
-              heading="Stay updated"
-              description="New features, safety tips, and community updates. No spam, ever."
-            />
+            <h2 className="font-display text-2xl font-bold text-slate-900">What happens if something goes wrong</h2>
+            <p className="mt-3 text-sm text-slate-600">CheckHire&apos;s dispute system is designed so both sides get a fair shot.</p>
+            <p className="mt-4 text-sm text-slate-600">
+              <span className="font-semibold text-slate-900">Step 1 — Self-resolution.</span> Both parties propose how they think the funds should be split (e.g., “I think 70% to freelancer, 30% refund”). If the proposals overlap, the system auto-resolves to the midpoint. Most disputes never need a human.
+            </p>
+            <p className="mt-2 text-sm text-slate-600">
+              <span className="font-semibold text-slate-900">Step 2 — Human review.</span> If proposals don&apos;t overlap, a real person reviews the evidence timeline — every message, file upload, and system event is timestamped and permanent. A resolution is issued within 48 hours.
+            </p>
+            <p className="mt-2 text-sm text-slate-600">
+              <span className="font-semibold text-slate-900">Dispute fee:</span> 5% of the disputed amount, charged to the party who loses the dispute. This discourages frivolous disputes while keeping the process fair.
+            </p>
+            <p className="mt-2 text-sm text-slate-600">
+              <span className="font-semibold text-slate-900">The evidence timeline is your protection.</span> Every action on a deal is logged with timestamps — file uploads, status changes, messages. This log is permanent and cannot be edited or deleted. The more evidence you upload during the deal, the stronger your position if a dispute ever happens.
+            </p>
+          </div>
+        </section>
+
+        <section className="px-6 py-20">
+          <div className="mx-auto max-w-3xl rounded-2xl border border-gray-200 bg-white p-8 text-center">
+            <h2 className="font-display text-2xl font-bold text-slate-900">
+              Ready to work with anyone online — without the risk?
+            </h2>
+            <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <Link
+                href="/create"
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-brand px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-hover"
+              >
+                Create a Payment Link
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+              <Link
+                href="/scam-check"
+                className="inline-flex items-center justify-center rounded-full border border-gray-300 px-5 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-gray-50"
+              >
+                Submit a Suspicious Posting for Free Investigation
+              </Link>
+            </div>
           </div>
         </section>
       </main>

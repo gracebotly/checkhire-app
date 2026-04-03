@@ -124,8 +124,8 @@ export function FAQContent() {
   const freelancerDoingTheWork = [
     {
       id: "f-timeline",
-      question: "What is the evidence timeline?",
-      answer: "Every gig has a timestamped record of all events — when the gig was created, when escrow was funded, when you accepted, every file you upload, when you submit work, and when payment releases. This is not a chat — it's a permanent, non-deletable transaction record. It protects both parties because there's always a clear paper trail.",
+      question: "What is the Deal Timeline?",
+      answer: "Every gig has a Deal Timeline — a timestamped record of everything that happens from posting to payout. It tracks when the gig was posted, when escrow was funded, when the freelancer was accepted, every piece of evidence uploaded, when work was submitted, and when payment released. It's a permanent, non-deletable transaction record that protects both parties with a clear paper trail.",
     },
     {
       id: "f-evidence",

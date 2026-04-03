@@ -355,12 +355,14 @@ export type DisputeEvidence = {
 
 export type TimelineNodeVariant =
   | 'system'
+  | 'genesis'
   | 'payment'
   | 'evidence'
   | 'submission'
   | 'resolution'
   | 'dispute'
-  | 'message';
+  | 'message'
+  | 'pending';
 
 // ─── Email Notifications ───
 

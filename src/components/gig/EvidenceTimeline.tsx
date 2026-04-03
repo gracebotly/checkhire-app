@@ -12,13 +12,20 @@ import {
   XCircle,
   AlertTriangle,
   FileText,
+  Circle,
+  Briefcase,
+  UserCheck,
+  Clock,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CountdownTimer } from "@/components/gig/CountdownTimer";
+import { categoryLabels } from "@/lib/categories";
 import type {
   ActivityLogEntryWithUser,
   DealWithParticipants,
+  DealStatus,
+  EscrowStatus,
   TimelineNodeVariant,
 } from "@/types/database";
 
@@ -33,39 +40,152 @@ type Props = {
   onOpenDispute: () => void;
 };
 
-function getNodeVariant(entry: ActivityLogEntryWithUser): TimelineNodeVariant {
-  if (entry.entry_type === "file" && entry.is_submission_evidence) return "evidence";
-  if (entry.entry_type === "file") return "message";
-  if (entry.entry_type === "text") return "message";
+// ── Stage Progress ──
 
-  if (entry.entry_type === "system" && entry.content) {
-    const c = entry.content.toLowerCase();
-    if (c.includes("escrow funded") || c.includes("payment secured") || c.includes("milestone") && c.includes("funded"))
-      return "payment";
-    if (c.includes("submitted") || c.includes("mark") && c.includes("complete"))
-      return "submission";
-    if (c.includes("confirmed") || c.includes("released") || c.includes("auto-released") || c.includes("complete"))
-      return "resolution";
-    if (c.includes("dispute")) return "dispute";
-    if (c.includes("cancelled") || c.includes("refund")) return "resolution";
+type Stage = {
+  key: string;
+  label: string;
+  status: "completed" | "current" | "upcoming";
+};
+
+function getStages(dealStatus: DealStatus, escrowStatus: EscrowStatus): Stage[] {
+  const stages: { key: string; label: string }[] = [
+    { key: "posted", label: "Posted" },
+    { key: "funded", label: "Funded" },
+    { key: "accepted", label: "Accepted" },
+    { key: "in_progress", label: "In Progress" },
+    { key: "submitted", label: "Submitted" },
+    { key: "complete", label: "Complete" },
+  ];
+
+  // Determine how far along we are
+  let currentIndex = 0;
+
+  // Posted is always done (we're viewing the deal page)
+  if (escrowStatus === "funded" || escrowStatus === "partially_released") {
+    currentIndex = 1;
+  }
+  if (
+    dealStatus === "in_progress" ||
+    dealStatus === "submitted" ||
+    dealStatus === "revision_requested" ||
+    dealStatus === "completed" ||
+    dealStatus === "disputed"
+  ) {
+    currentIndex = 2; // accepted
+  }
+  if (
+    dealStatus === "in_progress" ||
+    dealStatus === "revision_requested" ||
+    dealStatus === "submitted" ||
+    dealStatus === "completed" ||
+    dealStatus === "disputed"
+  ) {
+    currentIndex = 3; // in_progress
+  }
+  if (
+    dealStatus === "submitted" ||
+    dealStatus === "completed" ||
+    dealStatus === "disputed"
+  ) {
+    currentIndex = 4; // submitted
+  }
+  if (dealStatus === "completed") {
+    currentIndex = 5; // complete
   }
 
-  return "system";
+  return stages.map((s, i) => ({
+    ...s,
+    status: i < currentIndex ? "completed" : i === currentIndex ? "current" : "upcoming",
+  }));
 }
 
-function formatRelativeTime(dateStr: string): string {
-  const now = Date.now();
-  const date = new Date(dateStr).getTime();
-  const diff = now - date;
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 30) return `${days}d ago`;
-  return new Date(dateStr).toLocaleDateString();
+function StageProgress({ stages }: { stages: Stage[] }) {
+  return (
+    <div className="flex items-center justify-between gap-1 px-1">
+      {stages.map((stage, i) => (
+        <div key={stage.key} className="flex flex-1 items-center gap-1">
+          <div className="flex flex-col items-center gap-1">
+            <div
+              className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full transition-colors duration-200 ${
+                stage.status === "completed"
+                  ? "bg-brand"
+                  : stage.status === "current"
+                    ? "border-2 border-brand bg-white"
+                    : "border border-dashed border-gray-300 bg-white"
+              }`}
+            >
+              {stage.status === "completed" && (
+                <CheckCircle className="h-3 w-3 text-white" />
+              )}
+              {stage.status === "current" && (
+                <div className="h-2 w-2 rounded-full bg-brand" />
+              )}
+            </div>
+            <span
+              className={`text-[10px] leading-tight text-center ${
+                stage.status === "upcoming"
+                  ? "text-slate-600"
+                  : "font-medium text-slate-900"
+              }`}
+            >
+              {stage.label}
+            </span>
+          </div>
+          {i < stages.length - 1 && (
+            <div
+              className={`mb-4 h-0.5 flex-1 ${
+                stage.status === "completed" ? "bg-brand" : "bg-gray-200"
+              }`}
+            />
+          )}
+        </div>
+      ))}
+    </div>
+  );
 }
+
+// ── Timestamp formatting ──
+
+function formatDualTime(dateStr: string): { absolute: string; relative: string } {
+  const date = new Date(dateStr);
+  const now = Date.now();
+  const diff = now - date.getTime();
+  const mins = Math.floor(diff / 60000);
+
+  let relative: string;
+  if (mins < 1) relative = "just now";
+  else if (mins < 60) relative = `${mins}m ago`;
+  else {
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) relative = `${hours}h ago`;
+    else {
+      const days = Math.floor(hours / 24);
+      if (days < 30) relative = `${days}d ago`;
+      else relative = "";
+    }
+  }
+
+  const absolute = date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+
+  return { absolute, relative };
+}
+
+function Timestamp({ dateStr }: { dateStr: string }) {
+  const { absolute, relative } = formatDualTime(dateStr);
+  return (
+    <p className="text-xs text-slate-600 mt-0.5">
+      {absolute}{relative ? ` · ${relative}` : ""}
+    </p>
+  );
+}
+
+// ── Helpers ──
 
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -77,13 +197,48 @@ function isImageFile(name: string): boolean {
   return /\.(png|jpg|jpeg|gif|webp)$/i.test(name);
 }
 
-function getInitials(name: string | null): string {
-  if (!name) return "?";
-  return name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
+function truncate(text: string, max: number): string {
+  if (text.length <= max) return text;
+  return text.slice(0, max - 3).replace(/\s+\S*$/, "") + "...";
 }
+
+// ── Node variant detection ──
+
+function getNodeVariant(entry: ActivityLogEntryWithUser, isFirst: boolean): TimelineNodeVariant {
+  // First system entry that starts with "Gig created" → genesis
+  if (isFirst && entry.entry_type === "system" && entry.content?.toLowerCase().startsWith("gig created")) {
+    return "genesis";
+  }
+
+  if (entry.entry_type === "file" && entry.is_submission_evidence) return "evidence";
+  if (entry.entry_type === "file") return "message";
+  if (entry.entry_type === "text") return "message";
+
+  if (entry.entry_type === "system" && entry.content) {
+    const c = entry.content.toLowerCase();
+    if (c.includes("escrow funded") || c.includes("payment secured") || (c.includes("milestone") && c.includes("funded")))
+      return "payment";
+    if (c.includes("submitted") || (c.includes("mark") && c.includes("complete")))
+      return "submission";
+    if (c.includes("confirmed") || c.includes("released") || c.includes("auto-released") || c.includes("complete"))
+      return "resolution";
+    if (c.includes("dispute")) return "dispute";
+    if (c.includes("cancelled") || c.includes("refund")) return "resolution";
+  }
+
+  return "system";
+}
+
+// ── Node Icons ──
 
 function NodeIcon({ variant }: { variant: TimelineNodeVariant }) {
   switch (variant) {
+    case "genesis":
+      return (
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-muted border-2 border-brand">
+          <Briefcase className="h-4 w-4 text-brand" />
+        </div>
+      );
     case "payment":
       return (
         <div className="flex h-8 w-8 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-full bg-brand-muted">
@@ -120,6 +275,12 @@ function NodeIcon({ variant }: { variant: TimelineNodeVariant }) {
           <AlertTriangle className="h-4 w-4 text-red-600" />
         </div>
       );
+    case "pending":
+      return (
+        <div className="flex h-8 w-8 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-full border border-dashed border-gray-300 bg-white">
+          <Circle className="h-3 w-3 text-gray-300" />
+        </div>
+      );
     default:
       return (
         <div className="flex h-6 w-6 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-full bg-gray-100">
@@ -128,6 +289,73 @@ function NodeIcon({ variant }: { variant: TimelineNodeVariant }) {
       );
   }
 }
+
+// ── Genesis Node (the first node — summary card) ──
+
+function GenesisNode({ deal, entry }: { deal: DealWithParticipants; entry: ActivityLogEntryWithUser }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, ease: "easeOut" }}
+      className="flex gap-3 relative"
+    >
+      <div className="z-10 shrink-0">
+        <NodeIcon variant="genesis" />
+      </div>
+      <div className="flex-1 min-w-0 pb-1">
+        <div className="rounded-xl border border-gray-200 bg-white p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <p className="text-sm font-semibold text-slate-900">{"📋"} Gig Posted</p>
+            {deal.category && (
+              <Badge variant="outline" className="text-xs">
+                {categoryLabels[deal.category] || deal.category}
+              </Badge>
+            )}
+          </div>
+          <h3 className="text-base font-semibold text-slate-900">{deal.title}</h3>
+          <p className="font-mono text-lg font-bold tabular-nums text-slate-900 mt-1">
+            ${(deal.total_amount / 100).toFixed(2)}
+          </p>
+          {deal.deliverables && (
+            <div className="mt-2">
+              <p className="text-xs font-medium text-slate-600 mb-0.5">Deliverables</p>
+              <p className="text-sm text-slate-900 whitespace-pre-wrap">
+                {truncate(deal.deliverables, 200)}
+              </p>
+            </div>
+          )}
+          {deal.deadline && (
+            <p className="text-xs text-slate-600 mt-2">
+              Deadline: {new Date(deal.deadline).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+            </p>
+          )}
+          <Timestamp dateStr={entry.created_at} />
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// ── Pending Node (greyed-out future steps) ──
+
+function PendingNode({ label, icon }: { label: string; icon: React.ReactNode }) {
+  return (
+    <div className="flex gap-3 relative opacity-50">
+      <div className="z-10 shrink-0">
+        <NodeIcon variant="pending" />
+      </div>
+      <div className="flex-1 min-w-0 pb-1">
+        <div className="flex items-center gap-2 py-2">
+          {icon}
+          <p className="text-sm text-slate-600">{label}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Timeline Node (existing entries) ──
 
 function TimelineNode({
   entry,
@@ -152,10 +380,8 @@ function TimelineNode({
   onRequestRevision: () => void;
   onOpenDispute: () => void;
 }) {
-  const isUserEntry = entry.user_id && entry.user_id === currentUserId;
   const isClientEntry = entry.user_id === deal.client_user_id;
 
-  // Determine if this is a resolution that's positive (confirmed/released) or negative (cancelled/refunded)
   const isPositiveResolution =
     variant === "resolution" &&
     entry.content &&
@@ -179,13 +405,11 @@ function TimelineNode({
       </div>
 
       <div className="flex-1 min-w-0 pb-1">
-        {/* System node — minimal */}
+        {/* System node */}
         {variant === "system" && (
           <div>
             <p className="text-sm text-slate-600">{entry.content}</p>
-            <p className="text-xs text-slate-600 mt-0.5">
-              {formatRelativeTime(entry.created_at)}
-            </p>
+            <Timestamp dateStr={entry.created_at} />
           </div>
         )}
 
@@ -201,9 +425,7 @@ function TimelineNode({
             <p className="text-sm text-slate-600 mt-1">
               Held securely. Releases when work is confirmed.
             </p>
-            <p className="text-xs text-slate-600 mt-2">
-              {formatRelativeTime(entry.created_at)}
-            </p>
+            <Timestamp dateStr={entry.created_at} />
           </div>
         )}
 
@@ -213,7 +435,7 @@ function TimelineNode({
             <div className="flex items-center gap-2 mb-2">
               <Badge variant="success">Evidence</Badge>
               <span className="text-xs text-slate-600">
-                {formatRelativeTime(entry.created_at)}
+                {formatDualTime(entry.created_at).absolute}
               </span>
             </div>
             {entry.file_url && entry.file_name && isImageFile(entry.file_name) ? (
@@ -262,7 +484,7 @@ function TimelineNode({
                 {entry.user?.display_name || guestFreelancerName || "Unknown"}
               </span>
               <span className="text-xs text-slate-600">
-                {formatRelativeTime(entry.created_at)}
+                {formatDualTime(entry.created_at).absolute}
               </span>
             </div>
             {entry.entry_type === "file" && entry.file_url ? (
@@ -334,9 +556,7 @@ function TimelineNode({
                 </Button>
               </div>
             )}
-            <p className="text-xs text-slate-600 mt-2">
-              {formatRelativeTime(entry.created_at)}
-            </p>
+            <Timestamp dateStr={entry.created_at} />
           </div>
         )}
 
@@ -365,22 +585,18 @@ function TimelineNode({
                 ? "Funds on their way to your bank"
                 : `Payment released to ${deal.freelancer?.display_name || guestFreelancerName || "freelancer"}`}
             </p>
-            <p className="text-xs text-slate-600 mt-2">
-              {formatRelativeTime(entry.created_at)}
-            </p>
+            <Timestamp dateStr={entry.created_at} />
           </div>
         )}
 
-        {/* Resolution node — neutral (cancelled/refunded) */}
+        {/* Resolution node — neutral */}
         {variant === "resolution" && !isPositiveResolution && (
           <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
             <div className="flex items-center gap-2">
               <XCircle className="h-5 w-5 text-slate-600" />
               <p className="text-sm text-slate-900">{entry.content}</p>
             </div>
-            <p className="text-xs text-slate-600 mt-1">
-              {formatRelativeTime(entry.created_at)}
-            </p>
+            <Timestamp dateStr={entry.created_at} />
           </div>
         )}
 
@@ -396,15 +612,46 @@ function TimelineNode({
                 {entry.content}
               </p>
             )}
-            <p className="text-xs text-slate-600 mt-2">
-              {formatRelativeTime(entry.created_at)}
-            </p>
+            <Timestamp dateStr={entry.created_at} />
           </div>
         )}
       </div>
     </motion.div>
   );
 }
+
+// ── Pending steps logic ──
+
+function getPendingSteps(deal: DealWithParticipants): { label: string; icon: React.ReactNode }[] {
+  const steps: { label: string; icon: React.ReactNode }[] = [];
+  const s = deal.status;
+  const e = deal.escrow_status;
+
+  // Terminal states — no pending steps
+  if (["completed", "cancelled", "refunded"].includes(s)) return steps;
+
+  if (e === "unfunded" && s === "pending_acceptance") {
+    steps.push({ label: "Awaiting escrow funding", icon: <Lock className="h-3.5 w-3.5 text-gray-400" /> });
+    steps.push({ label: "Awaiting freelancer", icon: <UserCheck className="h-3.5 w-3.5 text-gray-400" /> });
+    steps.push({ label: "Work submission", icon: <Send className="h-3.5 w-3.5 text-gray-400" /> });
+    steps.push({ label: "Delivery confirmed", icon: <CheckCircle className="h-3.5 w-3.5 text-gray-400" /> });
+  } else if (e === "funded" && s === "pending_acceptance") {
+    steps.push({ label: "Awaiting freelancer", icon: <UserCheck className="h-3.5 w-3.5 text-gray-400" /> });
+    steps.push({ label: "Work submission", icon: <Send className="h-3.5 w-3.5 text-gray-400" /> });
+    steps.push({ label: "Delivery confirmed", icon: <CheckCircle className="h-3.5 w-3.5 text-gray-400" /> });
+  } else if (s === "in_progress" || s === "revision_requested") {
+    steps.push({ label: "Work submission", icon: <Send className="h-3.5 w-3.5 text-gray-400" /> });
+    steps.push({ label: "Delivery confirmed", icon: <CheckCircle className="h-3.5 w-3.5 text-gray-400" /> });
+  } else if (s === "submitted") {
+    steps.push({ label: "Delivery confirmed", icon: <CheckCircle className="h-3.5 w-3.5 text-gray-400" /> });
+  } else if (s === "disputed") {
+    steps.push({ label: "Dispute resolution", icon: <Clock className="h-3.5 w-3.5 text-gray-400" /> });
+  }
+
+  return steps;
+}
+
+// ── Main Export ──
 
 export function EvidenceTimeline({
   entries,
@@ -422,40 +669,67 @@ export function EvidenceTimeline({
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [entries.length]);
 
-  if (entries.length === 0) {
-    return (
-      <div className="text-center py-8">
-        <p className="text-sm text-slate-600">No activity yet.</p>
-      </div>
-    );
-  }
+  const stages = getStages(deal.status, deal.escrow_status);
+  const pendingSteps = getPendingSteps(deal);
+
+  // Skip the stage header for cancelled/refunded deals
+  const showStageHeader = !["cancelled", "refunded"].includes(deal.status);
 
   return (
-    <div className="relative">
-      {/* Vertical line */}
-      <div className="absolute left-4 sm:left-5 top-4 bottom-4 w-0.5 bg-gray-200" />
+    <div>
+      {/* Stage Progress Header */}
+      {showStageHeader && (
+        <div className="mb-6 rounded-xl border border-gray-200 bg-white p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-600 mb-3">
+            Deal Timeline
+          </p>
+          <StageProgress stages={stages} />
+        </div>
+      )}
 
-      <div className="space-y-4">
-        {entries.map((entry, index) => {
-          const variant = getNodeVariant(entry);
-          return (
-            <TimelineNode
-              key={entry.id}
-              entry={entry}
-              index={index}
-              variant={variant}
-              deal={deal}
-              role={role}
-              guestFreelancerName={guestFreelancerName}
-              currentUserId={currentUserId}
-              onConfirmDelivery={onConfirmDelivery}
-              onRequestRevision={onRequestRevision}
-              onOpenDispute={onOpenDispute}
-            />
-          );
-        })}
-      </div>
-      <div ref={bottomRef} />
+      {/* Timeline entries */}
+      {entries.length === 0 ? (
+        <div className="text-center py-8">
+          <p className="text-sm text-slate-600">No activity yet.</p>
+        </div>
+      ) : (
+        <div className="relative">
+          {/* Vertical line */}
+          <div className="absolute left-4 sm:left-5 top-4 bottom-4 w-0.5 bg-gray-200" />
+
+          <div className="space-y-4">
+            {entries.map((entry, index) => {
+              const variant = getNodeVariant(entry, index === 0);
+
+              if (variant === "genesis") {
+                return <GenesisNode key={entry.id} deal={deal} entry={entry} />;
+              }
+
+              return (
+                <TimelineNode
+                  key={entry.id}
+                  entry={entry}
+                  index={index}
+                  variant={variant}
+                  deal={deal}
+                  role={role}
+                  guestFreelancerName={guestFreelancerName}
+                  currentUserId={currentUserId}
+                  onConfirmDelivery={onConfirmDelivery}
+                  onRequestRevision={onRequestRevision}
+                  onOpenDispute={onOpenDispute}
+                />
+              );
+            })}
+
+            {/* Pending future steps */}
+            {pendingSteps.map((step, i) => (
+              <PendingNode key={`pending-${i}`} label={step.label} icon={step.icon} />
+            ))}
+          </div>
+          <div ref={bottomRef} />
+        </div>
+      )}
     </div>
   );
 }

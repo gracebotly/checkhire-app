@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import Link from "next/link";
-import { Briefcase } from "lucide-react";
+import { Briefcase, Lock } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -47,10 +47,11 @@ export function BrowseGigsContent() {
   const [category, setCategory] = useState("all");
   const [budget, setBudget] = useState("all");
   const [sort, setSort] = useState("newest");
+  const [fundedOnly, setFundedOnly] = useState(false);
 
   useEffect(() => {
     setPage(1);
-  }, [category, budget, sort]);
+  }, [category, budget, sort, fundedOnly]);
 
   useEffect(() => {
     async function fetchDeals() {
@@ -70,6 +71,7 @@ export function BrowseGigsContent() {
             params.set("min_amount", "200000");
           }
         }
+        if (fundedOnly) params.set("funded_only", "true");
         params.set("sort", sort);
         params.set("page", page.toString());
 
@@ -90,7 +92,7 @@ export function BrowseGigsContent() {
       }
     }
     fetchDeals();
-  }, [category, budget, sort, page]);
+  }, [category, budget, sort, fundedOnly, page]);
 
   const hasMore = deals.length < total;
 
@@ -152,6 +154,19 @@ export function BrowseGigsContent() {
                 <SelectItem value="deadline_soonest">Deadline Soonest</SelectItem>
               </SelectContent>
             </Select>
+
+            <button
+              type="button"
+              onClick={() => setFundedOnly(!fundedOnly)}
+              className={`flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-colors duration-200 ${
+                fundedOnly
+                  ? "border-green-200 bg-green-50 text-green-700"
+                  : "border-gray-200 bg-white text-slate-600 hover:bg-gray-50"
+              }`}
+            >
+              <Lock className="h-3.5 w-3.5" />
+              Payment Secured
+            </button>
           </div>
         </div>
 

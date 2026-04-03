@@ -456,10 +456,12 @@ export function GigPageClient({
         )}
       </div>
 
-      {/* 2. Escrow Status Bar */}
-      <div className="mb-6">
-        <EscrowStatusBar status={deal.escrow_status} amount={deal.total_amount} />
-      </div>
+      {/* 2. Escrow Status Bar — hidden for unfunded deals (the Fund Escrow prompt handles that state) */}
+      {deal.escrow_status !== "unfunded" && (
+        <div className="mb-6">
+          <EscrowStatusBar status={deal.escrow_status} amount={deal.total_amount} />
+        </div>
+      )}
 
       {/* Stripe Connect / Fund Escrow prompt for clients */}
       {role === "client" && deal.escrow_status === "unfunded" && deal.status !== "cancelled" && (

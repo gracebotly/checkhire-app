@@ -61,6 +61,10 @@ export const publicDealsQuerySchema = z.object({
     .optional(),
   min_amount: z.coerce.number().int().min(0).optional(),
   max_amount: z.coerce.number().int().min(0).optional(),
+  funded_only: z
+    .enum(["true", "false"])
+    .optional()
+    .transform((v) => v === "true"),
   sort: z
     .enum(["newest", "highest_budget", "deadline_soonest"])
     .optional()

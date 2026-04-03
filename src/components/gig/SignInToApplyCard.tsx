@@ -2,10 +2,26 @@
 
 import { useState } from "react";
 import { motion } from "motion/react";
-import { Lock, ArrowRight } from "lucide-react";
+import { Lock, ArrowRight, Plus, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { createClient } from "@/lib/supabase/client";
+
+type ScreeningQuestion = {
+  id: string;
+  type: "yes_no" | "short_text" | "multiple_choice";
+  text: string;
+  options?: string[];
+  dealbreaker_answer?: string;
+};
 
 type Props = {
   dealSlug: string;
@@ -13,6 +29,7 @@ type Props = {
   escrowFunded: boolean;
   amountCents: number;
   dealTitle: string;
+  screeningQuestions?: ScreeningQuestion[];
 };
 
 function GoogleIcon() {
@@ -43,25 +60,54 @@ export function SignInToApplyCard({
   dealId,
   escrowFunded,
   amountCents,
+  screeningQuestions = [],
 }: Props) {
   const [pitch, setPitch] = useState("");
+  const [portfolioUrls, setPortfolioUrls] = useState<string[]>([""]);
+  const [screeningAnswers, setScreeningAnswers] = useState<Record<string, string>>({});
   const [showAuth, setShowAuth] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const updatePortfolioUrl = (index: number, value: string) => {
+    setPortfolioUrls((prev) => prev.map((url, i) => (i === index ? value : url)));
+  };
+
+  const addPortfolioUrl = () => {
+    if (portfolioUrls.length >= 3) return;
+    setPortfolioUrls((prev) => [...prev, ""]);
+  };
+
+  const removePortfolioUrl = (index: number) => {
+    setPortfolioUrls((prev) => prev.filter((_, i) => i !== index));
+  };
 
   const handleSubmit = () => {
     if (pitch.trim().length < 20) {
       setError("Your message must be at least 20 characters");
       return;
     }
-    // Save pitch to sessionStorage so it survives the auth redirect
+    // Save application data to sessionStorage so it survives the auth redirect
     try {
+      const applicationData = {
+        pitch: pitch.trim(),
+        portfolio_urls: portfolioUrls.filter((u) => u.trim()),
+        screening_answers: screeningQuestions.map((q) => ({
+          question_id: q.id,
+          answer: screeningAnswers[q.id] || "",
+        })),
+      };
+      sessionStorage.setItem(
+        `checkhire_pending_application_${dealId}`,
+        JSON.stringify(applicationData)
+      );
+      // Keep legacy pitch key for backward compatibility
       sessionStorage.setItem(
         `checkhire_pending_pitch_${dealId}`,
         pitch.trim()
       );
     } catch {
-      // sessionStorage unavailable — pitch will be lost but auth still works
+      // sessionStorage unavailable — data will be lost but auth still works
     }
     setShowAuth(true);
   };
@@ -96,10 +142,10 @@ export function SignInToApplyCard({
       {!showAuth ? (
         <>
           <h3 className="text-sm font-semibold text-slate-900">
-            Want this gig?
+            Apply for this gig
           </h3>
           <p className="mt-0.5 text-xs text-slate-600">
-            Tell the client why you&apos;re a good fit.
+            Stand out by sharing your work, experience, and relevant details. Create an account to submit your application.
           </p>
 
           {escrowFunded && (
@@ -111,38 +157,154 @@ export function SignInToApplyCard({
             </div>
           )}
 
-          <textarea
-            value={pitch}
-            onChange={(e) => {
-              setPitch(e.target.value);
-              setError("");
-            }}
-            placeholder="Introduce yourself — what's your experience with this kind of work?"
-            maxLength={1000}
-            rows={4}
-            className="mt-3 flex w-full resize-none rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-600 transition-colors duration-200 focus:border-brand focus:outline-none focus:ring-2 focus:ring-ring/40"
-          />
-          <div className="mt-1 flex items-center justify-between">
-            <span
-              className={`text-xs ${
-                pitch.length > 1000 ? "text-red-600" : "text-slate-600"
-              }`}
-            >
-              {pitch.length}/1000
-            </span>
-            <span className="text-xs text-slate-600">Min 20 characters</span>
-          </div>
-
           {error && (
             <p className="mt-2 text-xs text-red-600">{error}</p>
           )}
 
+          {/* Screening Questions */}
+          {screeningQuestions.length > 0 && (
+            <div className="mt-4 space-y-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-900">
+                Screening Questions
+              </p>
+              {screeningQuestions.map((q) => (
+                <div key={q.id}>
+                  <label className="mb-1.5 block text-sm font-medium text-slate-900">
+                    {q.text}
+                  </label>
+                  {q.type === "yes_no" && (
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant={screeningAnswers[q.id] === "yes" ? "default" : "outline"}
+                        size="sm"
+                        onClick={() =>
+                          setScreeningAnswers((prev) => ({ ...prev, [q.id]: "yes" }))
+                        }
+                      >
+                        Yes
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={screeningAnswers[q.id] === "no" ? "default" : "outline"}
+                        size="sm"
+                        onClick={() =>
+                          setScreeningAnswers((prev) => ({ ...prev, [q.id]: "no" }))
+                        }
+                      >
+                        No
+                      </Button>
+                    </div>
+                  )}
+                  {q.type === "short_text" && (
+                    <Input
+                      value={screeningAnswers[q.id] || ""}
+                      onChange={(e) =>
+                        setScreeningAnswers((prev) => ({
+                          ...prev,
+                          [q.id]: e.target.value,
+                        }))
+                      }
+                      placeholder="Your answer..."
+                      maxLength={200}
+                    />
+                  )}
+                  {q.type === "multiple_choice" && q.options && (
+                    <Select
+                      value={screeningAnswers[q.id] || ""}
+                      onValueChange={(v) =>
+                        setScreeningAnswers((prev) => ({ ...prev, [q.id]: v }))
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {q.options.map((opt) => (
+                          <SelectItem key={opt} value={opt}>
+                            {opt}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Cover Message */}
+          <div className="mt-4">
+            <label className="mb-1.5 block text-sm font-medium text-slate-900">Cover message</label>
+            <textarea
+              value={pitch}
+              onChange={(e) => {
+                setPitch(e.target.value);
+                setError("");
+              }}
+              placeholder="Introduce yourself — why are you a great fit for this gig?"
+              maxLength={1000}
+              rows={4}
+              className="flex w-full resize-none rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-600 transition-colors duration-200 focus:border-brand focus:outline-none focus:ring-2 focus:ring-ring/40"
+            />
+            <div className="mt-1 flex items-center justify-between">
+              <span
+                className={`text-xs ${
+                  pitch.length > 1000 ? "text-red-600" : "text-slate-600"
+                }`}
+              >
+                {pitch.length}/1000
+              </span>
+              <span className="text-xs text-slate-600">Min 20 characters</span>
+            </div>
+          </div>
+
+          {/* Portfolio Links */}
+          <div className="mt-4">
+            <div className="mb-1.5 flex items-center justify-between">
+              <label className="block text-sm font-medium text-slate-900">
+                Portfolio links <span className="font-normal text-slate-600">(optional)</span>
+              </label>
+              {portfolioUrls.length < 3 && (
+                <Button type="button" variant="outline" size="sm" onClick={addPortfolioUrl}>
+                  <Plus className="mr-1 h-3.5 w-3.5" /> Add link
+                </Button>
+              )}
+            </div>
+            <div className="space-y-2">
+              {portfolioUrls.map((url, index) => (
+                <div key={index} className="flex items-center gap-2">
+                  <Input
+                    value={url}
+                    onChange={(e) => updatePortfolioUrl(index, e.target.value)}
+                    placeholder="https://example.com/your-work"
+                    maxLength={500}
+                  />
+                  {portfolioUrls.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removePortfolioUrl(index)}
+                      className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-600 cursor-pointer transition-colors duration-200 hover:bg-gray-100 hover:text-slate-900"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* File upload note */}
+          <p className="mt-3 text-xs text-slate-600">
+            You can attach a resume or work samples after creating your account.
+          </p>
+
           <Button
-            className="mt-3 w-full"
+            className="mt-4 w-full"
             onClick={handleSubmit}
             disabled={pitch.trim().length < 20}
           >
-            Apply
+            Continue
             <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
           </Button>
         </>
@@ -161,6 +323,11 @@ export function SignInToApplyCard({
             <p className="text-xs text-slate-600 line-clamp-3">
               {pitch}
             </p>
+            {portfolioUrls.filter((u) => u.trim()).length > 0 && (
+              <p className="text-xs text-slate-600 mt-1">
+                + {portfolioUrls.filter((u) => u.trim()).length} portfolio link{portfolioUrls.filter((u) => u.trim()).length > 1 ? "s" : ""}
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">

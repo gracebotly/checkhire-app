@@ -938,6 +938,15 @@ export function GigPageClient({
                 escrowFunded={deal.escrow_status === "funded"}
                 amountCents={deal.total_amount}
                 dealTitle={deal.title}
+                screeningQuestions={
+                  ((deal as Record<string, unknown>).screening_questions as {
+                    id: string;
+                    type: "yes_no" | "short_text" | "multiple_choice";
+                    text: string;
+                    options?: string[];
+                    dealbreaker_answer?: string;
+                  }[]) || []
+                }
               />
             ) : (
               <GuestAcceptCard

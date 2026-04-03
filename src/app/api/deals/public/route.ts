@@ -11,9 +11,9 @@ export const GET = withApiHandler(async (req: Request) => {
     category: url.searchParams.get("category") || undefined,
     min_amount: url.searchParams.get("min_amount") || undefined,
     max_amount: url.searchParams.get("max_amount") || undefined,
-    funded_only: url.searchParams.get("funded_only") || undefined,
     sort: url.searchParams.get("sort") || undefined,
     page: url.searchParams.get("page") || undefined,
+    escrow: url.searchParams.get("escrow") || undefined,
   };
 
   const parsed = publicDealsQuerySchema.safeParse(rawParams);
@@ -24,10 +24,11 @@ export const GET = withApiHandler(async (req: Request) => {
     );
   }
 
-  const { category, min_amount, max_amount, funded_only, sort, page } = parsed.data;
+  const { category, min_amount, max_amount, sort, page, escrow } = parsed.data;
 
   // Use service client to bypass RLS — public deals should be visible to anyone
   const supabase = createServiceClient();
+  const now = new Date().toISOString();
 
   let query = supabase
     .from("deals")
@@ -37,15 +38,22 @@ export const GET = withApiHandler(async (req: Request) => {
       { count: "exact" }
     )
     .eq("deal_type", "public")
-    .eq("status", "pending_acceptance")
-    .is("freelancer_user_id", null);
+    .eq("review_status", "approved")
+    .not("status", "in", "(completed,cancelled,refunded,disputed)")
+    .is("freelancer_user_id", null)
+    .or(`expires_at.is.null,expires_at.gt.${now}`);
 
-  // Apply filters
+  // Escrow status filter
+  if (escrow === "funded") {
+    query = query.eq("escrow_status", "funded");
+  } else if (escrow === "unfunded") {
+    query = query.eq("escrow_status", "unfunded");
+  }
+  // If escrow is "all" or undefined, no filter — show both funded and unfunded
+
+  // Apply category filter
   if (category) {
     query = query.eq("category", category);
-  }
-  if (funded_only) {
-    query = query.eq("escrow_status", "funded");
   }
   if (min_amount !== undefined) {
     query = query.gte("total_amount", min_amount);
@@ -54,14 +62,21 @@ export const GET = withApiHandler(async (req: Request) => {
     query = query.lte("total_amount", max_amount);
   }
 
-  // Apply sort
+  // Apply sort — funded gigs always first within each sort
   if (sort === "highest_budget") {
-    query = query.order("total_amount", { ascending: false });
+    // Funded first, then by budget descending
+    query = query
+      .order("escrow_status", { ascending: true }) // 'funded' < 'unfunded' alphabetically
+      .order("total_amount", { ascending: false });
   } else if (sort === "deadline_soonest") {
-    query = query.order("deadline", { ascending: true, nullsFirst: false });
+    query = query
+      .order("escrow_status", { ascending: true })
+      .order("deadline", { ascending: true, nullsFirst: false });
   } else {
-    // Default: newest
-    query = query.order("created_at", { ascending: false });
+    // Default: funded first, then newest
+    query = query
+      .order("escrow_status", { ascending: true })
+      .order("created_at", { ascending: false });
   }
 
   // Paginate
@@ -79,7 +94,7 @@ export const GET = withApiHandler(async (req: Request) => {
 
   // Get interest counts for each deal
   const dealIds = (deals || []).map((d) => d.id);
-  const interestCounts: Record<string, number> = {};
+  let interestCounts: Record<string, number> = {};
 
   if (dealIds.length > 0) {
     const { data: interests } = await supabase

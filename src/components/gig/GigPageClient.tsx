@@ -944,7 +944,7 @@ export function GigPageClient({
           </div>
         )}
 
-      {/* 5. Evidence Timeline */}
+      {/* 5. Deal Timeline */}
       {(isParticipant || guestToken) && (
         <div className="mb-6">
           <EvidenceTimeline

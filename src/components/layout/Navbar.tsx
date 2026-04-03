@@ -11,6 +11,7 @@ import {
   Settings,
   HelpCircle,
   ChevronDown,
+  ArrowLeftRight,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
@@ -30,6 +31,7 @@ export function Navbar() {
   const [authState, setAuthState] = useState<AuthState>("loading");
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [currentMode, setCurrentMode] = useState<"client" | "freelancer" | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -47,12 +49,13 @@ export function Navbar() {
 
         const { data: profile } = await supabase
           .from("user_profiles")
-          .select("display_name, is_platform_admin")
+          .select("display_name, is_platform_admin, current_mode")
           .eq("id", user.id)
           .maybeSingle();
 
         setDisplayName(profile?.display_name || user.email || null);
         setIsAdmin(profile?.is_platform_admin === true);
+        setCurrentMode(profile?.current_mode || null);
         setAuthState("authenticated");
       } catch {
         setAuthState("anon");
@@ -67,9 +70,26 @@ export function Navbar() {
     setAuthState("anon");
     setDisplayName(null);
     setIsAdmin(false);
+    setCurrentMode(null);
     setMobileOpen(false);
     router.push("/");
     router.refresh();
+  };
+
+
+  const handleModeSwitch = async () => {
+    const newMode = currentMode === "freelancer" ? "client" : "freelancer";
+    setCurrentMode(newMode);
+    try {
+      await fetch("/api/users/mode", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: newMode }),
+      });
+    } catch {
+      // Revert on failure
+      setCurrentMode(currentMode);
+    }
   };
 
   const closeMobile = () => setMobileOpen(false);
@@ -158,11 +178,11 @@ export function Navbar() {
           {authState === "authenticated" && (
             <div className="flex items-center gap-3">
               <Link
-                href="/deal/new"
+                href={currentMode === "freelancer" ? "/gigs" : "/deal/new"}
                 prefetch={false}
                 className="cursor-pointer rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-brand-hover"
               >
-                Create a Deal
+                {currentMode === "freelancer" ? "Browse Gigs" : "Create Deal"}
               </Link>
 
               <DropdownMenu>
@@ -187,6 +207,10 @@ export function Navbar() {
                   <DropdownMenuItem onSelect={() => router.push("/contact")}>
                     <HelpCircle className="h-4 w-4 text-slate-600" />
                     Help
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={handleModeSwitch}>
+                    <ArrowLeftRight className="h-4 w-4 text-slate-600" />
+                    {currentMode === "freelancer" ? "Switch to Hiring" : "Switch to Working"}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
@@ -243,12 +267,12 @@ export function Navbar() {
                     My Gigs
                   </Link>
                   <Link
-                    href="/deal/new"
+                    href={currentMode === "freelancer" ? "/gigs" : "/deal/new"}
                     prefetch={false}
                     onClick={closeMobile}
                     className="cursor-pointer rounded-lg bg-brand px-3 py-2.5 text-center text-sm font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-brand-hover"
                   >
-                    Create a Deal
+                    {currentMode === "freelancer" ? "Browse Gigs" : "Create Deal"}
                   </Link>
                 </>
               )}
@@ -305,6 +329,13 @@ export function Navbar() {
                     <HelpCircle className="h-4 w-4" />
                     Help
                   </Link>
+                  <button
+                    onClick={() => { handleModeSwitch(); closeMobile(); }}
+                    className="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors duration-200 hover:bg-gray-50"
+                  >
+                    <ArrowLeftRight className="h-4 w-4" />
+                    {currentMode === "freelancer" ? "Switch to Hiring" : "Switch to Working"}
+                  </button>
                   <button
                     onClick={handleLogout}
                     className="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-red-600 transition-colors duration-200 hover:bg-red-50"

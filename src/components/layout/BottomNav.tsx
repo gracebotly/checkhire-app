@@ -1,30 +1,51 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Briefcase, Search, PlusCircle, User, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const tabs: {
-  label: string;
-  icon: typeof Briefcase;
-  href: string;
-  prominent?: boolean;
-}[] = [
-  { label: "My Gigs", icon: Briefcase, href: "/dashboard" },
-  { label: "Browse", icon: Search, href: "/gigs" },
-  { label: "Create", icon: PlusCircle, href: "/deal/new", prominent: true },
-  { label: "Profile", icon: User, href: "/profile" },
-  { label: "Settings", icon: Settings, href: "/settings" },
-];
+type Mode = "client" | "freelancer" | null;
 
 export function BottomNav() {
   const pathname = usePathname();
+  const [mode, setMode] = useState<Mode>(null);
+
+  useEffect(() => {
+    async function fetchMode() {
+      try {
+        const res = await fetch("/api/users/mode");
+        const data = await res.json();
+        if (data.ok) setMode(data.mode);
+      } catch {
+        // noop
+      }
+    }
+    fetchMode();
+  }, []);
+
+  // Deduplicate: if freelancer mode, the center button is Browse and the standalone Browse should become My Apps
+  const resolvedTabs = mode === "freelancer"
+    ? [
+        { label: "My Gigs", icon: Briefcase, href: "/dashboard" },
+        { label: "Create", icon: PlusCircle, href: "/deal/new" },
+        { label: "Browse", icon: Search, href: "/gigs", prominent: true },
+        { label: "Profile", icon: User, href: "/profile" },
+        { label: "Settings", icon: Settings, href: "/settings" },
+      ]
+    : [
+        { label: "My Gigs", icon: Briefcase, href: "/dashboard" },
+        { label: "Browse", icon: Search, href: "/gigs" },
+        { label: "Create", icon: PlusCircle, href: "/deal/new", prominent: true },
+        { label: "Profile", icon: User, href: "/profile" },
+        { label: "Settings", icon: Settings, href: "/settings" },
+      ];
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white md:hidden">
       <div className="flex h-16 items-center justify-around pb-[env(safe-area-inset-bottom)]">
-        {tabs.map((tab) => {
+        {resolvedTabs.map((tab) => {
           const isActive =
             pathname === tab.href ||
             (tab.href === "/profile" && pathname.startsWith("/u/")) ||
@@ -33,7 +54,7 @@ export function BottomNav() {
 
           return (
             <Link
-              key={tab.label}
+              key={tab.label + tab.href}
               href={tab.href}
               prefetch={false}
               className={cn(

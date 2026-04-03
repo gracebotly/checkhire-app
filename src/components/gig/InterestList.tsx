@@ -310,6 +310,8 @@ export function InterestList({
                 threadClosed={
                   interest.status === "rejected" || interest.status === "withdrawn"
                 }
+                otherPartyName={interest.user.display_name || "Applicant"}
+                otherPartyAvatar={interest.user.avatar_url || null}
               />
             </div>
           )}

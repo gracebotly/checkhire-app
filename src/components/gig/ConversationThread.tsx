@@ -12,6 +12,8 @@ type Props = {
   interestId: string;
   currentUserId: string;
   threadClosed?: boolean;
+  otherPartyName?: string;
+  otherPartyAvatar?: string | null;
 };
 
 function getInitials(name: string | null): string {
@@ -55,14 +57,18 @@ export function ConversationThread({
   interestId,
   currentUserId,
   threadClosed = false,
+  otherPartyName,
+  otherPartyAvatar,
 }: Props) {
   const [messages, setMessages] = useState<ActivityLogEntryWithUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [content, setContent] = useState("");
   const [posting, setPosting] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [hasNewMessages, setHasNewMessages] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
   const fetchMessages = async () => {
@@ -70,7 +76,23 @@ export function ConversationThread({
       const res = await fetch(`/api/deals/${dealId}/interest/${interestId}/messages`);
       const data = await res.json();
       if (data.ok) {
-        setMessages(data.messages);
+        const newMsgs: ActivityLogEntryWithUser[] = data.messages;
+        // Detect new messages from the other party (not our own)
+        if (!loading && newMsgs.length > messages.length) {
+          const latest = newMsgs[newMsgs.length - 1];
+          if (latest && latest.user_id !== currentUserId) {
+            // Check if the user is scrolled away from bottom
+            const container = messagesContainerRef.current;
+            if (container) {
+              const isNearBottom =
+                container.scrollHeight - container.scrollTop - container.clientHeight < 80;
+              if (!isNearBottom) {
+                setHasNewMessages(true);
+              }
+            }
+          }
+        }
+        setMessages(newMsgs);
       }
     } catch {
       // noop
@@ -103,6 +125,11 @@ export function ConversationThread({
       const data = await res.json();
       if (!data.ok) throw new Error(data.message);
       setContent("");
+      // Reset textarea height after send
+      const textarea = document.querySelector<HTMLTextAreaElement>(
+        'textarea[placeholder="Type a message..."]'
+      );
+      if (textarea) textarea.style.height = "36px";
       await fetchMessages();
     } catch (err) {
       toast(err instanceof Error ? err.message : "Failed to send", "error");
@@ -160,7 +187,34 @@ export function ConversationThread({
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white">
-      <div className="max-h-96 space-y-3 overflow-y-auto p-4">
+      {otherPartyName && (
+        <div className="flex items-center gap-2.5 border-b border-gray-100 px-4 py-3">
+          {otherPartyAvatar ? (
+            <img
+              src={otherPartyAvatar}
+              alt=""
+              className="h-6 w-6 rounded-full object-cover"
+            />
+          ) : (
+            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-muted text-[10px] font-semibold text-brand">
+              {getInitials(otherPartyName)}
+            </div>
+          )}
+          <span className="text-sm font-medium text-slate-900">{otherPartyName}</span>
+        </div>
+      )}
+      <div
+        ref={messagesContainerRef}
+        className="relative max-h-96 space-y-3 overflow-y-auto p-4"
+        onScroll={() => {
+          const container = messagesContainerRef.current;
+          if (container) {
+            const isNearBottom =
+              container.scrollHeight - container.scrollTop - container.clientHeight < 80;
+            if (isNearBottom) setHasNewMessages(false);
+          }
+        }}
+      >
         {messages.length === 0 && (
           <p className="py-4 text-center text-sm text-slate-600">
             No messages yet. Start the conversation.
@@ -239,6 +293,18 @@ export function ConversationThread({
           );
         })}
         <div ref={messagesEndRef} />
+        {hasNewMessages && (
+          <button
+            type="button"
+            onClick={() => {
+              messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+              setHasNewMessages(false);
+            }}
+            className="sticky bottom-2 left-1/2 -translate-x-1/2 cursor-pointer rounded-full bg-brand px-3 py-1 text-xs font-semibold text-white shadow-md transition-colors duration-200 hover:bg-brand-hover"
+          >
+            New messages ↓
+          </button>
+        )}
       </div>
 
       {!threadClosed ? (
@@ -246,7 +312,13 @@ export function ConversationThread({
           <div className="flex items-end gap-2">
             <textarea
               value={content}
-              onChange={(e) => setContent(e.target.value)}
+              onChange={(e) => {
+                setContent(e.target.value);
+                // Auto-grow
+                const el = e.target;
+                el.style.height = "36px";
+                el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
+              }}
               onKeyDown={handleKeyDown}
               placeholder="Type a message..."
               maxLength={2000}

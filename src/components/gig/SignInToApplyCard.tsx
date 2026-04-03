@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
-import { Lock, Shield, ArrowRight } from "lucide-react";
+import { Lock, ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
@@ -72,59 +72,53 @@ export function SignInToApplyCard({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25, ease: "easeOut" }}
-      className="rounded-xl border border-gray-200 bg-white p-6"
+      className="rounded-xl border border-gray-200 bg-white p-5"
     >
-      <div className="text-center space-y-4">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brand-muted">
-          <Shield className="h-6 w-6 text-brand" />
-        </div>
-
-        <div>
-          <h3 className="text-lg font-semibold text-slate-900">
-            Interested in this gig?
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1 min-w-0">
+          <h3 className="text-sm font-semibold text-slate-900">
+            Want this gig?
           </h3>
-          <p className="mt-1 text-sm text-slate-600">
-            Sign in to submit your application with a pitch, portfolio, and work samples.
+          <p className="mt-0.5 text-xs text-slate-600">
+            Sign up to apply.
           </p>
-          <p className="mt-1 truncate text-xs text-slate-600">
-            {dealTitle}
-          </p>
+          {escrowFunded && (
+            <div className="mt-2">
+              <Badge variant="success">
+                <Lock className="mr-1 h-3 w-3" />
+                ${(amountCents / 100).toFixed(2)} secured
+              </Badge>
+            </div>
+          )}
         </div>
-
-        {escrowFunded && (
-          <Badge variant="success">
-            <Lock className="mr-1 h-3 w-3" />
-            ${(amountCents / 100).toFixed(2)} secured in escrow
-          </Badge>
-        )}
-
-        <div className="space-y-3 pt-2">
-          <button
-            type="button"
-            onClick={handleGoogleAuth}
-            disabled={loading}
-            className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-900 cursor-pointer transition-colors duration-200 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <GoogleIcon />
-            {loading ? "Redirecting..." : "Continue with Google"}
-          </button>
-
-          <Link href={loginUrl}>
-            <Button variant="default" className="w-full">
-              Sign in with email
-              <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
-            </Button>
-          </Link>
-        </div>
-
-        {error && (
-          <p className="text-sm text-red-600">{error}</p>
-        )}
-
-        <p className="text-xs text-slate-600">
-          Free to join. No credit card required.
-        </p>
       </div>
+
+      <div className="mt-4 space-y-2">
+        <button
+          type="button"
+          onClick={handleGoogleAuth}
+          disabled={loading}
+          className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-900 cursor-pointer transition-colors duration-200 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <GoogleIcon />
+          {loading ? "Redirecting..." : "Continue with Google"}
+        </button>
+
+        <Link href={loginUrl}>
+          <Button variant="default" className="w-full">
+            Sign up with email
+            <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+          </Button>
+        </Link>
+      </div>
+
+      {error && (
+        <p className="mt-3 text-sm text-red-600 text-center">{error}</p>
+      )}
+
+      <p className="mt-3 text-xs text-slate-600 text-center">
+        Free to join. No credit card required.
+      </p>
     </motion.div>
   );
 }

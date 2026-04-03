@@ -425,6 +425,7 @@ export type NotificationType =
   | 'dispute_auto_resolved'
   | 'dispute_negotiation_round'
   | 'dispute_escalated'
+  | 'payment_confirmed'
   | 'checkout_expired'
   | 'payment_failed_async'
   | 'chargeback_opened'

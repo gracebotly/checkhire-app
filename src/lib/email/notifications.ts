@@ -335,6 +335,30 @@ const NOTIFICATION_CONFIG: Record<string, NotificationConfig> = {
     },
   },
 
+  // ── Template: payment_confirmed (client receipt) ──
+  payment_confirmed: {
+    accent: "#0d9488",
+    subject: (data) =>
+      `Payment confirmed — ${formatAmount(data.amount!)} secured for ${escapeHtml(data.dealTitle)}`,
+    body: (data) => {
+      const title = escapeHtml(data.dealTitle);
+      const amount = formatAmount(data.amount!);
+      const link = dealUrl(data.dealSlug);
+      return (
+        buildHeroAmount(data.amount!, "secured") +
+        `<p style="margin: 20px 0 0 0; font-size: 14px; color: #475569;">Your payment of <strong>${amount}</strong> for <strong>${title}</strong> has been processed and is now held securely in escrow.</p>` +
+        `<div style="margin: 16px 0; padding: 12px 16px; background-color: #f8fafc; border-radius: 8px;">` +
+        `<p style="margin: 0 0 8px 0; font-size: 13px; color: #0f172a; font-weight: 600;">What happens next:</p>` +
+        `<p style="margin: 0 0 4px 0; font-size: 13px; color: #475569;">1. Your freelancer will be notified that payment is secured</p>` +
+        `<p style="margin: 0 0 4px 0; font-size: 13px; color: #475569;">2. They'll start working and upload evidence of progress</p>` +
+        `<p style="margin: 0; font-size: 13px; color: #475569;">3. When work is submitted, you'll have 72 hours to review</p>` +
+        `</div>` +
+        `<p style="margin: 16px 0 0 0; font-size: 13px; color: #475569;">Funds are held safely and will only be released when you confirm delivery — or auto-release after 72 hours if you don't respond.</p>` +
+        buildCtaButton(link, "View Deal", "primary")
+      );
+    },
+  },
+
   // ── Template 7: work_submitted ──
   work_submitted: {
     accent: "#d97706",

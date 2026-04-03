@@ -146,6 +146,59 @@ export function GigPageClient({
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [submitDialogOpen, setSubmitDialogOpen] = useState(false);
 
+  // Auto-submit pending pitch after auth return
+  useEffect(() => {
+    if (!currentUserId || role !== "visitor" || deal.deal_type !== "public") return;
+    if (deal.status !== "pending_acceptance" || deal.freelancer_user_id) return;
+
+    // Check URL param
+    const url = new URL(window.location.href);
+    const shouldSubmit = url.searchParams.get("submit_pitch") === "true";
+    if (!shouldSubmit) return;
+
+    // Clean URL
+    url.searchParams.delete("submit_pitch");
+    window.history.replaceState(null, "", url.pathname + url.search);
+
+    // Read pitch from sessionStorage
+    let savedPitch: string | null = null;
+    try {
+      savedPitch = sessionStorage.getItem(`checkhire_pending_pitch_${deal.id}`);
+    } catch {
+      // sessionStorage unavailable
+    }
+
+    if (!savedPitch || savedPitch.trim().length < 20) return;
+
+    // Auto-submit the application
+    (async () => {
+      try {
+        const res = await fetch(`/api/deals/${deal.id}/interest`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            pitch_text: savedPitch!.trim(),
+            portfolio_urls: [],
+            screening_answers: [],
+            file_urls: [],
+          }),
+        });
+        const data = await res.json();
+        if (data.ok) {
+          try {
+            sessionStorage.removeItem(`checkhire_pending_pitch_${deal.id}`);
+          } catch {
+            // noop
+          }
+          toast("Application submitted!", "success");
+          router.refresh();
+        }
+      } catch {
+        // If auto-submit fails, user can still apply manually
+      }
+    })();
+  }, [currentUserId, deal.id, deal.deal_type, deal.status, deal.freelancer_user_id, role, router, toast]);
+
   const status = statusMap[deal.status] || statusMap.pending_acceptance;
   const dealUrl = typeof window !== "undefined" ? window.location.href : "";
   const isParticipant = role === "client" || role === "freelancer";
@@ -847,6 +900,7 @@ export function GigPageClient({
             {deal.deal_type === "public" ? (
               <SignInToApplyCard
                 dealSlug={deal.deal_link_slug}
+                dealId={deal.id}
                 escrowFunded={deal.escrow_status === "funded"}
                 amountCents={deal.total_amount}
                 dealTitle={deal.title}

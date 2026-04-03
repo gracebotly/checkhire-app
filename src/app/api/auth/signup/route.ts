@@ -81,6 +81,13 @@ export const POST = withApiHandler(async function POST(request: NextRequest) {
     );
   }
 
+  // Determine initial mode from context
+  // If the user signed up from an application flow, they're a freelancer
+  // If they signed up from the create wizard, they're a client
+  const intent = (body?.intent ?? "").toString().trim();
+  const initialMode =
+    intent === "freelancer" ? "freelancer" : intent === "client" ? "client" : null;
+
   const { error: profileError } = await supabaseService
     .from("user_profiles")
     .upsert(
@@ -89,6 +96,7 @@ export const POST = withApiHandler(async function POST(request: NextRequest) {
         email,
         full_name: name || null,
         display_name: name || null,
+        current_mode: initialMode,
       },
       { onConflict: "id" },
     );

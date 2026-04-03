@@ -21,6 +21,7 @@ export type UserProfile = {
   stripe_onboarding_complete: boolean;
   is_platform_admin: boolean;
   suspended: boolean;
+  current_mode: "client" | "freelancer" | null;
   referral_code: string | null;
   referral_slug: string | null;
   referred_by: string | null;

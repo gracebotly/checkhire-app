@@ -11,6 +11,7 @@ export const GET = withApiHandler(async (req: Request) => {
     category: url.searchParams.get("category") || undefined,
     min_amount: url.searchParams.get("min_amount") || undefined,
     max_amount: url.searchParams.get("max_amount") || undefined,
+    funded_only: url.searchParams.get("funded_only") || undefined,
     sort: url.searchParams.get("sort") || undefined,
     page: url.searchParams.get("page") || undefined,
   };
@@ -23,7 +24,7 @@ export const GET = withApiHandler(async (req: Request) => {
     );
   }
 
-  const { category, min_amount, max_amount, sort, page } = parsed.data;
+  const { category, min_amount, max_amount, funded_only, sort, page } = parsed.data;
 
   // Use service client to bypass RLS — public deals should be visible to anyone
   const supabase = createServiceClient();
@@ -42,6 +43,9 @@ export const GET = withApiHandler(async (req: Request) => {
   // Apply filters
   if (category) {
     query = query.eq("category", category);
+  }
+  if (funded_only) {
+    query = query.eq("escrow_status", "funded");
   }
   if (min_amount !== undefined) {
     query = query.gte("total_amount", min_amount);

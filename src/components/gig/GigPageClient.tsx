@@ -231,6 +231,15 @@ export function GigPageClient({
     }
   };
 
+  const handleLockSlug = async () => {
+    if (deal.slug_locked) return;
+    try {
+      await fetch(`/api/deals/${deal.id}/slug/lock`, { method: "POST" });
+    } catch {
+      // non-blocking — don't prevent the share action
+    }
+  };
+
   const handleSaveSlug = async () => {
     const cleaned = slugInput.toLowerCase().trim();
     if (cleaned === deal.deal_link_slug) {
@@ -456,10 +465,12 @@ export function GigPageClient({
         )}
       </div>
 
-      {/* 2. Escrow Status Bar */}
-      <div className="mb-6">
-        <EscrowStatusBar status={deal.escrow_status} amount={deal.total_amount} />
-      </div>
+      {/* 2. Escrow Status Bar — hidden for unfunded deals (the Fund Escrow prompt handles that state) */}
+      {deal.escrow_status !== "unfunded" && (
+        <div className="mb-6">
+          <EscrowStatusBar status={deal.escrow_status} amount={deal.total_amount} />
+        </div>
+      )}
 
       {/* Stripe Connect / Fund Escrow prompt for clients */}
       {role === "client" && deal.escrow_status === "unfunded" && deal.status !== "cancelled" && (
@@ -859,6 +870,7 @@ export function GigPageClient({
               description={deal.description}
               clientName={deal.client.display_name || "Client"}
               escrowFunded={deal.escrow_status === "funded"}
+              onShare={handleLockSlug}
             />
             <div className="rounded-lg bg-gray-50 px-3 py-2">
               {editingSlug && role === "client" ? (
@@ -905,7 +917,7 @@ export function GigPageClient({
                   <p className="font-mono text-xs text-slate-600">
                     checkhire.co/deal/{deal.deal_link_slug}
                   </p>
-                  {role === "client" && (
+                  {role === "client" && !deal.slug_locked && (
                     <button
                       type="button"
                       onClick={() => setEditingSlug(true)}

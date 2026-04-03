@@ -84,6 +84,7 @@ export type Deal = {
   deadline: string | null;
   deal_type: DealType;
   deal_link_slug: string;
+  slug_locked: boolean;
   category: DealCategory | null;
   other_category_description: string | null;
   payment_frequency: PaymentFrequency;
@@ -160,6 +161,7 @@ export type ProposalStatus = 'pending' | 'approved' | 'rejected';
 
 export type MilestoneChangeProposal = {
   id: string;
+  milestone_id: string | null;
   deal_id: string;
   proposed_by: string;
   proposal_type: ProposalType;

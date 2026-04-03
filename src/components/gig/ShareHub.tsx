@@ -32,6 +32,7 @@ type Props = {
   description: string;
   clientName: string;
   escrowFunded: boolean;
+  onShare?: () => void;
 };
 
 const formatAmount = (cents: number) =>
@@ -49,6 +50,7 @@ export function ShareHub({
   description,
   clientName,
   escrowFunded,
+  onShare,
 }: Props) {
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
@@ -74,6 +76,7 @@ export function ShareHub({
     setCopied(true);
     toast("Link copied!", "success");
     setTimeout(() => setCopied(false), 2000);
+    onShare?.();
   };
 
   const isMobile =
@@ -84,6 +87,7 @@ export function ShareHub({
     if (typeof navigator !== "undefined" && navigator.share) {
       try {
         await navigator.share({ title: dealTitle, url: dealUrl });
+        onShare?.();
       } catch {
         // user cancelled
       }
@@ -92,7 +96,10 @@ export function ShareHub({
     }
   };
 
-  const openUrl = (url: string) => window.open(url, "_blank", "noopener");
+  const openUrl = (url: string) => {
+    window.open(url, "_blank", "noopener");
+    onShare?.();
+  };
 
   const shareButtons = [
     {
@@ -143,6 +150,7 @@ export function ShareHub({
       onClick: async () => {
         await navigator.clipboard.writeText(getDiscordMessage(shareData));
         toast("Discord message copied!", "success");
+        onShare?.();
       },
     },
     {

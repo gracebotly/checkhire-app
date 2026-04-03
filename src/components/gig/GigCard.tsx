@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import { motion } from "motion/react";
-import { Calendar } from "lucide-react";
+import { Calendar, CircleDashed, Lock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { TrustBadge } from "@/components/gig/TrustBadge";
 import { categoryLabels } from "@/lib/categories";
-import type { DealWithParticipants, DealStatus } from "@/types/database";
+import type { DealWithParticipants, DealStatus, EscrowStatus } from "@/types/database";
 
 type Props = {
   deal: DealWithParticipants;
@@ -30,6 +30,28 @@ const statusMap: Record<
   refunded: { label: "Refunded", variant: "outline" },
 };
 
+function getEscrowBadge(
+  escrowStatus: EscrowStatus,
+  dealStatus: DealStatus
+): {
+  label: string;
+  icon: "lock" | "dashed" | null;
+  variant: "success" | "outline";
+} | null {
+  if (["completed", "cancelled", "refunded"].includes(dealStatus)) return null;
+  if (escrowStatus === "fully_released") return null;
+
+  if (escrowStatus === "funded" || escrowStatus === "partially_released") {
+    return { label: "Payment Secured", icon: "lock", variant: "success" };
+  }
+  if (escrowStatus === "frozen") {
+    return { label: "Funds Frozen", icon: "lock", variant: "outline" };
+  }
+  if (escrowStatus === "unfunded") {
+    return { label: "Not Funded", icon: "dashed", variant: "outline" };
+  }
+  return null;
+}
 
 function formatRelativeTime(dateStr: string): string {
   const now = Date.now();
@@ -47,6 +69,7 @@ function formatRelativeTime(dateStr: string): string {
 
 export function GigCard({ deal, index, currentUserId }: Props) {
   const status = statusMap[deal.status] || statusMap.pending_acceptance;
+  const escrowBadge = getEscrowBadge(deal.escrow_status, deal.status);
   const isClient = deal.client_user_id === currentUserId;
   const otherParty = isClient ? deal.freelancer : deal.client;
   const otherPartyLabel = isClient ? "Freelancer" : "Client";
@@ -59,12 +82,25 @@ export function GigCard({ deal, index, currentUserId }: Props) {
     >
       <Link href={`/deal/${deal.deal_link_slug}`}>
         <div className="cursor-pointer rounded-xl border border-gray-200 bg-white p-5 transition-colors duration-200 hover:border-gray-300 hover:bg-gray-50/50">
-          {/* Row 1: Title + Status */}
+          {/* Row 1: Title + Status badges */}
           <div className="flex items-start justify-between gap-3">
             <h3 className="text-base font-semibold text-slate-900">
               {deal.title}
             </h3>
-            <Badge variant={status.variant}>{status.label}</Badge>
+            <div className="flex shrink-0 items-center gap-1.5">
+              {escrowBadge && (
+                <Badge variant={escrowBadge.variant}>
+                  {escrowBadge.icon === "lock" && (
+                    <Lock className="mr-1 h-3 w-3" />
+                  )}
+                  {escrowBadge.icon === "dashed" && (
+                    <CircleDashed className="mr-1 h-3 w-3" />
+                  )}
+                  {escrowBadge.label}
+                </Badge>
+              )}
+              <Badge variant={status.variant}>{status.label}</Badge>
+            </div>
           </div>
 
           {/* Row 2: Amount + Category */}

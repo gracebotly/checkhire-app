@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "motion/react";
-import { Calendar, Users } from "lucide-react";
+import { Calendar, Lock, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { TrustBadge } from "@/components/gig/TrustBadge";
@@ -28,6 +28,7 @@ type Props = {
     deadline: string | null;
     deal_link_slug: string;
     category: string | null;
+    escrow_status: string;
     client: {
       display_name: string | null;
       avatar_url: string | null;
@@ -50,12 +51,20 @@ export function PublicGigCard({ deal, index }: Props) {
         href={`/deal/${deal.deal_link_slug}`}
         className="block cursor-pointer rounded-xl border border-gray-200 bg-white p-5 transition-colors duration-200 hover:border-gray-300 hover:bg-gray-50/50"
       >
-        {/* Category */}
-        {deal.category && (
-          <Badge variant="outline" className="text-xs">
-            {categoryLabels[deal.category] || deal.category}
-          </Badge>
-        )}
+        {/* Badges row: category + escrow */}
+        <div className="flex flex-wrap items-center gap-1.5">
+          {deal.escrow_status === "funded" && (
+            <Badge variant="success" className="text-xs">
+              <Lock className="mr-1 h-3 w-3" />
+              Payment Secured
+            </Badge>
+          )}
+          {deal.category && (
+            <Badge variant="outline" className="text-xs">
+              {categoryLabels[deal.category] || deal.category}
+            </Badge>
+          )}
+        </div>
 
         {/* Title */}
         <h3 className="mt-2 text-base font-semibold text-slate-900 line-clamp-2">

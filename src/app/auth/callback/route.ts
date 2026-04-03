@@ -134,6 +134,7 @@ export async function GET(request: Request) {
           email: user.email || null,
           profile_slug: attempt === 0 ? profileSlug : `${profileSlug}-${attempt}`,
           referral_code: referralCode,
+          current_mode: inferModeFromRedirect(searchParams.get("redirect") || searchParams.get("next") || ""),
         },
         { onConflict: "id" }
       );
@@ -213,4 +214,17 @@ async function attributeReferral(
   } catch (err) {
     console.error("[auth/callback] Referral attribution error:", err);
   }
+}
+
+// ── Helper: Infer UI mode from redirect URL ──
+function inferModeFromRedirect(redirect: string): "client" | "freelancer" | null {
+  if (!redirect) return null;
+  // Coming from the create wizard → client mode
+  if (redirect.includes("from_wizard") || redirect.includes("/deal/new")) return "client";
+  // Coming from a deal page (applying/accepting) → freelancer mode
+  if (redirect.includes("/deal/") && redirect.includes("submit_pitch")) return "freelancer";
+  if (redirect.includes("/deal/") && redirect.includes("accept=true")) return "freelancer";
+  // Coming from /gigs (browsing open gigs) → freelancer mode
+  if (redirect.includes("/gigs")) return "freelancer";
+  return null;
 }

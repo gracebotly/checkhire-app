@@ -58,7 +58,9 @@ export function InterestForm({
   screeningQuestions = [],
 }: Props) {
   const [pitch, setPitch] = useState("");
-  const [portfolioUrls, setPortfolioUrls] = useState<string[]>([""]);
+  const [portfolioUrls, setPortfolioUrls] = useState<string[]>([]);
+  const [showPortfolio, setShowPortfolio] = useState(false);
+  const [showFiles, setShowFiles] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<UploadedApplicationFile[]>([]);
   const [uploading, setUploading] = useState(false);
   const [screeningAnswers, setScreeningAnswers] = useState<Record<string, string>>({});
@@ -147,10 +149,6 @@ export function InterestForm({
 
   const updatePortfolioUrl = (index: number, value: string) => {
     setPortfolioUrls((prev) => prev.map((url, i) => (i === index ? value : url)));
-  };
-
-  const removePortfolioUrl = (index: number) => {
-    setPortfolioUrls((prev) => prev.filter((_, i) => i !== index));
   };
 
   const addPortfolioUrl = () => {
@@ -328,87 +326,122 @@ export function InterestForm({
       </div>
 
       <div className="mt-4">
-        <div className="mb-1.5 flex items-center justify-between">
-          <label className="block text-sm font-medium text-slate-900">Portfolio links</label>
-          {portfolioUrls.length < 3 && (
-            <Button type="button" variant="outline" size="sm" onClick={addPortfolioUrl}>
-              <Plus className="mr-1 h-3.5 w-3.5" /> Add link
-            </Button>
-          )}
-        </div>
-        <div className="space-y-2">
-          {portfolioUrls.map((url, index) => (
-            <div key={index} className="flex items-center gap-2">
-              <Input
-                value={url}
-                onChange={(e) => updatePortfolioUrl(index, e.target.value)}
-                placeholder="https://example.com/your-work"
-                maxLength={500}
-              />
-              {portfolioUrls.length > 1 && (
-                <button
-                  type="button"
-                  onClick={() => removePortfolioUrl(index)}
-                  className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-600 cursor-pointer transition-colors duration-200 hover:bg-gray-100 hover:text-slate-900"
-                >
-                  <X className="h-4 w-4" />
-                </button>
+        {!showPortfolio ? (
+          <button
+            type="button"
+            onClick={() => {
+              setShowPortfolio(true);
+              if (portfolioUrls.length === 0) setPortfolioUrls([""]);
+            }}
+            className="flex cursor-pointer items-center gap-1.5 text-sm text-brand transition-colors duration-200 hover:text-brand-hover"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Add portfolio link
+            <span className="text-xs text-slate-600">(optional)</span>
+          </button>
+        ) : (
+          <>
+            <div className="mb-1.5 flex items-center justify-between">
+              <label className="block text-sm font-medium text-slate-900">Portfolio links <span className="font-normal text-slate-600">(optional)</span></label>
+              {portfolioUrls.length < 3 && (
+                <Button type="button" variant="outline" size="sm" onClick={addPortfolioUrl}>
+                  <Plus className="mr-1 h-3.5 w-3.5" /> Add link
+                </Button>
               )}
             </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="mt-4">
-        <label className="mb-1.5 block text-sm font-medium text-slate-900">Resume or work samples</label>
-        <div className="rounded-lg border border-dashed border-gray-200 bg-white p-3">
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => fileRef.current?.click()}
-              disabled={uploading || uploadedFiles.length >= 3}
-            >
-              {uploading ? (
-                <Loader2 className="mr-1 h-4 w-4 animate-spin" />
-              ) : (
-                <Paperclip className="mr-1 h-4 w-4" />
-              )}
-              {uploading ? "Uploading..." : "Upload file"}
-            </Button>
-            <span className="text-xs text-slate-600">Up to 3 files, 20MB each</span>
-          </div>
-          <input
-            ref={fileRef}
-            type="file"
-            onChange={handleFileUpload}
-            accept=".png,.jpg,.jpeg,.gif,.webp,.pdf,.doc,.docx,.txt,.zip"
-            className="hidden"
-          />
-
-          {uploadedFiles.length > 0 && (
-            <div className="mt-3 space-y-1.5">
-              {uploadedFiles.map((file, index) => (
-                <div
-                  key={`${file.file_url}-${index}`}
-                  className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-2.5 py-1.5"
-                >
-                  <span className="truncate text-sm text-slate-900">{file.file_name}</span>
+            <div className="space-y-2">
+              {portfolioUrls.map((url, index) => (
+                <div key={index} className="flex items-center gap-2">
+                  <Input
+                    value={url}
+                    onChange={(e) => updatePortfolioUrl(index, e.target.value)}
+                    placeholder="https://example.com/your-work"
+                    maxLength={500}
+                  />
                   <button
                     type="button"
-                    onClick={() =>
-                      setUploadedFiles((prev) => prev.filter((_, i) => i !== index))
-                    }
-                    className="ml-2 flex h-6 w-6 items-center justify-center rounded text-slate-600 cursor-pointer transition-colors duration-200 hover:bg-gray-100 hover:text-slate-900"
+                    onClick={() => {
+                      const updated = portfolioUrls.filter((_, i) => i !== index);
+                      setPortfolioUrls(updated);
+                      if (updated.length === 0) setShowPortfolio(false);
+                    }}
+                    className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-600 cursor-pointer transition-colors duration-200 hover:bg-gray-100 hover:text-slate-900"
                   >
-                    <X className="h-3.5 w-3.5" />
+                    <X className="h-4 w-4" />
                   </button>
                 </div>
               ))}
             </div>
-          )}
-        </div>
+          </>
+        )}
+      </div>
+
+      <div className="mt-4">
+        {!showFiles ? (
+          <button
+            type="button"
+            onClick={() => setShowFiles(true)}
+            className="flex cursor-pointer items-center gap-1.5 text-sm text-brand transition-colors duration-200 hover:text-brand-hover"
+          >
+            <Paperclip className="h-3.5 w-3.5" />
+            Attach files
+            <span className="text-xs text-slate-600">(optional)</span>
+          </button>
+        ) : (
+          <>
+            <label className="mb-1.5 block text-sm font-medium text-slate-900">
+              Files <span className="font-normal text-slate-600">(optional)</span>
+            </label>
+            <div className="rounded-lg border border-dashed border-gray-200 bg-white p-3">
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fileRef.current?.click()}
+                  disabled={uploading || uploadedFiles.length >= 3}
+                >
+                  {uploading ? (
+                    <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Paperclip className="mr-1 h-4 w-4" />
+                  )}
+                  {uploading ? "Uploading..." : "Upload file"}
+                </Button>
+                <span className="text-xs text-slate-600">Up to 3 files, 20MB each</span>
+              </div>
+              <input
+                ref={fileRef}
+                type="file"
+                onChange={handleFileUpload}
+                accept=".png,.jpg,.jpeg,.gif,.webp,.pdf,.doc,.docx,.txt,.zip"
+                className="hidden"
+              />
+
+              {uploadedFiles.length > 0 && (
+                <div className="mt-3 space-y-1.5">
+                  {uploadedFiles.map((file, index) => (
+                    <div
+                      key={`${file.file_url}-${index}`}
+                      className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-2.5 py-1.5"
+                    >
+                      <span className="truncate text-sm text-slate-900">{file.file_name}</span>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setUploadedFiles((prev) => prev.filter((_, i) => i !== index))
+                        }
+                        className="ml-2 flex h-6 w-6 items-center justify-center rounded text-slate-600 cursor-pointer transition-colors duration-200 hover:bg-gray-100 hover:text-slate-900"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </>
+        )}
       </div>
 
       <div className="mt-4">

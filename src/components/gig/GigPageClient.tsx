@@ -17,6 +17,7 @@ import {
   ShieldAlert,
   PenLine,
   Ban,
+  CreditCard,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -146,9 +147,68 @@ export function GigPageClient({
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [submitDialogOpen, setSubmitDialogOpen] = useState(false);
 
+  // Auto-submit pending pitch after auth return
+  useEffect(() => {
+    if (!currentUserId || role !== "visitor" || deal.deal_type !== "public") return;
+    if (deal.status !== "pending_acceptance" || deal.freelancer_user_id) return;
+
+    // Check URL param
+    const url = new URL(window.location.href);
+    const shouldSubmit = url.searchParams.get("submit_pitch") === "true";
+    if (!shouldSubmit) return;
+
+    // Clean URL
+    url.searchParams.delete("submit_pitch");
+    window.history.replaceState(null, "", url.pathname + url.search);
+
+    // Read pitch from sessionStorage
+    let savedPitch: string | null = null;
+    try {
+      savedPitch = sessionStorage.getItem(`checkhire_pending_pitch_${deal.id}`);
+    } catch {
+      // sessionStorage unavailable
+    }
+
+    if (!savedPitch || savedPitch.trim().length < 20) return;
+
+    // Auto-submit the application
+    (async () => {
+      try {
+        const res = await fetch(`/api/deals/${deal.id}/interest`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            pitch_text: savedPitch!.trim(),
+            portfolio_urls: [],
+            screening_answers: [],
+            file_urls: [],
+          }),
+        });
+        const data = await res.json();
+        if (data.ok) {
+          try {
+            sessionStorage.removeItem(`checkhire_pending_pitch_${deal.id}`);
+          } catch {
+            // noop
+          }
+          toast("Application submitted!", "success");
+          router.refresh();
+        }
+      } catch {
+        // If auto-submit fails, user can still apply manually
+      }
+    })();
+  }, [currentUserId, deal.id, deal.deal_type, deal.status, deal.freelancer_user_id, role, router, toast]);
+
   const status = statusMap[deal.status] || statusMap.pending_acceptance;
   const dealUrl = typeof window !== "undefined" ? window.location.href : "";
   const isParticipant = role === "client" || role === "freelancer";
+  const freelancerNeedsStripe =
+    role === "freelancer" &&
+    !guestToken &&
+    deal.freelancer?.stripe_onboarding_complete === false &&
+    deal.escrow_status !== "unfunded" &&
+    !["completed", "cancelled", "refunded"].includes(deal.status);
   const isGuestFreelancer = !!guestToken && role === "freelancer";
   const hasFreelancer = !!deal.freelancer_user_id || !!deal.guest_freelancer_email;
 
@@ -812,17 +872,44 @@ export function GigPageClient({
         </div>
       )}
 
-      {/* Stripe Connect Prompt for freelancers */}
-      {role === "freelancer" &&
-        deal.freelancer?.stripe_onboarding_complete === false &&
-        deal.escrow_status !== "unfunded" && (
-          <div className="mb-6">
-            <StripeConnectPrompt
-              onConnect={handleStripeConnect}
-              loading={actionLoading}
-            />
+      {/* Stripe Connect Gate for freelancers — BLOCKS work until connected */}
+      {freelancerNeedsStripe && (
+        <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-6">
+          <div className="text-center space-y-4">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-100">
+              <CreditCard className="h-7 w-7 text-amber-700" />
+            </div>
+            <div>
+              <h3 className="font-display text-lg font-semibold text-slate-900">
+                Connect your bank to start working
+              </h3>
+              <p className="mt-1 text-sm text-slate-600">
+                Before you can start this gig, connect your bank account through Stripe. This verifies your identity and ensures you can receive payment when the work is done.
+              </p>
+            </div>
+            <div className="rounded-lg bg-white border border-amber-200 p-3">
+              <p className="text-xs text-slate-600">
+                This takes about 2 minutes. You&apos;ll need your bank account details and a valid ID. Stripe supports 46+ countries.
+              </p>
+            </div>
+            <Button
+              size="lg"
+              onClick={handleStripeConnect}
+              disabled={actionLoading}
+              className="w-full"
+            >
+              <CreditCard className="mr-2 h-4 w-4" />
+              {actionLoading ? "Redirecting to Stripe..." : "Connect with Stripe"}
+            </Button>
+            {error && (
+              <p className="text-sm text-red-600">{error}</p>
+            )}
+            <p className="text-xs text-slate-600">
+              Powered by Stripe. CheckHire never sees your bank details.
+            </p>
           </div>
-        )}
+        </div>
+      )}
 
       {/* Instant Payout for completed deals */}
       {role === "freelancer" && deal.status === "completed" && (
@@ -847,6 +934,7 @@ export function GigPageClient({
             {deal.deal_type === "public" ? (
               <SignInToApplyCard
                 dealSlug={deal.deal_link_slug}
+                dealId={deal.id}
                 escrowFunded={deal.escrow_status === "funded"}
                 amountCents={deal.total_amount}
                 dealTitle={deal.title}
@@ -954,8 +1042,8 @@ export function GigPageClient({
           </div>
         )}
 
-      {/* 5. Deal Timeline */}
-      {(isParticipant || guestToken) && (
+      {/* 5. Deal Timeline — hidden for freelancers who haven't connected Stripe */}
+      {(isParticipant || guestToken) && !freelancerNeedsStripe && (
         <div className="mb-6">
           <EvidenceTimeline
             entries={activityEntries}

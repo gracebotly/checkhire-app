@@ -616,7 +616,7 @@ const NOTIFICATION_CONFIG: Record<string, NotificationConfig> = {
   interest_received: {
     accent: "#0d9488",
     subject: (data) =>
-      `${escapeHtml(data.otherPartyName || "Someone")} is interested in ${escapeHtml(data.dealTitle)}`,
+      `${escapeHtml(data.otherPartyName || "Someone")} applied to ${escapeHtml(data.dealTitle)}`,
     body: (data) => {
       const title = escapeHtml(data.dealTitle);
       const name = escapeHtml(data.otherPartyName || "Someone");
@@ -624,10 +624,14 @@ const NOTIFICATION_CONFIG: Record<string, NotificationConfig> = {
       const initialsHtml = data.initials
         ? `<div style="display: inline-block; width: 40px; height: 40px; background-color: #f0fdfa; color: #0d9488; font-weight: 600; text-align: center; line-height: 40px; border-radius: 50%; font-size: 16px; margin-bottom: 8px;">${escapeHtml(data.initials)}</div><br>`
         : "";
+      const pitchHtml = data.notes
+        ? `<div style="margin: 16px 0; padding: 12px 16px; background-color: #f8fafc; border-left: 3px solid #0d9488; border-radius: 4px;"><p style="margin: 0 0 4px 0; font-size: 12px; font-weight: 600; color: #0f172a;">Their message:</p><p style="margin: 0; font-size: 14px; color: #475569; white-space: pre-wrap;">${escapeHtml(data.notes).slice(0, 500)}</p></div>`
+        : "";
       return (
         initialsHtml +
-        `<p style="margin: 0 0 12px 0; font-size: 14px; color: #475569;"><strong>${name}</strong> wants to work on <strong>${title}</strong>. Review their pitch and decide if they're a good fit.</p>` +
-        buildCtaButton(link, "Review Pitches", "primary")
+        `<p style="margin: 0 0 4px 0; font-size: 14px; color: #475569;"><strong>${name}</strong> applied to <strong>${title}</strong>.</p>` +
+        pitchHtml +
+        buildCtaButton(link, "View Application", "primary")
       );
     },
   },

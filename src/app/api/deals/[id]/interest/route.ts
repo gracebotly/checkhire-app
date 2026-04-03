@@ -127,6 +127,7 @@ export const POST = withApiHandler(
           dealTitle: deal.title,
           dealSlug: deal.deal_link_slug,
           otherPartyName: profile?.display_name || "A freelancer",
+          notes: pitch_text,
         },
       });
     }

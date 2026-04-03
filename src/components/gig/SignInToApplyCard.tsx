@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { motion } from "motion/react";
 import { Lock, ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +9,7 @@ import { createClient } from "@/lib/supabase/client";
 
 type Props = {
   dealSlug: string;
+  dealId: string;
   escrowFunded: boolean;
   amountCents: number;
   dealTitle: string;
@@ -40,12 +40,31 @@ function GoogleIcon() {
 
 export function SignInToApplyCard({
   dealSlug,
+  dealId,
   escrowFunded,
   amountCents,
-  dealTitle,
 }: Props) {
+  const [pitch, setPitch] = useState("");
+  const [showAuth, setShowAuth] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const handleSubmit = () => {
+    if (pitch.trim().length < 20) {
+      setError("Your message must be at least 20 characters");
+      return;
+    }
+    // Save pitch to sessionStorage so it survives the auth redirect
+    try {
+      sessionStorage.setItem(
+        `checkhire_pending_pitch_${dealId}`,
+        pitch.trim()
+      );
+    } catch {
+      // sessionStorage unavailable — pitch will be lost but auth still works
+    }
+    setShowAuth(true);
+  };
 
   const handleGoogleAuth = async () => {
     setLoading(true);
@@ -55,7 +74,7 @@ export function SignInToApplyCard({
       const { error: authError } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/auth/callback?intent=signin&redirect=/deal/${dealSlug}`,
+          redirectTo: `${window.location.origin}/auth/callback?intent=signup&redirect=/deal/${dealSlug}?submit_pitch=true`,
         },
       });
       if (authError) setError(authError.message);
@@ -65,7 +84,7 @@ export function SignInToApplyCard({
     }
   };
 
-  const loginUrl = `/login?next=/deal/${dealSlug}`;
+  const loginUrl = `/login?mode=signup&next=/deal/${dealSlug}?submit_pitch=true`;
 
   return (
     <motion.div
@@ -74,14 +93,15 @@ export function SignInToApplyCard({
       transition={{ duration: 0.25, ease: "easeOut" }}
       className="rounded-xl border border-gray-200 bg-white p-5"
     >
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex-1 min-w-0">
+      {!showAuth ? (
+        <>
           <h3 className="text-sm font-semibold text-slate-900">
             Want this gig?
           </h3>
           <p className="mt-0.5 text-xs text-slate-600">
-            Sign up to apply.
+            Tell the client why you&apos;re a good fit.
           </p>
+
           {escrowFunded && (
             <div className="mt-2">
               <Badge variant="success">
@@ -90,35 +110,91 @@ export function SignInToApplyCard({
               </Badge>
             </div>
           )}
-        </div>
-      </div>
 
-      <div className="mt-4 space-y-2">
-        <button
-          type="button"
-          onClick={handleGoogleAuth}
-          disabled={loading}
-          className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-900 cursor-pointer transition-colors duration-200 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <GoogleIcon />
-          {loading ? "Redirecting..." : "Continue with Google"}
-        </button>
+          <textarea
+            value={pitch}
+            onChange={(e) => {
+              setPitch(e.target.value);
+              setError("");
+            }}
+            placeholder="Introduce yourself — what's your experience with this kind of work?"
+            maxLength={1000}
+            rows={4}
+            className="mt-3 flex w-full resize-none rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-600 transition-colors duration-200 focus:border-brand focus:outline-none focus:ring-2 focus:ring-ring/40"
+          />
+          <div className="mt-1 flex items-center justify-between">
+            <span
+              className={`text-xs ${
+                pitch.length > 1000 ? "text-red-600" : "text-slate-600"
+              }`}
+            >
+              {pitch.length}/1000
+            </span>
+            <span className="text-xs text-slate-600">Min 20 characters</span>
+          </div>
 
-        <Link href={loginUrl}>
-          <Button variant="default" className="w-full">
-            Sign up with email
+          {error && (
+            <p className="mt-2 text-xs text-red-600">{error}</p>
+          )}
+
+          <Button
+            className="mt-3 w-full"
+            onClick={handleSubmit}
+            disabled={pitch.trim().length < 20}
+          >
+            Apply
             <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
           </Button>
-        </Link>
-      </div>
+        </>
+      ) : (
+        <div className="space-y-4">
+          <div>
+            <h3 className="text-sm font-semibold text-slate-900">
+              Create an account to submit
+            </h3>
+            <p className="mt-0.5 text-xs text-slate-600">
+              Your application is saved. Sign up to send it.
+            </p>
+          </div>
 
-      {error && (
-        <p className="mt-3 text-sm text-red-600 text-center">{error}</p>
+          <div className="rounded-lg bg-gray-50 p-3">
+            <p className="text-xs text-slate-600 line-clamp-3">
+              {pitch}
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <button
+              type="button"
+              onClick={handleGoogleAuth}
+              disabled={loading}
+              className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-900 cursor-pointer transition-colors duration-200 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <GoogleIcon />
+              {loading ? "Redirecting..." : "Continue with Google"}
+            </button>
+
+            <a href={loginUrl}>
+              <Button variant="default" className="w-full">
+                Sign up with email
+                <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+              </Button>
+            </a>
+          </div>
+
+          {error && (
+            <p className="text-sm text-red-600 text-center">{error}</p>
+          )}
+
+          <button
+            type="button"
+            onClick={() => setShowAuth(false)}
+            className="w-full cursor-pointer text-center text-xs text-slate-600 transition-colors duration-200 hover:text-slate-900"
+          >
+            Back to edit
+          </button>
+        </div>
       )}
-
-      <p className="mt-3 text-xs text-slate-600 text-center">
-        Free to join. No credit card required.
-      </p>
     </motion.div>
   );
 }

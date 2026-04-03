@@ -84,6 +84,7 @@ export type Deal = {
   deadline: string | null;
   deal_type: DealType;
   deal_link_slug: string;
+  slug_locked: boolean;
   category: DealCategory | null;
   other_category_description: string | null;
   payment_frequency: PaymentFrequency;

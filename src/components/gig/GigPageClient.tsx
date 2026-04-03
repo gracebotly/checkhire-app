@@ -231,6 +231,15 @@ export function GigPageClient({
     }
   };
 
+  const handleLockSlug = async () => {
+    if (deal.slug_locked) return;
+    try {
+      await fetch(`/api/deals/${deal.id}/slug/lock`, { method: "POST" });
+    } catch {
+      // non-blocking — don't prevent the share action
+    }
+  };
+
   const handleSaveSlug = async () => {
     const cleaned = slugInput.toLowerCase().trim();
     if (cleaned === deal.deal_link_slug) {
@@ -861,6 +870,7 @@ export function GigPageClient({
               description={deal.description}
               clientName={deal.client.display_name || "Client"}
               escrowFunded={deal.escrow_status === "funded"}
+              onShare={handleLockSlug}
             />
             <div className="rounded-lg bg-gray-50 px-3 py-2">
               {editingSlug && role === "client" ? (
@@ -907,7 +917,7 @@ export function GigPageClient({
                   <p className="font-mono text-xs text-slate-600">
                     checkhire.co/deal/{deal.deal_link_slug}
                   </p>
-                  {role === "client" && (
+                  {role === "client" && !deal.slug_locked && (
                     <button
                       type="button"
                       onClick={() => setEditingSlug(true)}

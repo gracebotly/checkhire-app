@@ -35,7 +35,7 @@ export const PATCH = withApiHandler(
     // Verify ownership
     const { data: deal } = await supabase
       .from("deals")
-      .select("id, client_user_id")
+      .select("id, client_user_id, slug_locked")
       .eq("id", id)
       .maybeSingle();
 
@@ -50,6 +50,13 @@ export const PATCH = withApiHandler(
       return NextResponse.json(
         { ok: false, code: "FORBIDDEN", message: "Only the client can edit the link" },
         { status: 403 }
+      );
+    }
+
+    if (deal.slug_locked) {
+      return NextResponse.json(
+        { ok: false, code: "SLUG_LOCKED", message: "This link has been locked and can no longer be changed." },
+        { status: 400 }
       );
     }
 
@@ -72,10 +79,10 @@ export const PATCH = withApiHandler(
       );
     }
 
-    // Update slug
+    // Update slug and lock it — this is the one allowed customization
     const { error: updateError } = await supabase
       .from("deals")
-      .update({ deal_link_slug: parsed.data.slug })
+      .update({ deal_link_slug: parsed.data.slug, slug_locked: true })
       .eq("id", id);
 
     if (updateError) {

@@ -34,11 +34,12 @@ export type ScamSubmission = {
   id: string;
   url: string;
   platform: string;
-  submitted_by_email: string | null;
+  submitted_by_email: string;
   submitted_by_name: string | null;
   description: string | null;
   source: string;
   status: "pending" | "investigating" | "safe" | "suspicious" | "confirmed_scam";
+  scam_type: string | null;
   reviewer_user_id: string | null;
   verdict_notes: string | null;
   verdict_summary: string | null;

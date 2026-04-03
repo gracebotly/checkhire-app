@@ -1,5 +1,37 @@
 import { z } from "zod";
 
+const platformOptions = [
+  "reddit",
+  "facebook",
+  "indeed",
+  "linkedin",
+  "discord",
+  "whatsapp",
+  "craigslist",
+  "twitter",
+  "other",
+] as const;
+
+const scamTypeOptions = [
+  "company_impersonation",
+  "upfront_payment",
+  "too_good_to_be_true",
+  "personal_info_harvesting",
+  "crypto_gift_card",
+  "not_sure",
+  "other",
+] as const;
+
+const sourceOptions = [
+  "website",
+  "reddit_dm",
+  "reddit_comment",
+  "discord",
+  "facebook",
+  "email",
+  "other",
+] as const;
+
 export const submitScamCheckSchema = z.object({
   url: z
     .string()
@@ -11,7 +43,6 @@ export const submitScamCheckSchema = z.object({
           new URL(val);
           return true;
         } catch {
-          // Allow URLs without protocol — we'll add https://
           try {
             new URL(`https://${val}`);
             return true;
@@ -24,10 +55,13 @@ export const submitScamCheckSchema = z.object({
     ),
   email: z
     .string()
+    .min(1, "Email is required")
     .email("Please enter a valid email")
-    .max(255)
-    .optional()
-    .or(z.literal("")),
+    .max(255),
+  platform: z.enum(platformOptions, {
+    errorMap: () => ({ message: "Please select where you found this posting" }),
+  }),
+  scam_type: z.enum(scamTypeOptions).default("not_sure"),
   description: z
     .string()
     .max(1000, "Description too long")
@@ -37,11 +71,12 @@ export const submitScamCheckSchema = z.object({
 
 export const adminCreateScamCheckSchema = z.object({
   url: z.string().min(1, "Link is required").max(2000),
-  platform: z.enum(["reddit", "facebook", "discord", "twitter", "craigslist", "linkedin", "other"]).default("other"),
-  submitted_by_email: z.string().max(255).optional().or(z.literal("")),
+  platform: z.enum(platformOptions).default("other"),
+  submitted_by_email: z.string().min(1, "Email is required").email().max(255),
   submitted_by_name: z.string().max(255).optional().or(z.literal("")),
   description: z.string().max(2000).optional().or(z.literal("")),
-  source: z.enum(["website", "reddit_dm", "reddit_comment", "discord", "facebook", "email", "other"]).default("reddit_dm"),
+  scam_type: z.enum(scamTypeOptions).default("not_sure"),
+  source: z.enum(sourceOptions).default("reddit_dm"),
 });
 
 export const adminUpdateScamCheckSchema = z.object({

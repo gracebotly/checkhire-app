@@ -5,17 +5,6 @@ import { submitScamCheckSchema } from "@/lib/validation/scam-check";
 import { notifyAdmin } from "@/lib/slack/notify";
 import { scamCheckSubmitted } from "@/lib/slack/templates";
 
-function detectPlatform(url: string): string {
-  const lower = url.toLowerCase();
-  if (lower.includes("reddit.com") || lower.includes("redd.it")) return "reddit";
-  if (lower.includes("facebook.com") || lower.includes("fb.com") || lower.includes("fb.me")) return "facebook";
-  if (lower.includes("discord.com") || lower.includes("discord.gg")) return "discord";
-  if (lower.includes("twitter.com") || lower.includes("x.com")) return "twitter";
-  if (lower.includes("craigslist.org")) return "craigslist";
-  if (lower.includes("linkedin.com")) return "linkedin";
-  return "other";
-}
-
 function normalizeUrl(url: string): string {
   if (url.startsWith("http://") || url.startsWith("https://")) return url;
   return `https://${url}`;
@@ -32,9 +21,8 @@ export const POST = withApiHandler(async (req: Request) => {
     );
   }
 
-  const { url, email, description } = parsed.data;
+  const { url, email, platform, scam_type, description } = parsed.data;
   const normalizedUrl = normalizeUrl(url);
-  const platform = detectPlatform(normalizedUrl);
 
   const serviceClient = createServiceClient();
 
@@ -43,7 +31,8 @@ export const POST = withApiHandler(async (req: Request) => {
     .insert({
       url: normalizedUrl,
       platform,
-      submitted_by_email: email || null,
+      submitted_by_email: email,
+      scam_type: scam_type || "not_sure",
       description: description || null,
       source: "website",
       status: "pending",
@@ -64,7 +53,8 @@ export const POST = withApiHandler(async (req: Request) => {
     id: data.id,
     url: normalizedUrl,
     platform,
-    email: email || undefined,
+    email,
+    scam_type: scam_type || "not_sure",
     description: description || undefined,
     source: "website",
   }));

@@ -256,16 +256,38 @@ export function scamCheckSubmitted(submission: {
   url: string;
   platform: string;
   email?: string;
+  scam_type?: string;
   description?: string;
   source: string;
 }) {
+  const scamTypeLabels: Record<string, string> = {
+    company_impersonation: "Company impersonation",
+    upfront_payment: "Upfront payment required",
+    too_good_to_be_true: "Too good to be true",
+    personal_info_harvesting: "Personal info harvesting",
+    crypto_gift_card: "Crypto / gift card payment",
+    not_sure: "Not sure — something feels off",
+    other: "Other",
+  };
+
   const fields: Array<{ type: string; text: string }> = [
-    { type: "mrkdwn", text: `*Link:*\n${submission.url}` },
-    { type: "mrkdwn", text: `*Platform:*\n${submission.platform}` },
-    { type: "mrkdwn", text: `*Source:*\n${submission.source}` },
+    { type: "mrkdwn", text: `*Link:*
+${submission.url}` },
+    { type: "mrkdwn", text: `*Platform:*
+${submission.platform}` },
+    { type: "mrkdwn", text: `*Source:*
+${submission.source}` },
   ];
   if (submission.email) {
-    fields.push({ type: "mrkdwn", text: `*Email:*\n${submission.email}` });
+    fields.push({ type: "mrkdwn", text: `*Email:*
+${submission.email}` });
+  }
+  if (submission.scam_type && submission.scam_type !== "not_sure") {
+    fields.push({
+      type: "mrkdwn",
+      text: `*Scam Type:*
+${scamTypeLabels[submission.scam_type] || submission.scam_type}`,
+    });
   }
 
   const blocks: SlackBlock[] = [
@@ -282,7 +304,8 @@ export function scamCheckSubmitted(submission: {
   if (submission.description) {
     blocks.push({
       type: "section",
-      text: { type: "mrkdwn", text: `*Description:*\n${submission.description}` },
+      text: { type: "mrkdwn", text: `*Description:*
+${submission.description}` },
     });
   }
 

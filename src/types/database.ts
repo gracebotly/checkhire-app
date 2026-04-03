@@ -28,6 +28,26 @@ export type UserProfile = {
   updated_at: string;
 };
 
+
+
+export type ScamSubmission = {
+  id: string;
+  url: string;
+  platform: string;
+  submitted_by_email: string | null;
+  submitted_by_name: string | null;
+  description: string | null;
+  source: string;
+  status: "pending" | "investigating" | "safe" | "suspicious" | "confirmed_scam";
+  reviewer_user_id: string | null;
+  verdict_notes: string | null;
+  verdict_summary: string | null;
+  verdict_at: string | null;
+  published: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
 // ─── Deals ───
 
 export type DealType = 'private' | 'public';

@@ -10,6 +10,12 @@
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://checkhire.co";
 
 type SlackField = { type: "mrkdwn"; text: string };
+type SlackBlock = {
+  type: string;
+  text?: { type: string; text: string; emoji?: boolean };
+  elements?: Array<{ type: string; text: string; emoji?: boolean }>;
+  fields?: Array<{ type: string; text: string }>;
+};
 
 function formatAmount(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`;
@@ -242,5 +248,51 @@ export function newUserSignup(user: {
         fields,
       },
     ],
+  };
+}
+
+export function scamCheckSubmitted(submission: {
+  id: string;
+  url: string;
+  platform: string;
+  email?: string;
+  description?: string;
+  source: string;
+}) {
+  const fields: Array<{ type: string; text: string }> = [
+    { type: "mrkdwn", text: `*Link:*\n${submission.url}` },
+    { type: "mrkdwn", text: `*Platform:*\n${submission.platform}` },
+    { type: "mrkdwn", text: `*Source:*\n${submission.source}` },
+  ];
+  if (submission.email) {
+    fields.push({ type: "mrkdwn", text: `*Email:*\n${submission.email}` });
+  }
+
+  const blocks: SlackBlock[] = [
+    {
+      type: "header",
+      text: { type: "plain_text", text: "🔍 New Scam Check Submission", emoji: true },
+    },
+    {
+      type: "section",
+      fields,
+    },
+  ];
+
+  if (submission.description) {
+    blocks.push({
+      type: "section",
+      text: { type: "mrkdwn", text: `*Description:*\n${submission.description}` },
+    });
+  }
+
+  blocks.push({
+    type: "section",
+    text: { type: "mrkdwn", text: `<${APP_URL}/admin?tab=scam-checks|Review in Admin>` },
+  });
+
+  return {
+    text: `🔍 New scam check: ${submission.url} (via ${submission.source})`,
+    blocks,
   };
 }

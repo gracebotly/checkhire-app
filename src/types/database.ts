@@ -161,6 +161,7 @@ export type ProposalStatus = 'pending' | 'approved' | 'rejected';
 
 export type MilestoneChangeProposal = {
   id: string;
+  milestone_id: string | null;
   deal_id: string;
   proposed_by: string;
   proposal_type: ProposalType;

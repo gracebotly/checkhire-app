@@ -4,6 +4,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { submitScamCheckSchema } from "@/lib/validation/scam-check";
 import { notifyAdmin } from "@/lib/slack/notify";
 import { scamCheckSubmitted } from "@/lib/slack/templates";
+import { sendScamCheckConfirmation } from "@/lib/email/scamCheckEmails";
 
 function normalizeUrl(url: string): string {
   if (url.startsWith("http://") || url.startsWith("https://")) return url;
@@ -58,6 +59,17 @@ export const POST = withApiHandler(async (req: Request) => {
     description: description || undefined,
     source: "website",
   }));
+
+  // Fire-and-forget confirmation email to submitter
+  sendScamCheckConfirmation({
+    to: email,
+    submissionId: data.id,
+    url: normalizedUrl,
+    platform,
+    scamType: scam_type || null,
+    description: description || null,
+    submittedAt: new Date().toISOString(),
+  });
 
   return NextResponse.json({ ok: true, id: data.id });
 });

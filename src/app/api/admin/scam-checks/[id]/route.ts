@@ -3,6 +3,7 @@ import { withApiHandler } from "@/lib/api/withApiHandler";
 import { verifyAdmin } from "@/lib/api/verifyAdmin";
 import { createServiceClient } from "@/lib/supabase/service";
 import { adminUpdateScamCheckSchema } from "@/lib/validation/scam-check";
+import { sendScamCheckVerdict } from "@/lib/email/scamCheckEmails";
 
 export const PATCH = withApiHandler(async (req: Request, { params }: { params: Promise<{ id: string }> }) => {
   const adminCheck = await verifyAdmin();
@@ -42,6 +43,25 @@ export const PATCH = withApiHandler(async (req: Request, { params }: { params: P
       { ok: false, code: "UPDATE_FAILED", message: error.message },
       { status: 500 }
     );
+  }
+
+  // Send verdict email when a final status is set
+  const finalVerdictStatuses = ["safe", "suspicious", "confirmed_scam"];
+  if (
+    parsed.data.status &&
+    finalVerdictStatuses.includes(parsed.data.status) &&
+    data.submitted_by_email &&
+    data.verdict_summary
+  ) {
+    // Fire-and-forget verdict email
+    sendScamCheckVerdict({
+      to: data.submitted_by_email,
+      submissionId: data.id,
+      url: data.url,
+      platform: data.platform,
+      status: parsed.data.status as "safe" | "suspicious" | "confirmed_scam",
+      verdictSummary: data.verdict_summary,
+    });
   }
 
   return NextResponse.json({ ok: true, submission: data });

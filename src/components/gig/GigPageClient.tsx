@@ -414,7 +414,7 @@ export function GigPageClient({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25, ease: "easeOut" }}
-      className="mx-auto max-w-4xl px-6 py-10 pb-36 md:pb-10"
+      className="mx-auto max-w-4xl px-6 py-10"
     >
       {/* Rejected deal — visitor view */}
       {deal.review_status === "rejected" && !isParticipant && (
@@ -1186,7 +1186,7 @@ export function GigPageClient({
       </div>
 
       {/* 7. Action Buttons — sticky on mobile */}
-      <div className="fixed bottom-16 left-0 right-0 z-40 border-t border-gray-200 bg-white px-6 py-3 md:static md:border-0 md:px-0 md:py-0">
+      <div className="mt-6">
         <div className="flex flex-wrap items-center gap-3">
           {/* Always show Copy Link for participants */}
           {isParticipant && (

@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { GigPageClient } from "@/components/gig/GigPageClient";
+import { GigPageClientV2 as GigPageClient } from "@/components/gig/GigPageClientV2";
 import { Navbar } from "@/components/layout/Navbar";
 import { ToastProvider } from "@/components/ui/toast";
 import { verifyGuestToken } from "@/lib/deals/guestToken";

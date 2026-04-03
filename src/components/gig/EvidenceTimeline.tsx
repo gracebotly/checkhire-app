@@ -38,6 +38,7 @@ type Props = {
   onConfirmDelivery: () => void;
   onRequestRevision: () => void;
   onOpenDispute: () => void;
+  actionCard?: React.ReactNode;
 };
 
 // ── Stage Progress ──
@@ -662,6 +663,7 @@ export function EvidenceTimeline({
   onConfirmDelivery,
   onRequestRevision,
   onOpenDispute,
+  actionCard,
 }: Props) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -688,9 +690,14 @@ export function EvidenceTimeline({
       )}
 
       {/* Timeline entries */}
-      {entries.length === 0 ? (
+      {entries.length === 0 && !actionCard ? (
         <div className="text-center py-8">
           <p className="text-sm text-slate-600">No activity yet.</p>
+        </div>
+      ) : entries.length === 0 && actionCard ? (
+        <div className="relative">
+          <div className="mt-2">{actionCard}</div>
+          <div ref={bottomRef} />
         </div>
       ) : (
         <div className="relative">
@@ -727,6 +734,11 @@ export function EvidenceTimeline({
               <PendingNode key={`pending-${i}`} label={step.label} icon={step.icon} />
             ))}
           </div>
+
+          {/* Action card — contextual next step, injected by parent */}
+          {actionCard && (
+            <div className="mt-2">{actionCard}</div>
+          )}
           <div ref={bottomRef} />
         </div>
       )}

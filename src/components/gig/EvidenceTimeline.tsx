@@ -671,24 +671,10 @@ export function EvidenceTimeline({
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [entries.length]);
 
-  const stages = getStages(deal.status, deal.escrow_status);
   const pendingSteps = getPendingSteps(deal);
-
-  // Skip the stage header for cancelled/refunded deals
-  const showStageHeader = !["cancelled", "refunded"].includes(deal.status);
 
   return (
     <div>
-      {/* Stage Progress Header */}
-      {showStageHeader && (
-        <div className="mb-6 rounded-xl border border-gray-200 bg-white p-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-600 mb-3">
-            Deal Timeline
-          </p>
-          <StageProgress stages={stages} />
-        </div>
-      )}
-
       {/* Timeline entries */}
       {entries.length === 0 && !actionCard ? (
         <div className="text-center py-8">
@@ -733,12 +719,25 @@ export function EvidenceTimeline({
             {pendingSteps.map((step, i) => (
               <PendingNode key={`pending-${i}`} label={step.label} icon={step.icon} />
             ))}
+
+            {/* Action card — contextual next step, injected by parent */}
+            {actionCard && (
+              <div className="mt-2">{actionCard}</div>
+            )}
           </div>
 
           {/* Action card — contextual next step, injected by parent */}
           {actionCard && (
             <div className="mt-2">{actionCard}</div>
           )}
+          <div ref={bottomRef} />
+        </div>
+      )}
+
+      {/* Empty timeline but has an action card */}
+      {entries.length === 0 && actionCard && (
+        <div className="relative">
+          <div className="mt-2">{actionCard}</div>
           <div ref={bottomRef} />
         </div>
       )}

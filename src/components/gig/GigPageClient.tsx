@@ -44,7 +44,6 @@ import { CountdownTimer } from "@/components/gig/CountdownTimer";
 import { StripeConnectPrompt } from "@/components/gig/StripeConnectPrompt";
 import { InstantPayoutCard } from "@/components/gig/InstantPayoutCard";
 import { RatingForm } from "@/components/gig/RatingForm";
-import { RatingDisplay } from "@/components/gig/RatingDisplay";
 import { StarRating } from "@/components/gig/StarRating";
 import { InterestForm } from "@/components/gig/InterestForm";
 import { InterestList } from "@/components/gig/InterestList";

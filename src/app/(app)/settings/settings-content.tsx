@@ -46,9 +46,12 @@ export function SettingsContent() {
   // Security
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
   const [passwordSaving, setPasswordSaving] = useState(false);
   const [passwordError, setPasswordError] = useState("");
   const [passwordSuccess, setPasswordSuccess] = useState(false);
+  const [forgotPasswordSent, setForgotPasswordSent] = useState(false);
+  const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
 
   // Profile save
@@ -190,6 +193,10 @@ export function SettingsContent() {
     setPasswordError("");
     setPasswordSuccess(false);
 
+    if (!currentPassword) {
+      setPasswordError("Please enter your current password");
+      return;
+    }
     if (newPassword.length < 8) {
       setPasswordError("New password must be at least 8 characters");
       return;
@@ -198,15 +205,34 @@ export function SettingsContent() {
       setPasswordError("Passwords don't match");
       return;
     }
+    if (currentPassword === newPassword) {
+      setPasswordError("New password must be different from your current password");
+      return;
+    }
 
     setPasswordSaving(true);
     try {
       const supabase = createClient();
+
+      const { data: isValid, error: rpcError } = await supabase.rpc(
+        "verify_user_password",
+        { password: currentPassword }
+      );
+
+      if (rpcError) throw new Error("Failed to verify current password");
+      if (!isValid) {
+        setPasswordError("Current password is incorrect");
+        setPasswordSaving(false);
+        return;
+      }
+
       const { error } = await supabase.auth.updateUser({
         password: newPassword,
       });
       if (error) throw new Error(error.message);
+
       setPasswordSuccess(true);
+      setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
       toast("Password updated!", "success");
@@ -216,6 +242,29 @@ export function SettingsContent() {
       );
     } finally {
       setPasswordSaving(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    setForgotPasswordLoading(true);
+    setPasswordError("");
+    try {
+      const res = await fetch("/api/auth/reset-password", {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        throw new Error(data.message || "Failed to send reset email");
+      }
+
+      setForgotPasswordSent(true);
+      toast("Password reset email sent! Check your inbox.", "success");
+    } catch (err) {
+      setPasswordError(
+        err instanceof Error ? err.message : "Failed to send reset email"
+      );
+    } finally {
+      setForgotPasswordLoading(false);
     }
   };
 
@@ -429,9 +478,19 @@ export function SettingsContent() {
                 <div>
                   <p className="text-sm font-medium text-slate-900">Change password</p>
                   <p className="mt-0.5 text-xs text-slate-600">
-                    Update your password to keep your account secure.
+                    Enter your current password to set a new one.
                   </p>
-                  <div className="mt-3 space-y-3 max-w-sm">
+                  <div className="mt-3 max-w-sm space-y-3">
+                    <Input
+                      type="password"
+                      placeholder="Current password"
+                      value={currentPassword}
+                      onChange={(e) => {
+                        setCurrentPassword(e.target.value);
+                        setPasswordError("");
+                        setPasswordSuccess(false);
+                      }}
+                    />
                     <Input
                       type="password"
                       placeholder="New password"
@@ -456,7 +515,7 @@ export function SettingsContent() {
                       <p className="text-xs text-red-600">{passwordError}</p>
                     )}
                     {passwordSuccess && (
-                      <p className="text-xs text-green-700 flex items-center gap-1">
+                      <p className="flex items-center gap-1 text-xs text-green-700">
                         <CheckCircle className="h-3 w-3" />
                         Password updated successfully
                       </p>
@@ -464,10 +523,34 @@ export function SettingsContent() {
                     <Button
                       size="sm"
                       onClick={handleChangePassword}
-                      disabled={passwordSaving || !newPassword || !confirmPassword}
+                      disabled={
+                        passwordSaving ||
+                        !currentPassword ||
+                        !newPassword ||
+                        !confirmPassword
+                      }
                     >
                       {passwordSaving ? "Updating..." : "Update Password"}
                     </Button>
+                    <div className="border-t border-gray-100 pt-3">
+                      {forgotPasswordSent ? (
+                        <p className="flex items-center gap-1 text-xs text-green-700">
+                          <CheckCircle className="h-3 w-3" />
+                          Reset email sent — check your inbox
+                        </p>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={handleForgotPassword}
+                          disabled={forgotPasswordLoading}
+                          className="cursor-pointer text-xs text-slate-600 transition-colors duration-200 hover:text-slate-900"
+                        >
+                          {forgotPasswordLoading
+                            ? "Sending..."
+                            : "Forgot your password? Reset via email"}
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               ) : (

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { withApiHandler } from "@/lib/api/withApiHandler";
 
 const MAX_SIZE = 20 * 1024 * 1024; // 20MB
@@ -14,6 +15,7 @@ const ALLOWED_TYPES = new Set([
 ]);
 
 export const POST = withApiHandler(async (req: Request) => {
+  // Authenticate the user via session cookies
   const supabase = await createClient();
   const {
     data: { user },
@@ -38,14 +40,22 @@ export const POST = withApiHandler(async (req: Request) => {
 
   if (file.size > MAX_SIZE) {
     return NextResponse.json(
-      { ok: false, code: "VALIDATION_ERROR", message: "File too large. Maximum 20MB." },
+      {
+        ok: false,
+        code: "VALIDATION_ERROR",
+        message: "File too large. Maximum 20MB.",
+      },
       { status: 400 }
     );
   }
 
   if (!ALLOWED_TYPES.has(file.type)) {
     return NextResponse.json(
-      { ok: false, code: "VALIDATION_ERROR", message: "File type not allowed. Upload a PDF, Word doc, image, or text file." },
+      {
+        ok: false,
+        code: "VALIDATION_ERROR",
+        message: "File type not allowed. Upload a PDF, Word doc, image, or text file.",
+      },
       { status: 400 }
     );
   }
@@ -54,8 +64,11 @@ export const POST = withApiHandler(async (req: Request) => {
   const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
   const storagePath = `briefs/${user.id}/${timestamp}-${safeName}`;
 
+  // Use service client for storage upload to bypass bucket RLS policies.
+  // Auth is already verified above via the user session.
+  const serviceClient = createServiceClient();
   const arrayBuffer = await file.arrayBuffer();
-  const { error: uploadError } = await supabase.storage
+  const { error: uploadError } = await serviceClient.storage
     .from("deal-files")
     .upload(storagePath, arrayBuffer, {
       contentType: file.type,

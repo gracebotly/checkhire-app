@@ -150,7 +150,7 @@ export const POST = withApiHandler(async (req: Request) => {
       client_user_id: user.id,
       has_milestones: data.has_milestones,
       template_id: data.template_id || null,
-      status: "pending_acceptance",
+      status: data.is_draft ? "draft" : "pending_acceptance",
       escrow_status: "unfunded",
       expires_at: expiresAt,
     })

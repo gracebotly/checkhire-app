@@ -46,6 +46,97 @@ export const PATCH = withApiHandler(
 
     const displayName = profile?.display_name || "Unknown";
 
+    // Publish a draft deal
+    if (body.action === "publish_draft") {
+      if (deal.status !== "draft") {
+        return NextResponse.json({ ok: false, code: "INVALID_STATUS", message: "Only draft deals can be published" }, { status: 400 });
+      }
+      if (deal.client_user_id !== user.id) {
+        return NextResponse.json({ ok: false, code: "FORBIDDEN", message: "Only the client can publish" }, { status: 403 });
+      }
+
+      const updateData: Record<string, unknown> = {
+        status: "pending_acceptance",
+        title: body.title || deal.title,
+        description: body.description || deal.description,
+        deliverables: body.deliverables ?? deal.deliverables,
+        total_amount: body.total_amount || deal.total_amount,
+        category: body.category ?? deal.category,
+        other_category_description: body.other_category_description ?? deal.other_category_description,
+        payment_frequency: body.payment_frequency || deal.payment_frequency,
+        deadline: body.deadline ?? deal.deadline,
+        has_milestones: body.has_milestones ?? deal.has_milestones,
+        description_brief_url: body.description_brief_url ?? deal.description_brief_url,
+        deliverables_brief_url: body.deliverables_brief_url ?? deal.deliverables_brief_url,
+        deal_type: body.deal_type || deal.deal_type,
+      };
+
+      const { data: updatedDeal, error: updateError } = await supabase
+        .from("deals")
+        .update(updateData)
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (updateError) {
+        return NextResponse.json({ ok: false, code: "DB_ERROR", message: updateError.message }, { status: 500 });
+      }
+
+      await supabase.from("deal_activity_log").insert({
+        deal_id: id,
+        user_id: user.id,
+        entry_type: "system",
+        content: `Gig published by ${displayName}`,
+      });
+
+      return NextResponse.json({ ok: true, deal: updatedDeal, slug: updatedDeal.deal_link_slug });
+    }
+
+    // Save updates to an existing draft
+    if (body.is_draft === true) {
+      if (deal.status !== "draft") {
+        return NextResponse.json(
+          { ok: false, code: "INVALID_STATUS", message: "Only draft deals can be updated as drafts" },
+          { status: 400 }
+        );
+      }
+      if (deal.client_user_id !== user.id) {
+        return NextResponse.json(
+          { ok: false, code: "FORBIDDEN", message: "Only the client can update this draft" },
+          { status: 403 }
+        );
+      }
+
+      const { data: updatedDeal, error: updateError } = await supabase
+        .from("deals")
+        .update({
+          title: body.title || deal.title,
+          description: body.description ?? deal.description,
+          deliverables: body.deliverables ?? deal.deliverables,
+          description_brief_url: body.description_brief_url ?? deal.description_brief_url,
+          deliverables_brief_url: body.deliverables_brief_url ?? deal.deliverables_brief_url,
+          total_amount: body.total_amount || deal.total_amount,
+          category: body.category ?? deal.category,
+          other_category_description: body.other_category_description ?? deal.other_category_description,
+          payment_frequency: body.payment_frequency || deal.payment_frequency,
+          deadline: body.deadline ?? deal.deadline,
+          deal_type: body.deal_type || deal.deal_type,
+          has_milestones: body.has_milestones ?? deal.has_milestones,
+        })
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (updateError) {
+        return NextResponse.json(
+          { ok: false, code: "DB_ERROR", message: updateError.message },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({ ok: true, deal: updatedDeal, slug: updatedDeal.deal_link_slug });
+    }
+
     if (action === "accept") {
       if (deal.freelancer_user_id) {
         return NextResponse.json(

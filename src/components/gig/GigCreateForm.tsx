@@ -39,9 +39,28 @@ type RepeatDealData = {
   category: string | null;
 };
 
+type InitialDraftData = {
+  id: string;
+  title: string;
+  description: string;
+  deliverables: string | null;
+  total_amount: number;
+  category: string | null;
+  other_category_description: string | null;
+  payment_frequency: string;
+  deadline: string | null;
+  has_milestones: boolean;
+  description_brief_url: string | null;
+  deliverables_brief_url: string | null;
+  description_brief_name: string | null;
+  deliverables_brief_name: string | null;
+  screening_questions: unknown[];
+};
+
 type Props = {
   initialTemplate?: DealTemplate | null;
   initialRepeatData?: RepeatDealData | null;
+  initialDraft?: InitialDraftData | null;
   wizardData?: {
     category: string | null;
     title: string | null;
@@ -57,6 +76,7 @@ const STEP_TITLES = [
   "Set the Deadline",
   "Review & Lock It In",
 ];
+const DRAFT_STORAGE_KEY = "checkhire_draft_gig";
 
 function BriefUploadZone({ onUploaded, onCancel }: { onUploaded: (url: string, name: string) => void; onCancel: () => void }) {
   const [uploading, setUploading] = useState(false);
@@ -145,43 +165,46 @@ function BriefUploadZone({ onUploaded, onCancel }: { onUploaded: (url: string, n
   );
 }
 
-export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }: Props) {
+export function GigCreateForm({ initialTemplate, initialRepeatData, initialDraft, wizardData }: Props) {
   const router = useRouter();
   const { toast } = useToast();
 
   // Form state
   const [title, setTitle] = useState(
-    initialRepeatData?.title || initialTemplate?.title || wizardData?.title || ""
+    initialDraft?.title || initialRepeatData?.title || initialTemplate?.title || wizardData?.title || ""
   );
   const [description, setDescription] = useState(
-    initialRepeatData?.description || initialTemplate?.description || ""
+    initialDraft?.description || initialRepeatData?.description || initialTemplate?.description || ""
   );
   const [deliverables, setDeliverables] = useState(
-    initialRepeatData?.deliverables || initialTemplate?.deliverables || ""
+    initialDraft?.deliverables || initialRepeatData?.deliverables || initialTemplate?.deliverables || ""
   );
   const [category, setCategory] = useState<DealCategory | "">(
+    (initialDraft?.category as DealCategory) ||
     (initialRepeatData?.category as DealCategory) ||
     (wizardData?.category as DealCategory) ||
     ""
   );
   const [otherCategoryDescription, setOtherCategoryDescription] = useState(
-    wizardData?.otherDescription || ""
+    initialDraft?.other_category_description || wizardData?.otherDescription || ""
   );
   const [paymentFrequency, setPaymentFrequency] = useState(
-    wizardData?.frequency || "one_time"
+    initialDraft?.payment_frequency || wizardData?.frequency || "one_time"
   );
   const [showDescriptionUpload, setShowDescriptionUpload] = useState(false);
-  const [descriptionBriefUrl, setDescriptionBriefUrl] = useState<string | null>(null);
-  const [descriptionBriefName, setDescriptionBriefName] = useState<string | null>(null);
+  const [descriptionBriefUrl, setDescriptionBriefUrl] = useState<string | null>(initialDraft?.description_brief_url || null);
+  const [descriptionBriefName, setDescriptionBriefName] = useState<string | null>(initialDraft?.description_brief_name || null);
   const [showDeliverablesUpload, setShowDeliverablesUpload] = useState(false);
-  const [deliverablesBriefUrl, setDeliverablesBriefUrl] = useState<string | null>(null);
-  const [deliverablesBriefName, setDeliverablesBriefName] = useState<string | null>(null);
+  const [deliverablesBriefUrl, setDeliverablesBriefUrl] = useState<string | null>(initialDraft?.deliverables_brief_url || null);
+  const [deliverablesBriefName, setDeliverablesBriefName] = useState<string | null>(initialDraft?.deliverables_brief_name || null);
   const [amount, setAmount] = useState(
-    initialRepeatData?.total_amount
-      ? (initialRepeatData.total_amount / 100).toString()
-      : initialTemplate?.default_amount
-        ? (initialTemplate.default_amount / 100).toString()
-        : wizardData?.amount || ""
+    initialDraft?.total_amount
+      ? (initialDraft.total_amount / 100).toString()
+      : initialRepeatData?.total_amount
+        ? (initialRepeatData.total_amount / 100).toString()
+        : initialTemplate?.default_amount
+          ? (initialTemplate.default_amount / 100).toString()
+          : wizardData?.amount || ""
   );
   // ── Recover wizard data from sessionStorage (Google OAuth fallback) ──
   // The CreateWizard saves data to sessionStorage before Google OAuth redirects
@@ -230,9 +253,15 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
       options: string[];
       dealbreaker_answer: string;
     }[]
-  >([]);
+  >((initialDraft?.screening_questions as {
+    id: string;
+    type: "yes_no" | "short_text" | "multiple_choice";
+    text: string;
+    options: string[];
+    dealbreaker_answer: string;
+  }[]) || []);
   const [hasMilestones, setHasMilestones] = useState(
-    initialTemplate?.has_milestones || false
+    initialDraft?.has_milestones || initialTemplate?.has_milestones || false
   );
   const [milestones, setMilestones] = useState<MilestoneFormItem[]>(
     initialTemplate?.milestone_templates?.length
@@ -249,6 +278,7 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
         ]
   );
   const [deadline, setDeadline] = useState(() => {
+    if (initialDraft?.deadline) return initialDraft.deadline.split("T")[0];
     if (initialTemplate?.default_deadline_days) {
       const d = new Date();
       d.setDate(d.getDate() + initialTemplate.default_deadline_days);
@@ -263,6 +293,8 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
   const [error, setError] = useState("");
   const [errorLink, setErrorLink] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [draftRestored, setDraftRestored] = useState(false);
+  const [draftId, setDraftId] = useState<string | null>(initialDraft?.id || null);
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
   const [templateName, setTemplateName] = useState("");
   const [showReferralField, setShowReferralField] = useState(false);
@@ -270,6 +302,80 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
   const [userProfile, setUserProfile] = useState<{ referred_by: string | null } | null>(null);
 
   const totalAmountDollars = parseFloat(amount) || 0;
+
+  // Auto-save form state to localStorage (debounced)
+  useEffect(() => {
+    // Don't auto-save if form was loaded from a template, repeat deal, or wizard
+    if (initialTemplate || initialRepeatData) return;
+
+    const timer = setTimeout(() => {
+      try {
+        const draft = {
+          title, description, deliverables, category, otherCategoryDescription,
+          paymentFrequency, amount, deadline, hasMilestones,
+          milestones, acceptanceCriteria, screeningQuestions,
+          descriptionBriefUrl, descriptionBriefName,
+          deliverablesBriefUrl, deliverablesBriefName,
+          step,
+          savedAt: Date.now(),
+        };
+        localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+      } catch {
+        // localStorage unavailable
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [
+    title, description, deliverables, category, otherCategoryDescription,
+    paymentFrequency, amount, deadline, hasMilestones, milestones,
+    acceptanceCriteria, screeningQuestions, step,
+    descriptionBriefUrl, descriptionBriefName,
+    deliverablesBriefUrl, deliverablesBriefName,
+    initialTemplate, initialRepeatData,
+  ]);
+
+  // Restore draft from localStorage on mount
+  useEffect(() => {
+    // Don't restore if form was loaded from template, repeat, wizard, or database draft
+    if (initialTemplate || initialRepeatData || wizardData?.title || draftId) return;
+
+    try {
+      const stored = localStorage.getItem(DRAFT_STORAGE_KEY);
+      if (!stored) return;
+
+      const draft = JSON.parse(stored);
+
+      // Ignore drafts older than 7 days
+      if (draft.savedAt && Date.now() - draft.savedAt > 7 * 24 * 60 * 60 * 1000) {
+        localStorage.removeItem(DRAFT_STORAGE_KEY);
+        return;
+      }
+
+      // Only restore if there's meaningful content
+      if (!draft.title && !draft.description) return;
+
+      setTitle(draft.title || "");
+      setDescription(draft.description || "");
+      setDeliverables(draft.deliverables || "");
+      setCategory(draft.category || "");
+      setOtherCategoryDescription(draft.otherCategoryDescription || "");
+      setPaymentFrequency(draft.paymentFrequency || "one_time");
+      setAmount(draft.amount || "");
+      setDeadline(draft.deadline || "");
+      setHasMilestones(draft.hasMilestones || false);
+      if (draft.milestones?.length) setMilestones(draft.milestones);
+      if (draft.acceptanceCriteria?.length) setAcceptanceCriteria(draft.acceptanceCriteria);
+      if (draft.screeningQuestions?.length) setScreeningQuestions(draft.screeningQuestions);
+      if (draft.descriptionBriefUrl) setDescriptionBriefUrl(draft.descriptionBriefUrl);
+      if (draft.descriptionBriefName) setDescriptionBriefName(draft.descriptionBriefName);
+      if (draft.deliverablesBriefUrl) setDeliverablesBriefUrl(draft.deliverablesBriefUrl);
+      if (draft.deliverablesBriefName) setDeliverablesBriefName(draft.deliverablesBriefName);
+
+      setDraftRestored(true);
+    } catch {
+      // localStorage unavailable or corrupt data
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const supabase = createClient();
@@ -366,6 +472,7 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
 
     const totalCents = Math.round(totalAmountDollars * 100);
     const body = {
+      ...(draftId ? { action: "publish_draft" } : {}),
       title: title.trim(),
       description: description.trim(),
       deliverables: deliverables.trim(),
@@ -406,8 +513,8 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
     };
 
     try {
-      const res = await fetch("/api/deals", {
-        method: "POST",
+      const res = await fetch(draftId ? `/api/deals/${draftId}` : "/api/deals", {
+        method: draftId ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
@@ -418,11 +525,82 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
         setSubmitting(false);
         return;
       }
+      try { localStorage.removeItem(DRAFT_STORAGE_KEY); } catch {}
       router.push(`/deal/${data.slug}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create gig");
       setErrorLink("");
     } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleSaveDraft = async () => {
+    setError("");
+    setSubmitting(true);
+
+    const totalCents = Math.round(totalAmountDollars * 100);
+    const body = {
+      title: title.trim() || "Untitled Draft",
+      description: description.trim(),
+      deliverables: deliverables.trim() || null,
+      description_brief_url: descriptionBriefUrl || null,
+      deliverables_brief_url: deliverablesBriefUrl || null,
+      total_amount: totalCents || 1000,
+      category: category || null,
+      other_category_description: category === "other" ? otherCategoryDescription.trim() : null,
+      payment_frequency: paymentFrequency,
+      deadline: deadline || null,
+      deal_type: "public",
+      has_milestones: hasMilestones,
+      is_draft: true,
+      acceptance_criteria: acceptanceCriteria
+        .filter((c) => c.description.trim())
+        .map((c) => ({
+          evidence_type: c.evidence_type,
+          description: c.description.trim(),
+        })),
+      milestones: hasMilestones
+        ? milestones
+            .filter((m) => m.title.trim())
+            .map((m) => ({
+              title: m.title.trim(),
+              description: m.description.trim() || undefined,
+              amount: Math.round((parseFloat(m.amount) || 0) * 100),
+            }))
+        : null,
+      template_id: initialTemplate?.id || null,
+      screening_questions: screeningQuestions
+        .filter((q) => q.text.trim())
+        .map((q) => ({
+          id: q.id,
+          type: q.type,
+          text: q.text.trim(),
+          options: q.type === "multiple_choice" ? q.options.filter((o) => o.trim()) : undefined,
+          dealbreaker_answer: q.dealbreaker_answer || undefined,
+        })),
+    };
+
+    try {
+      const url = draftId ? `/api/deals/${draftId}` : "/api/deals";
+      const method = draftId ? "PATCH" : "POST";
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (!data.ok) {
+        setError(data.message || "Failed to save draft");
+        setSubmitting(false);
+        return;
+      }
+      try { localStorage.removeItem(DRAFT_STORAGE_KEY); } catch {}
+      toast("Draft saved", "success");
+      if (!draftId) setDraftId(data.deal?.id || null);
+      setSubmitting(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save draft");
       setSubmitting(false);
     }
   };
@@ -523,6 +701,29 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
           {/* Step 1 — What's the gig? */}
           {step === 0 && (
             <div className="space-y-4">
+              {draftRestored && (
+                <div className="flex items-center justify-between rounded-lg border border-brand/20 bg-brand-muted px-4 py-3">
+                  <p className="text-sm text-slate-900">You have an unfinished gig. Picked up where you left off.</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      try { localStorage.removeItem(DRAFT_STORAGE_KEY); } catch {}
+                      setDraftRestored(false);
+                      setTitle(""); setDescription(""); setDeliverables("");
+                      setCategory("" as DealCategory); setAmount(""); setDeadline("");
+                      setHasMilestones(false);
+                      setMilestones([{ title: "", description: "", amount: "" }, { title: "", description: "", amount: "" }]);
+                      setAcceptanceCriteria([{ evidence_type: "file", description: "" }]);
+                      setScreeningQuestions([]);
+                      setDescriptionBriefUrl(null); setDescriptionBriefName(null);
+                      setDeliverablesBriefUrl(null); setDeliverablesBriefName(null);
+                    }}
+                    className="cursor-pointer text-xs font-medium text-slate-600 transition-colors duration-200 hover:text-slate-900"
+                  >
+                    Start fresh
+                  </button>
+                </div>
+              )}
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-slate-900">
                   Title
@@ -1236,14 +1437,25 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
               )}
 
               <div className="flex flex-col gap-3">
-                <Button
-                  size="lg"
-                  onClick={handleSubmit}
-                  disabled={submitting}
-                  className="w-full"
-                >
-                  {submitting ? "Creating..." : "Create Deal Link"}
-                </Button>
+                <div className="space-y-2">
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="w-full"
+                    onClick={handleSaveDraft}
+                    disabled={submitting}
+                  >
+                    {submitting ? "Saving..." : "Save Draft"}
+                  </Button>
+                  <Button
+                    size="lg"
+                    className="w-full"
+                    onClick={handleSubmit}
+                    disabled={submitting}
+                  >
+                    {submitting ? "Creating..." : "Create Deal Link"}
+                  </Button>
+                </div>
                 <Button
                   variant="outline"
                   size="sm"

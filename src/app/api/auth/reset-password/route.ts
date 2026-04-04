@@ -18,7 +18,7 @@ export const POST = withApiHandler(async () => {
   }
 
   const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
-    redirectTo: `${APP_URL}/auth/confirm?type=recovery&next=/auth/reset-password`,
+    redirectTo: `${APP_URL}/auth/reset-password`,
   });
 
   if (error) {

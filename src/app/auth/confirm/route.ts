@@ -67,5 +67,18 @@ export async function GET(request: Request) {
     });
   }
 
+  // Handle redirect based on OTP type and next parameter
+  const next = searchParams.get("next");
+
+  // Recovery flow → always go to reset password page
+  if (type === "recovery") {
+    return NextResponse.redirect(new URL("/auth/reset-password", request.url));
+  }
+
+  // If a valid next path was provided, redirect there
+  if (next && next.startsWith("/")) {
+    return NextResponse.redirect(new URL(next, request.url));
+  }
+
   return NextResponse.redirect(new URL("/dashboard", request.url));
 }

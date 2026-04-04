@@ -86,18 +86,15 @@ function BriefUploadZone({ onUploaded, onCancel }: { onUploaded: (url: string, n
 
     setUploading(true);
     try {
-      const supabase = createClient();
-      const timestamp = Date.now();
-      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-      const storagePath = `briefs/${timestamp}-${safeName}`;
+      const formData = new FormData();
+      formData.append("file", file);
 
-      const { error: uploadError } = await supabase.storage
-        .from("deal-files")
-        .upload(storagePath, file, { contentType: file.type, upsert: false });
+      const res = await fetch("/api/brief-upload", { method: "POST", body: formData });
+      const data = await res.json();
 
-      if (uploadError) throw uploadError;
+      if (!data.ok) throw new Error(data.message || "Upload failed");
 
-      onUploaded(storagePath, file.name);
+      onUploaded(data.storagePath, data.fileName);
     } catch {
       alert("Upload failed. Please try again.");
     } finally {

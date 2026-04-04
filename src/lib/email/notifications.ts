@@ -303,22 +303,6 @@ const NOTIFICATION_CONFIG: Record<string, NotificationConfig> = {
     },
   },
 
-  // ── Template 5: escrow_funded ──
-  escrow_funded: {
-    accent: "#16a34a",
-    subject: (data) =>
-      `💰 ${formatAmount(data.amount!)} secured — ${escapeHtml(data.dealTitle)}`,
-    body: (data) => {
-      const title = escapeHtml(data.dealTitle);
-      const link = dealUrl(data.dealSlug);
-      return (
-        buildHeroAmount(data.amount!, "secured") +
-        `<p style="margin: 20px 0 0 0; font-size: 14px; color: #475569;">The client has funded escrow for <strong>${title}</strong>. The money is real and waiting for you. Start working and upload evidence of your progress — it protects you if there's ever a dispute.</p>` +
-        buildCtaButton(link, "Start Working", "success")
-      );
-    },
-  },
-
   // ── Template 6: escrow_funded_after_accept (same as escrow_funded) ──
   escrow_funded_after_accept: {
     accent: "#16a34a",

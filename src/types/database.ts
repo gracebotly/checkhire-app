@@ -391,7 +391,6 @@ export type TimelineNodeVariant =
 export type NotificationType =
   | 'deal_created'
   | 'deal_accepted'
-  | 'escrow_funded'
   | 'milestone_funded'
   | 'work_submitted'
   | 'milestone_submitted'

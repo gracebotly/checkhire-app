@@ -171,7 +171,7 @@ export const POST = withApiHandler(async (req: Request) => {
   }
 
   // ── Run all post-insert operations in parallel ──
-  const postInsertPromises: Promise<unknown>[] = [];
+  const postInsertPromises: PromiseLike<unknown>[] = [];
 
   // Insert acceptance criteria
   if (data.acceptance_criteria && data.acceptance_criteria.length > 0) {

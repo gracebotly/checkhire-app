@@ -84,7 +84,6 @@ const TIMEFRAME_OPTIONS: { label: string; days: number | null }[] = [
   { label: "1 month", days: 30 },
   { label: "No deadline", days: null },
 ];
-const DRAFT_STORAGE_KEY = "checkhire_draft_gig";
 
 function BriefUploadZone({ onUploaded, onCancel }: { onUploaded: (url: string, name: string) => void; onCancel: () => void }) {
   const [uploading, setUploading] = useState(false);
@@ -314,8 +313,9 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, initialDraft
   const [error, setError] = useState("");
   const [errorLink, setErrorLink] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [draftRestored, setDraftRestored] = useState(false);
   const [draftId, setDraftId] = useState<string | null>(initialDraft?.id || null);
+  const [autoSaving, setAutoSaving] = useState(false);
+  const [lastAutoSaved, setLastAutoSaved] = useState<number | null>(null);
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
   const [templateName, setTemplateName] = useState("");
   const [showReferralField, setShowReferralField] = useState(false);
@@ -324,84 +324,96 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, initialDraft
 
   const totalAmountDollars = parseFloat(amount) || 0;
 
-  // Auto-save form state to localStorage (debounced)
+  // ── Auto-save draft to database (debounced, every 30 seconds) ──
   useEffect(() => {
-    // Don't auto-save if form was loaded from a template, repeat deal, or wizard
+    // Don't auto-save if loaded from a template, repeat deal, or wizard redirect
     if (initialTemplate || initialRepeatData) return;
+    // Don't auto-save if the form has no meaningful content
+    if (!title.trim() && !description.trim()) return;
+    // Don't auto-save while a manual submit or save is in progress
+    if (submitting) return;
 
-    const timer = setTimeout(() => {
+    const timer = setTimeout(async () => {
+      // Only auto-save if the user has typed something meaningful
+      if (!title.trim() || title.trim().length < 3) return;
+
+      setAutoSaving(true);
       try {
-        const draft = {
-          title, description, deliverables, category, otherCategoryDescription,
-          paymentFrequency, amount, deadline, selectedTimeframe, customDeadline, hasMilestones,
-          milestones, acceptanceCriteria, screeningQuestions,
-          maxApplicants,
-          descriptionBriefUrl, descriptionBriefName,
-          deliverablesBriefUrl, deliverablesBriefName,
-          step,
-          savedAt: Date.now(),
+        const totalCents = Math.round(totalAmountDollars * 100);
+        const body = {
+          title: title.trim() || "Untitled Draft",
+          description: description.trim(),
+          deliverables: deliverables.trim() || null,
+          description_brief_url: descriptionBriefUrl || null,
+          deliverables_brief_url: deliverablesBriefUrl || null,
+          total_amount: totalCents || 1000,
+          category: category || null,
+          other_category_description: category === "other" ? otherCategoryDescription.trim() : null,
+          payment_frequency: paymentFrequency,
+          deadline: deadline || null,
+          deal_type: "public",
+          max_applicants: maxApplicants,
+          has_milestones: hasMilestones,
+          is_draft: true,
+          acceptance_criteria: acceptanceCriteria
+            .filter((c) => c.description.trim())
+            .map((c) => ({
+              evidence_type: c.evidence_type,
+              description: c.description.trim(),
+            })),
+          milestones: hasMilestones
+            ? milestones
+                .filter((m) => m.title.trim())
+                .map((m) => ({
+                  title: m.title.trim(),
+                  description: m.description.trim() || undefined,
+                  amount: Math.round((parseFloat(m.amount) || 0) * 100),
+                }))
+            : null,
+          template_id: initialTemplate?.id || null,
+          screening_questions: screeningQuestions
+            .filter((q) => q.text.trim())
+            .map((q) => ({
+              id: q.id,
+              type: q.type,
+              text: q.text.trim(),
+              options: q.type === "multiple_choice" ? q.options.filter((o) => o.trim()) : undefined,
+              dealbreaker_answer: q.dealbreaker_answer || undefined,
+            })),
         };
-        localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+
+        const url = draftId ? `/api/deals/${draftId}` : "/api/deals";
+        const method = draftId ? "PATCH" : "POST";
+        const res = await fetch(url, {
+          method,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        const data = await res.json();
+        if (data.ok) {
+          if (!draftId && data.deal?.id) {
+            setDraftId(data.deal.id);
+            window.history.replaceState(null, "", `/deal/new?draft=${data.deal.id}`);
+          }
+          setLastAutoSaved(Date.now());
+        }
       } catch {
-        // localStorage unavailable
+        // Silent — auto-save failure shouldn't interrupt the user
+      } finally {
+        setAutoSaving(false);
       }
-    }, 500);
+    }, 30000); // 30 seconds
+
     return () => clearTimeout(timer);
   }, [
     title, description, deliverables, category, otherCategoryDescription,
-    paymentFrequency, amount, deadline, selectedTimeframe, customDeadline, hasMilestones, milestones,
-    acceptanceCriteria, screeningQuestions, step,
+    paymentFrequency, amount, deadline, hasMilestones, milestones,
+    acceptanceCriteria, screeningQuestions,
     maxApplicants,
-    descriptionBriefUrl, descriptionBriefName,
-    deliverablesBriefUrl, deliverablesBriefName,
-    initialTemplate, initialRepeatData,
+    descriptionBriefUrl, deliverablesBriefUrl,
+    draftId, initialTemplate, initialRepeatData, submitting,
+    totalAmountDollars,
   ]);
-
-  // Restore draft from localStorage on mount
-  useEffect(() => {
-    // Don't restore if form was loaded from template, repeat, wizard, or database draft
-    if (initialTemplate || initialRepeatData || wizardData?.title || draftId) return;
-
-    try {
-      const stored = localStorage.getItem(DRAFT_STORAGE_KEY);
-      if (!stored) return;
-
-      const draft = JSON.parse(stored);
-
-      // Ignore drafts older than 7 days
-      if (draft.savedAt && Date.now() - draft.savedAt > 7 * 24 * 60 * 60 * 1000) {
-        localStorage.removeItem(DRAFT_STORAGE_KEY);
-        return;
-      }
-
-      // Only restore if there's meaningful content
-      if (!draft.title && !draft.description) return;
-
-      setTitle(draft.title || "");
-      setDescription(draft.description || "");
-      setDeliverables(draft.deliverables || "");
-      setCategory(draft.category || "");
-      setOtherCategoryDescription(draft.otherCategoryDescription || "");
-      setPaymentFrequency(draft.paymentFrequency || "one_time");
-      setAmount(draft.amount || "");
-      setDeadline(draft.deadline || "");
-      if (draft.selectedTimeframe !== undefined) setSelectedTimeframe(draft.selectedTimeframe);
-      if (draft.customDeadline) setCustomDeadline(draft.customDeadline);
-      setHasMilestones(draft.hasMilestones || false);
-      if (draft.milestones?.length) setMilestones(draft.milestones);
-      if (draft.acceptanceCriteria?.length) setAcceptanceCriteria(draft.acceptanceCriteria);
-      if (draft.screeningQuestions?.length) setScreeningQuestions(draft.screeningQuestions);
-      if (draft.maxApplicants && [15, 30, 50].includes(draft.maxApplicants)) setMaxApplicants(draft.maxApplicants);
-      if (draft.descriptionBriefUrl) setDescriptionBriefUrl(draft.descriptionBriefUrl);
-      if (draft.descriptionBriefName) setDescriptionBriefName(draft.descriptionBriefName);
-      if (draft.deliverablesBriefUrl) setDeliverablesBriefUrl(draft.deliverablesBriefUrl);
-      if (draft.deliverablesBriefName) setDeliverablesBriefName(draft.deliverablesBriefName);
-
-      setDraftRestored(true);
-    } catch {
-      // localStorage unavailable or corrupt data
-    }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const supabase = createClient();
@@ -551,7 +563,6 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, initialDraft
         setSubmitting(false);
         return;
       }
-      try { localStorage.removeItem(DRAFT_STORAGE_KEY); } catch {}
       router.push(`/deal/${data.slug}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create gig");
@@ -621,7 +632,6 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, initialDraft
         setSubmitting(false);
         return;
       }
-      try { localStorage.removeItem(DRAFT_STORAGE_KEY); } catch {}
       toast("Draft saved", "success");
       if (!draftId) setDraftId(data.deal?.id || null);
       setSubmitting(false);
@@ -737,6 +747,11 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, initialDraft
         {step === 1 && "Budget, payment structure, and delivery timeline."}
         {step === 2 && "This is exactly what the other party will see. Make sure it’s right."}
       </p>
+      {(autoSaving || lastAutoSaved) && (
+        <p className="mb-4 text-center text-xs text-slate-600">
+          {autoSaving ? "Saving draft..." : lastAutoSaved ? `Draft saved ${new Date(lastAutoSaved).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}` : ""}
+        </p>
+      )}
 
       {error && (
         <Alert variant="danger" className="mb-4">
@@ -765,30 +780,6 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, initialDraft
           {/* Step 1 — What's the gig? */}
           {step === 0 && (
             <div className="space-y-4">
-              {draftRestored && (
-                <div className="flex items-center justify-between rounded-lg border border-brand/20 bg-brand-muted px-4 py-3">
-                  <p className="text-sm text-slate-900">You have an unfinished gig. Picked up where you left off.</p>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      try { localStorage.removeItem(DRAFT_STORAGE_KEY); } catch {}
-                      setDraftRestored(false);
-                      setTitle(""); setDescription(""); setDeliverables("");
-                      setCategory("" as DealCategory); setAmount(""); setDeadline("");
-                      setSelectedTimeframe(null); setCustomDeadline("");
-                      setHasMilestones(false);
-                      setMilestones([{ title: "", description: "", amount: "" }, { title: "", description: "", amount: "" }]);
-                      setAcceptanceCriteria([{ evidence_type: "file", description: "" }]);
-                      setScreeningQuestions([]);
-                      setDescriptionBriefUrl(null); setDescriptionBriefName(null);
-                      setDeliverablesBriefUrl(null); setDeliverablesBriefName(null);
-                    }}
-                    className="cursor-pointer text-xs font-medium text-slate-600 transition-colors duration-200 hover:text-slate-900"
-                  >
-                    Start fresh
-                  </button>
-                </div>
-              )}
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-slate-900">
                   Title

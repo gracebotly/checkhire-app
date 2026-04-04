@@ -36,8 +36,10 @@ export const GET = withApiHandler(async (req: Request) => {
     query = query.not(
       "status",
       "in",
-      "(completed,cancelled,refunded)"
+      "(completed,cancelled,refunded,draft)"
     );
+  } else if (filter === "drafts") {
+    query = query.eq("status", "draft");
   } else if (filter === "completed") {
     query = query.eq("status", "completed");
   }

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import Link from "next/link";
-import { Search, ArrowLeftRight, PlusCircle } from "lucide-react";
+import { Search, ArrowLeftRight, PlusCircle, FileText } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -85,8 +85,9 @@ export default function DashboardPage() {
 
   const counts = {
     active: deals.filter(
-      (d) => !["completed", "cancelled", "refunded"].includes(d.status)
+      (d) => !["completed", "cancelled", "refunded", "draft"].includes(d.status)
     ).length,
+    drafts: deals.filter((d) => d.status === "draft").length,
     completed: deals.filter((d) => d.status === "completed").length,
     all: deals.length,
   };
@@ -130,6 +131,9 @@ export default function DashboardPage() {
             <TabsTrigger value="active">
               Active {!loading && `(${counts.active})`}
             </TabsTrigger>
+            <TabsTrigger value="drafts">
+              Drafts {!loading && `(${counts.drafts})`}
+            </TabsTrigger>
             <TabsTrigger value="completed">
               Completed {!loading && `(${counts.completed})`}
             </TabsTrigger>
@@ -148,23 +152,35 @@ export default function DashboardPage() {
             ) : deals.length === 0 ? (
               <div className="mt-12 flex flex-col items-center text-center">
                 <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-muted">
-                  {isFreelancer ? (
+                  {filter === "drafts" ? (
+                    <FileText className="h-7 w-7 text-brand" />
+                  ) : isFreelancer ? (
                     <Search className="h-7 w-7 text-brand" />
                   ) : (
                     <PlusCircle className="h-7 w-7 text-brand" />
                   )}
                 </div>
                 <p className="text-base font-semibold text-slate-900">
-                  {isFreelancer ? "No work yet" : "No gigs yet"}
+                  {filter === "drafts"
+                    ? "No drafts"
+                    : isFreelancer
+                      ? "No work yet"
+                      : "No gigs yet"}
                 </p>
                 <p className="mt-1 max-w-sm text-sm text-slate-600">
-                  {isFreelancer
-                    ? "Browse open gigs and apply. Your accepted gigs and active work will appear here."
-                    : "Create a protected deal, share the link anywhere, and get paid safely. Your deals will appear here."}
+                  {filter === "drafts"
+                    ? "Gigs you start creating are auto-saved here. Start a new one anytime."
+                    : isFreelancer
+                      ? "Browse open gigs and apply. Your accepted gigs and active work will appear here."
+                      : "Create a protected deal, share the link anywhere, and get paid safely. Your deals will appear here."}
                 </p>
                 <Link href={isFreelancer ? "/gigs" : "/deal/new"} className="mt-5">
                   <Button size="lg">
-                    {isFreelancer ? "Browse Gigs" : "Create Your First Deal"}
+                    {filter === "drafts"
+                      ? "Start a New Gig"
+                      : isFreelancer
+                        ? "Browse Gigs"
+                        : "Create Your First Deal"}
                   </Button>
                 </Link>
               </div>

@@ -72,9 +72,16 @@ type Props = {
 
 const STEP_TITLES = [
   "Set the Terms",
-  "Set the Budget",
-  "Set the Deadline",
+  "Budget & Timing",
   "Review & Lock It In",
+];
+const TIMEFRAME_OPTIONS: { label: string; days: number | null }[] = [
+  { label: "24 hours", days: 1 },
+  { label: "2–3 days", days: 3 },
+  { label: "1 week", days: 7 },
+  { label: "2 weeks", days: 14 },
+  { label: "1 month", days: 30 },
+  { label: "No deadline", days: null },
 ];
 const DRAFT_STORAGE_KEY = "checkhire_draft_gig";
 
@@ -286,6 +293,14 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, initialDraft
     }
     return "";
   });
+  const [selectedTimeframe, setSelectedTimeframe] = useState<number | null | "custom">(() => {
+    // If there's an existing deadline, try to match it to a preset
+    if (initialDraft?.deadline || initialTemplate?.default_deadline_days) {
+      return "custom"; // Existing dates show as custom
+    }
+    return null; // Default: no selection yet (will be set by user)
+  });
+  const [customDeadline, setCustomDeadline] = useState("");
 
   // UI state
   const [step, setStep] = useState(0);
@@ -312,7 +327,7 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, initialDraft
       try {
         const draft = {
           title, description, deliverables, category, otherCategoryDescription,
-          paymentFrequency, amount, deadline, hasMilestones,
+          paymentFrequency, amount, deadline, selectedTimeframe, customDeadline, hasMilestones,
           milestones, acceptanceCriteria, screeningQuestions,
           descriptionBriefUrl, descriptionBriefName,
           deliverablesBriefUrl, deliverablesBriefName,
@@ -327,7 +342,7 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, initialDraft
     return () => clearTimeout(timer);
   }, [
     title, description, deliverables, category, otherCategoryDescription,
-    paymentFrequency, amount, deadline, hasMilestones, milestones,
+    paymentFrequency, amount, deadline, selectedTimeframe, customDeadline, hasMilestones, milestones,
     acceptanceCriteria, screeningQuestions, step,
     descriptionBriefUrl, descriptionBriefName,
     deliverablesBriefUrl, deliverablesBriefName,
@@ -362,6 +377,8 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, initialDraft
       setPaymentFrequency(draft.paymentFrequency || "one_time");
       setAmount(draft.amount || "");
       setDeadline(draft.deadline || "");
+      if (draft.selectedTimeframe !== undefined) setSelectedTimeframe(draft.selectedTimeframe);
+      if (draft.customDeadline) setCustomDeadline(draft.customDeadline);
       setHasMilestones(draft.hasMilestones || false);
       if (draft.milestones?.length) setMilestones(draft.milestones);
       if (draft.acceptanceCriteria?.length) setAcceptanceCriteria(draft.acceptanceCriteria);
@@ -431,8 +448,6 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, initialDraft
             return false;
           }
         }
-        return true;
-      case 2:
         if (deadline) {
           const deadlineDate = new Date(deadline);
           if (deadlineDate <= new Date()) {
@@ -441,7 +456,7 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, initialDraft
           }
         }
         return true;
-      case 3:
+      case 2:
         return true;
       default:
         return true;
@@ -451,7 +466,7 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, initialDraft
   const goNext = () => {
     if (!validateStep()) return;
     setDirection(1);
-    setStep((s) => Math.min(s + 1, 3));
+    setStep((s) => Math.min(s + 1, 2));
   };
 
   const goBack = () => {
@@ -644,6 +659,24 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, initialDraft
     }
   };
 
+  const handleTimeframeSelect = (days: number | null) => {
+    setSelectedTimeframe(days);
+    if (days === null) {
+      setDeadline("");
+    } else {
+      const d = new Date();
+      d.setDate(d.getDate() + days);
+      setDeadline(d.toISOString().split("T")[0]);
+    }
+    setCustomDeadline("");
+  };
+
+  const handleCustomDeadline = (dateStr: string) => {
+    setCustomDeadline(dateStr);
+    setSelectedTimeframe("custom");
+    setDeadline(dateStr);
+  };
+
   const slideVariants = {
     enter: (dir: number) => ({ x: dir > 0 ? 80 : -80, opacity: 0 }),
     center: { x: 0, opacity: 1 },
@@ -669,9 +702,8 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, initialDraft
       </h2>
       <p className="mb-6 text-center text-sm text-slate-600">
         {step === 0 && "Everything here becomes the agreement. If there’s a dispute, this is the evidence."}
-        {step === 1 && "The freelancer receives exactly what you enter. You pay a 5% fee on top."}
-        {step === 2 && "When should the freelancer deliver the final work?"}
-        {step === 3 && "This is exactly what the other party will see. Make sure it’s right."}
+        {step === 1 && "Budget, payment structure, and delivery timeline."}
+        {step === 2 && "This is exactly what the other party will see. Make sure it’s right."}
       </p>
 
       {error && (
@@ -711,6 +743,7 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, initialDraft
                       setDraftRestored(false);
                       setTitle(""); setDescription(""); setDeliverables("");
                       setCategory("" as DealCategory); setAmount(""); setDeadline("");
+                      setSelectedTimeframe(null); setCustomDeadline("");
                       setHasMilestones(false);
                       setMilestones([{ title: "", description: "", amount: "" }, { title: "", description: "", amount: "" }]);
                       setAcceptanceCriteria([{ evidence_type: "file", description: "" }]);
@@ -1217,30 +1250,64 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, initialDraft
                   ))}
                 </div>
               </div>
-            </div>
-          )}
 
-          {/* Step 3 — When? */}
-          {step === 2 && (
-            <div className="space-y-4">
+              {/* Delivery timeframe */}
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-slate-900">
-                  Work completion deadline
+                  Delivery timeframe
                 </label>
-                <Input
-                  type="date"
-                  value={deadline}
-                  onChange={(e) => setDeadline(e.target.value)}
-                />
-                <p className="mt-1 text-xs text-slate-600">
-                  When should the freelancer deliver the final work? Leave blank if flexible.
+                <p className="mb-2 text-xs text-slate-600">
+                  How long should this gig take? The freelancer will see this as a deadline.
                 </p>
+                <div className="flex flex-wrap gap-2">
+                  {TIMEFRAME_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.label}
+                      type="button"
+                      onClick={() => handleTimeframeSelect(opt.days)}
+                      className={`cursor-pointer rounded-lg border px-3 py-2 text-sm font-medium transition-colors duration-200 ${
+                        (opt.days === null && selectedTimeframe === null && deadline === "") ||
+                        (opt.days !== null && selectedTimeframe === opt.days)
+                          ? "border-brand bg-brand-muted text-brand"
+                          : "border-gray-200 bg-white text-slate-900 hover:border-gray-300 hover:bg-gray-50"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => setSelectedTimeframe("custom")}
+                    className={`cursor-pointer rounded-lg border px-3 py-2 text-sm font-medium transition-colors duration-200 ${
+                      selectedTimeframe === "custom"
+                        ? "border-brand bg-brand-muted text-brand"
+                        : "border-gray-200 bg-white text-slate-900 hover:border-gray-300 hover:bg-gray-50"
+                    }`}
+                  >
+                    Custom date
+                  </button>
+                </div>
+                {selectedTimeframe === "custom" && (
+                  <div className="mt-2">
+                    <Input
+                      type="date"
+                      value={customDeadline}
+                      onChange={(e) => handleCustomDeadline(e.target.value)}
+                      min={new Date().toISOString().split("T")[0]}
+                    />
+                  </div>
+                )}
+                {deadline && selectedTimeframe !== "custom" && selectedTimeframe !== null && (
+                  <p className="mt-1.5 text-xs text-slate-600">
+                    Deadline will be set to {new Date(deadline).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                  </p>
+                )}
               </div>
             </div>
           )}
 
-          {/* Step 4 — Review & Post */}
-          {step === 3 && (
+          {/* Step 3 — Review & Post */}
+          {step === 2 && (
             <div className="space-y-4">
               <div className="rounded-xl border border-gray-200 bg-white p-5 space-y-4">
                 {/* Title */}
@@ -1391,16 +1458,16 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, initialDraft
                 {/* Deadline */}
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="text-xs text-slate-600">Work completion deadline</p>
+                    <p className="text-xs text-slate-600">Delivery timeframe</p>
                     <p className="text-sm text-slate-900">
                       {deadline
-                        ? new Date(deadline).toLocaleDateString()
-                        : "No deadline"}
+                        ? `Due ${new Date(deadline).toLocaleDateString()}`
+                        : "No deadline — flexible"}
                     </p>
                   </div>
                   <button
                     type="button"
-                    onClick={() => goToStep(2)}
+                    onClick={() => goToStep(1)}
                     className="cursor-pointer text-slate-600 transition-colors duration-200 hover:text-slate-900"
                   >
                     <Pencil className="h-4 w-4" />
@@ -1470,7 +1537,7 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, initialDraft
       </AnimatePresence>
 
       {/* Navigation buttons */}
-      {step < 3 && (
+      {step < 2 && (
         <div className="mt-8 mb-6 flex items-center justify-between">
           {step > 0 ? (
             <Button variant="ghost" onClick={goBack}>
@@ -1483,7 +1550,7 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, initialDraft
         </div>
       )}
 
-      {step === 3 && step > 0 && (
+      {step === 2 && step > 0 && (
         <div className="mt-4 mb-6">
           <Button variant="ghost" onClick={goBack}>
             Back

@@ -6,6 +6,8 @@ import { disputeNegotiateSchema } from "@/lib/validation/disputes";
 import { sendAndLogNotification } from "@/lib/email/logNotification";
 import { notifyAdmin } from "@/lib/email/adminNotify";
 import { verifyGuestToken } from "@/lib/deals/guestToken";
+import { notifyAdmin as slackNotifyAdmin } from "@/lib/slack/notify";
+import { disputeEscalated } from "@/lib/slack/templates";
 
 export const POST = withApiHandler(
   async (req: Request, { params }: { params: Promise<{ id: string }> }) => {
@@ -150,6 +152,15 @@ export const POST = withApiHandler(
           `,
           dealSlug: dealSlug,
         }).catch((err: unknown) => console.error("[negotiate] Failed to notify admin:", err));
+
+        // Slack: notify admin of escalation
+        void slackNotifyAdmin(disputeEscalated({
+          deal_id: dealId,
+          deal_title: dealTitle,
+          deal_link_slug: dealSlug,
+          deal_amount: totalAmount,
+          negotiation_round: 2,
+        }));
 
         // Email both
         const { data: cp } = await serviceClient.from("user_profiles").select("email").eq("id", clientUserId).maybeSingle();

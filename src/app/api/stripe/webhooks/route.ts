@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe/client";
 import { createServiceClient } from "@/lib/supabase/service";
 import { sendAndLogNotification } from "@/lib/email/logNotification";
+import { notifyAdmin } from "@/lib/slack/notify";
+import { escrowFunded } from "@/lib/slack/templates";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -171,6 +173,15 @@ export async function POST(req: Request) {
         const fundedAt = deal.funded_at || new Date().toISOString();
         const expiresAt = new Date(new Date(fundedAt).getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
         await supabase.from("deals").update({ expires_at: expiresAt }).eq("id", dealId);
+
+        // Slack: notify admin of escrow funding
+        void notifyAdmin(escrowFunded({
+          id: deal.id,
+          title: deal.title,
+          deal_link_slug: deal.deal_link_slug,
+          total_amount: escrowAmount || deal.total_amount,
+          client_name: session.customer_email || "Client",
+        }));
 
         // Email CLIENT confirming their payment was processed
         {

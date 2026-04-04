@@ -7,6 +7,8 @@ import { generateSlug } from "@/lib/deals/generateSlug";
 import { checkBlocklist } from "@/lib/validation/blocklist";
 import { sendAndLogNotification } from "@/lib/email/logNotification";
 import { calculateRiskScore } from "@/lib/moderation/riskScore";
+import { notifyAdmin } from "@/lib/slack/notify";
+import { dealFlaggedForReview } from "@/lib/slack/templates";
 
 const MAX_UNFUNDED_DEALS = 3;
 const UNFUNDED_EXPIRY_DAYS = 14;
@@ -249,6 +251,17 @@ export const POST = withApiHandler(async (req: Request) => {
   );
 
   await Promise.allSettled(postInsertPromises);
+
+  // Slack: notify admin if deal was flagged for review
+  if (flagForReview && flagReason) {
+    void notifyAdmin(dealFlaggedForReview({
+      id: deal.id,
+      title: deal.title,
+      deal_link_slug: deal.deal_link_slug,
+      flagged_reason: flagReason,
+      client_name: userProfile?.display_name || userProfile?.email || "Unknown",
+    }));
+  }
 
   return NextResponse.json({ ok: true, deal, slug: deal.deal_link_slug });
 });

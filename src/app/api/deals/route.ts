@@ -134,6 +134,8 @@ export const POST = withApiHandler(async (req: Request) => {
       title: data.title,
       description: data.description,
       deliverables: data.deliverables,
+      description_brief_url: data.description_brief_url || null,
+      deliverables_brief_url: data.deliverables_brief_url || null,
       total_amount: data.total_amount,
       category: data.category,
       other_category_description: data.other_category_description || null,

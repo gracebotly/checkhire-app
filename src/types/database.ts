@@ -101,6 +101,8 @@ export type Deal = {
   title: string;
   description: string;
   deliverables: string | null;
+  description_brief_url: string | null;
+  deliverables_brief_url: string | null;
   total_amount: number; // stored in cents
   currency: string;
   deadline: string | null;

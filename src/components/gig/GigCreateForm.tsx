@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
-import { Pencil, X, Plus, Shield } from "lucide-react";
+import { Pencil, X, Plus, Shield, Paperclip, Upload, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -58,6 +58,96 @@ const STEP_TITLES = [
   "Review & Lock It In",
 ];
 
+function BriefUploadZone({ onUploaded, onCancel }: { onUploaded: (url: string, name: string) => void; onCancel: () => void }) {
+  const [uploading, setUploading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+
+  const handleFile = async (file: File) => {
+    const maxSize = 20 * 1024 * 1024; // 20MB
+    const allowedTypes = [
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "image/png",
+      "image/jpeg",
+      "image/webp",
+      "text/plain",
+    ];
+
+    if (file.size > maxSize) {
+      alert("File too large. Maximum 20MB.");
+      return;
+    }
+
+    if (!allowedTypes.includes(file.type)) {
+      alert("Unsupported file type. Upload a PDF, Word doc, image, or text file.");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const supabase = createClient();
+      const timestamp = Date.now();
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const storagePath = `briefs/${timestamp}-${safeName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("deal-files")
+        .upload(storagePath, file, { contentType: file.type, upsert: false });
+
+      if (uploadError) throw uploadError;
+
+      onUploaded(storagePath, file.name);
+    } catch {
+      alert("Upload failed. Please try again.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div
+      onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={(e) => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }}
+      className={`rounded-lg border-2 border-dashed p-4 text-center transition-colors duration-200 ${
+        dragOver ? "border-brand bg-brand-muted" : "border-gray-200 bg-gray-50"
+      }`}
+    >
+      {uploading ? (
+        <div className="flex items-center justify-center gap-2 py-2">
+          <Loader2 className="h-4 w-4 animate-spin text-brand" />
+          <span className="text-xs text-slate-600">Uploading...</span>
+        </div>
+      ) : (
+        <>
+          <Upload className="mx-auto h-5 w-5 text-slate-600" />
+          <p className="mt-1 text-xs text-slate-600">
+            Drag a file here or{" "}
+            <label className="cursor-pointer text-brand hover:text-brand-hover transition-colors duration-200">
+              browse
+              <input
+                type="file"
+                className="hidden"
+                accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.webp,.txt"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
+              />
+            </label>
+          </p>
+          <p className="mt-0.5 text-[11px] text-slate-600">PDF, Word, image, or text. Max 20MB.</p>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="mt-2 text-xs text-slate-600 cursor-pointer transition-colors duration-200 hover:text-slate-900"
+          >
+            Cancel
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
 export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }: Props) {
   const router = useRouter();
   const { toast } = useToast();
@@ -83,6 +173,12 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
   const [paymentFrequency, setPaymentFrequency] = useState(
     wizardData?.frequency || "one_time"
   );
+  const [showDescriptionUpload, setShowDescriptionUpload] = useState(false);
+  const [descriptionBriefUrl, setDescriptionBriefUrl] = useState<string | null>(null);
+  const [descriptionBriefName, setDescriptionBriefName] = useState<string | null>(null);
+  const [showDeliverablesUpload, setShowDeliverablesUpload] = useState(false);
+  const [deliverablesBriefUrl, setDeliverablesBriefUrl] = useState<string | null>(null);
+  const [deliverablesBriefName, setDeliverablesBriefName] = useState<string | null>(null);
   const [amount, setAmount] = useState(
     initialRepeatData?.total_amount
       ? (initialRepeatData.total_amount / 100).toString()
@@ -198,8 +294,8 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
       case 0:
         if (!title.trim()) { setError("Title is required"); return false; }
         if (title.length > 100) { setError("Title too long (max 100)"); return false; }
-        if (!description.trim()) { setError("Description is required"); return false; }
-        if (!deliverables.trim()) { setError("Deliverables are required"); return false; }
+        if (!description.trim() && !descriptionBriefUrl) { setError("Description is required"); return false; }
+        if (!deliverables.trim() && !deliverablesBriefUrl) { setError("Deliverables are required"); return false; }
         if (category === "other" && otherCategoryDescription.trim().length < 10) {
           setError("Please describe the type of work (at least 10 characters)");
           return false;
@@ -276,6 +372,8 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
       title: title.trim(),
       description: description.trim(),
       deliverables: deliverables.trim(),
+      description_brief_url: descriptionBriefUrl || null,
+      deliverables_brief_url: deliverablesBriefUrl || null,
       total_amount: totalCents,
       category: category || null,
       other_category_description: category === "other" ? otherCategoryDescription.trim() : null,
@@ -432,43 +530,110 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
                 <label className="mb-1.5 block text-sm font-medium text-slate-900">
                   Title
                 </label>
-                <p className="mb-1.5 text-xs text-slate-600">A clear title helps both sides understand the deal at a glance.</p>
                 <Input
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g., Logo design for podcast brand (3 concepts + final files)"
+                  placeholder="Logo design for podcast brand"
                   maxLength={100}
                 />
               </div>
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-slate-900">
-                  What&apos;s being agreed?
+                  Project description
                 </label>
-                <p className="mb-1.5 text-xs text-slate-600">This becomes the record if there&apos;s ever a dispute. Be specific.</p>
+                <p className="mb-1.5 text-xs text-slate-600">Be specific. This is the record if there&apos;s a dispute.</p>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Describe the work clearly — scope, expectations, and anything that defines 'done.' This protects both sides."
+                  placeholder="What needs to be done? Include scope, timeline, and what &quot;done&quot; looks like."
                   maxLength={2000}
                   rows={4}
                   className="flex w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-base md:text-sm text-slate-900 placeholder:text-slate-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-ring/40 focus:border-brand resize-none"
                 />
+                {!descriptionBriefUrl && (
+                  <button
+                    type="button"
+                    onClick={() => setShowDescriptionUpload(true)}
+                    className="mt-1.5 text-xs text-brand cursor-pointer transition-colors duration-200 hover:text-brand-hover"
+                  >
+                    Or upload a brief
+                  </button>
+                )}
+                {showDescriptionUpload && !descriptionBriefUrl && (
+                  <div className="mt-2">
+                    <BriefUploadZone
+                      onUploaded={(url, name) => {
+                        setDescriptionBriefUrl(url);
+                        setDescriptionBriefName(name);
+                        setShowDescriptionUpload(false);
+                      }}
+                      onCancel={() => setShowDescriptionUpload(false)}
+                    />
+                  </div>
+                )}
+                {descriptionBriefUrl && (
+                  <div className="mt-2 flex items-center gap-2 rounded-lg bg-gray-50 px-3 py-2">
+                    <Paperclip className="h-3.5 w-3.5 text-slate-600" />
+                    <span className="text-xs text-slate-900 truncate flex-1">{descriptionBriefName}</span>
+                    <button
+                      type="button"
+                      onClick={() => { setDescriptionBriefUrl(null); setDescriptionBriefName(null); }}
+                      className="cursor-pointer text-slate-600 transition-colors duration-200 hover:text-slate-900"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                )}
               </div>
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-slate-900">
-                  What must be delivered before payment is released?
+                  Deliverables
                 </label>
                 <textarea
                   value={deliverables}
                   onChange={(e) => setDeliverables(e.target.value)}
-                  placeholder="e.g., 3 logo concepts, 2 revision rounds, final files in AI + PNG"
+                  placeholder="Final deliverables that trigger payment release"
                   maxLength={1000}
                   rows={3}
                   className="flex w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-base md:text-sm text-slate-900 placeholder:text-slate-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-ring/40 focus:border-brand resize-none"
                 />
                 <p className="mt-1 text-xs text-slate-600">
-                  Payment is only released when all listed deliverables are completed.
+                  Payment releases when these are done.
                 </p>
+                {!deliverablesBriefUrl && (
+                  <button
+                    type="button"
+                    onClick={() => setShowDeliverablesUpload(true)}
+                    className="mt-1 text-xs text-brand cursor-pointer transition-colors duration-200 hover:text-brand-hover"
+                  >
+                    Or upload a brief
+                  </button>
+                )}
+                {showDeliverablesUpload && !deliverablesBriefUrl && (
+                  <div className="mt-2">
+                    <BriefUploadZone
+                      onUploaded={(url, name) => {
+                        setDeliverablesBriefUrl(url);
+                        setDeliverablesBriefName(name);
+                        setShowDeliverablesUpload(false);
+                      }}
+                      onCancel={() => setShowDeliverablesUpload(false)}
+                    />
+                  </div>
+                )}
+                {deliverablesBriefUrl && (
+                  <div className="mt-2 flex items-center gap-2 rounded-lg bg-gray-50 px-3 py-2">
+                    <Paperclip className="h-3.5 w-3.5 text-slate-600" />
+                    <span className="text-xs text-slate-900 truncate flex-1">{deliverablesBriefName}</span>
+                    <button
+                      type="button"
+                      onClick={() => { setDeliverablesBriefUrl(null); setDeliverablesBriefName(null); }}
+                      className="cursor-pointer text-slate-600 transition-colors duration-200 hover:text-slate-900"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                )}
               </div>
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-slate-900">
@@ -514,10 +679,10 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
               {/* Proof of Completion */}
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-slate-900">
-                  How will the work be verified?
+                  How is delivery verified?
                 </label>
                 <p className="mb-3 text-xs text-slate-600">
-                  Add proof requirements so both sides agree on what &quot;completed&quot; means.
+                  Add requirements so both sides agree.
                 </p>
                 <div className="space-y-3">
                   {acceptanceCriteria.map((criteria, i) => (
@@ -548,7 +713,7 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
                           updated[i] = { ...updated[i], description: e.target.value };
                           setAcceptanceCriteria(updated);
                         }}
-                        placeholder="e.g., Final logo files (PNG + SVG), project files, or delivery link"
+                        placeholder="What proves the work is done?"
                         maxLength={200}
                         className="flex-1"
                       />
@@ -580,7 +745,7 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
                   </button>
                 )}
                 <p className="mt-2 text-xs text-slate-600">
-                  Examples: final files uploaded, live website link, screenshots, or screen recordings.
+                  Examples: final files, live website link, screenshots, or screen recordings.
                 </p>
               </div>
 
@@ -650,8 +815,8 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
                                   </SelectTrigger>
                                   <SelectContent>
                                     <SelectItem value="__none__">No dealbreaker</SelectItem>
-                                    <SelectItem value="yes">Flag if \"Yes\"</SelectItem>
-                                    <SelectItem value="no">Flag if \"No\"</SelectItem>
+                                    <SelectItem value="yes">Flag if &quot;Yes&quot;</SelectItem>
+                                    <SelectItem value="no">Flag if &quot;No&quot;</SelectItem>
                                   </SelectContent>
                                 </Select>
                               )}
@@ -813,7 +978,7 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
                   >
                     <p className="text-sm font-semibold text-slate-900">Pay in stages</p>
                     <p className="mt-0.5 text-xs text-slate-600">
-                      Split into checkpoints — review work along the way
+                      Split into checkpoints. Review work along the way.
                     </p>
                   </button>
                 </div>
@@ -903,6 +1068,12 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
                   <p className="text-sm text-slate-900 whitespace-pre-wrap">
                     {description}
                   </p>
+                  {descriptionBriefUrl && (
+                    <div className="flex items-center gap-2">
+                      <Paperclip className="h-3.5 w-3.5 text-slate-600" />
+                      <span className="text-xs text-slate-600">Brief attached: {descriptionBriefName}</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Deliverables */}
@@ -911,6 +1082,12 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, wizardData }
                   <p className="text-sm text-slate-900 whitespace-pre-wrap">
                     {deliverables}
                   </p>
+                  {deliverablesBriefUrl && (
+                    <div className="flex items-center gap-2">
+                      <Paperclip className="h-3.5 w-3.5 text-slate-600" />
+                      <span className="text-xs text-slate-600">Brief attached: {deliverablesBriefName}</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Amount */}

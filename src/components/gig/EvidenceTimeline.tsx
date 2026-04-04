@@ -620,18 +620,6 @@ export function EvidenceTimeline({
             )}
           </div>
 
-          {/* Action card — contextual next step, injected by parent */}
-          {actionCard && (
-            <div className="mt-2">{actionCard}</div>
-          )}
-          <div ref={bottomRef} />
-        </div>
-      )}
-
-      {/* Empty timeline but has an action card */}
-      {entries.length === 0 && actionCard && (
-        <div className="relative">
-          <div className="mt-2">{actionCard}</div>
           <div ref={bottomRef} />
         </div>
       )}

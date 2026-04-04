@@ -619,6 +619,7 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, initialDraft
       setSubmitting(false);
     }
   };
+  void handleSaveDraft; // Keep handler available for future UX flows.
 
   const handleSaveTemplate = async () => {
     if (!templateName.trim()) return;
@@ -1503,33 +1504,22 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, initialDraft
                 </div>
               )}
 
-              <div className="flex flex-col gap-3">
-                <div className="space-y-2">
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    className="w-full"
-                    onClick={handleSaveDraft}
-                    disabled={submitting}
-                  >
-                    {submitting ? "Saving..." : "Save Draft"}
-                  </Button>
-                  <Button
-                    size="lg"
-                    className="w-full"
-                    onClick={handleSubmit}
-                    disabled={submitting}
-                  >
-                    {submitting ? "Creating..." : "Create Deal Link"}
-                  </Button>
-                </div>
+              <div className="space-y-3">
                 <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setTemplateDialogOpen(true)}
+                  size="lg"
+                  className="w-full"
+                  onClick={handleSubmit}
+                  disabled={submitting}
                 >
-                  Save as Template
+                  {submitting ? "Creating..." : "Create Deal Link"}
                 </Button>
+                <button
+                  type="button"
+                  onClick={() => setTemplateDialogOpen(true)}
+                  className="w-full cursor-pointer text-center text-xs text-slate-600 transition-colors duration-200 hover:text-slate-900"
+                >
+                  Save this setup as a reusable template
+                </button>
               </div>
             </div>
           )}

@@ -25,7 +25,6 @@ import type {
   ActivityLogEntryWithUser,
   DealWithParticipants,
   DealStatus,
-  EscrowStatus,
   TimelineNodeVariant,
 } from "@/types/database";
 
@@ -40,111 +39,6 @@ type Props = {
   onOpenDispute: () => void;
   actionCard?: React.ReactNode;
 };
-
-// ── Stage Progress ──
-
-type Stage = {
-  key: string;
-  label: string;
-  status: "completed" | "current" | "upcoming";
-};
-
-function getStages(dealStatus: DealStatus, escrowStatus: EscrowStatus): Stage[] {
-  const stages: { key: string; label: string }[] = [
-    { key: "posted", label: "Posted" },
-    { key: "funded", label: "Funded" },
-    { key: "accepted", label: "Accepted" },
-    { key: "in_progress", label: "In Progress" },
-    { key: "submitted", label: "Submitted" },
-    { key: "complete", label: "Complete" },
-  ];
-
-  // Determine how far along we are
-  let currentIndex = 0;
-
-  // Posted is always done (we're viewing the deal page)
-  if (escrowStatus === "funded" || escrowStatus === "partially_released") {
-    currentIndex = 1;
-  }
-  if (
-    dealStatus === "in_progress" ||
-    dealStatus === "submitted" ||
-    dealStatus === "revision_requested" ||
-    dealStatus === "completed" ||
-    dealStatus === "disputed"
-  ) {
-    currentIndex = 2; // accepted
-  }
-  if (
-    dealStatus === "in_progress" ||
-    dealStatus === "revision_requested" ||
-    dealStatus === "submitted" ||
-    dealStatus === "completed" ||
-    dealStatus === "disputed"
-  ) {
-    currentIndex = 3; // in_progress
-  }
-  if (
-    dealStatus === "submitted" ||
-    dealStatus === "completed" ||
-    dealStatus === "disputed"
-  ) {
-    currentIndex = 4; // submitted
-  }
-  if (dealStatus === "completed") {
-    currentIndex = 5; // complete
-  }
-
-  return stages.map((s, i) => ({
-    ...s,
-    status: i < currentIndex ? "completed" : i === currentIndex ? "current" : "upcoming",
-  }));
-}
-
-function StageProgress({ stages }: { stages: Stage[] }) {
-  return (
-    <div className="flex items-center justify-between gap-1 px-1">
-      {stages.map((stage, i) => (
-        <div key={stage.key} className="flex flex-1 items-center gap-1">
-          <div className="flex flex-col items-center gap-1">
-            <div
-              className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full transition-colors duration-200 ${
-                stage.status === "completed"
-                  ? "bg-brand"
-                  : stage.status === "current"
-                    ? "border-2 border-brand bg-white"
-                    : "border border-dashed border-gray-300 bg-white"
-              }`}
-            >
-              {stage.status === "completed" && (
-                <CheckCircle className="h-3 w-3 text-white" />
-              )}
-              {stage.status === "current" && (
-                <div className="h-2 w-2 rounded-full bg-brand" />
-              )}
-            </div>
-            <span
-              className={`text-[10px] leading-tight text-center ${
-                stage.status === "upcoming"
-                  ? "text-slate-600"
-                  : "font-medium text-slate-900"
-              }`}
-            >
-              {stage.label}
-            </span>
-          </div>
-          {i < stages.length - 1 && (
-            <div
-              className={`mb-4 h-0.5 flex-1 ${
-                stage.status === "completed" ? "bg-brand" : "bg-gray-200"
-              }`}
-            />
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}
 
 // ── Timestamp formatting ──
 

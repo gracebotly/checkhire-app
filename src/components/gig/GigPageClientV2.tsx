@@ -2,19 +2,15 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "motion/react";
 import { categoryLabels } from "@/lib/categories";
 import {
-  Calendar,
   Lock,
-  Clock,
   CheckCircle,
   ChevronDown,
   ChevronUp,
   AlertTriangle,
   DollarSign,
   ShieldCheck,
-  ShieldAlert,
   PenLine,
   Ban,
   CreditCard,
@@ -46,7 +42,6 @@ import { CountdownTimer } from "@/components/gig/CountdownTimer";
 import { StripeConnectPrompt } from "@/components/gig/StripeConnectPrompt";
 import { InstantPayoutCard } from "@/components/gig/InstantPayoutCard";
 import { RatingForm } from "@/components/gig/RatingForm";
-import { RatingDisplay } from "@/components/gig/RatingDisplay";
 import { StarRating } from "@/components/gig/StarRating";
 import { InterestForm } from "@/components/gig/InterestForm";
 import { InterestList } from "@/components/gig/InterestList";
@@ -131,7 +126,6 @@ export function GigPageClientV2({
   const [activityEntries, setActivityEntries] = useState(initialActivity);
   const [userRating, setUserRating] = useState(initialUserRating);
   const [otherRating, setOtherRating] = useState(initialOtherRating);
-  const [escrowExpanded, setEscrowExpanded] = useState(role === "visitor");
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -1105,12 +1099,34 @@ export function GigPageClientV2({
               <button type="button" onClick={handleCancelWithRefund} disabled={actionLoading} className="cursor-pointer text-red-600 transition-colors duration-200 hover:text-red-700">Cancel this gig</button>
             )}
             {role === "client" && deal.escrow_status === "funded" && !hasFreelancer && !["completed", "cancelled", "refunded"].includes(deal.status) && (
-              <button type="button" onClick={handleCancelWithRefund} disabled={actionLoading} className="cursor-pointer text-red-600 transition-colors duration-200 hover:text-red-700">Cancel &amp; get full refund</button>
+              <CancelRefundDialog
+                dealId={deal.id}
+                dealTitle={deal.title}
+                refundAmountCents={deal.total_amount}
+                hasFreelancer={false}
+                onSuccess={() => {
+                  toast("Gig cancelled — refund issued", "info");
+                  router.refresh();
+                }}
+              >
+                <button type="button" className="cursor-pointer text-red-600 transition-colors duration-200 hover:text-red-700 text-sm">Cancel &amp; get full refund</button>
+              </CancelRefundDialog>
             )}
             {role === "client" && deal.escrow_status === "funded" && hasFreelancer && !gracePeriodExpired && !["completed", "cancelled", "refunded", "disputed"].includes(deal.status) && (
-              <button type="button" onClick={handleCancelWithRefund} disabled={actionLoading} className="cursor-pointer text-red-600 transition-colors duration-200 hover:text-red-700">
-                Cancel &amp; refund {gracePeriodRemaining && `(${gracePeriodRemaining})`}
-              </button>
+              <CancelRefundDialog
+                dealId={deal.id}
+                dealTitle={deal.title}
+                refundAmountCents={deal.total_amount}
+                hasFreelancer={true}
+                onSuccess={() => {
+                  toast("Gig cancelled — refund issued", "info");
+                  router.refresh();
+                }}
+              >
+                <button type="button" className="cursor-pointer text-red-600 transition-colors duration-200 hover:text-red-700 text-sm">
+                  Cancel &amp; refund {gracePeriodRemaining && `(${gracePeriodRemaining})`}
+                </button>
+              </CancelRefundDialog>
             )}
             {role === "client" && deal.escrow_status === "funded" && hasFreelancer && gracePeriodExpired && !["completed", "cancelled", "refunded", "disputed"].includes(deal.status) && (
               <p className="text-xs text-slate-600">Funds are locked — the freelancer accepted more than 24 hours ago.</p>

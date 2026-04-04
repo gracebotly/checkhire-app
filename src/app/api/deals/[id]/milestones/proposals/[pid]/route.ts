@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { withApiHandler } from "@/lib/api/withApiHandler";
 import { proposalActionSchema } from "@/lib/validation/escrow";
+import { sendAndLogNotification } from "@/lib/email/logNotification";
 
 export const PATCH = withApiHandler(
   async (req: Request, { params }: { params: Promise<{ id: string; pid: string }> }) => {
@@ -23,7 +25,7 @@ export const PATCH = withApiHandler(
     if (proposal.proposed_by === user.id) return NextResponse.json({ ok: false, code: "FORBIDDEN", message: "You cannot approve/reject your own proposal" }, { status: 403 });
 
     // Verify the user is the other participant
-    const { data: deal } = await supabase.from("deals").select("client_user_id, freelancer_user_id").eq("id", id).maybeSingle();
+    const { data: deal } = await supabase.from("deals").select("client_user_id, freelancer_user_id, title, deal_link_slug").eq("id", id).maybeSingle();
     if (!deal) return NextResponse.json({ ok: false, code: "NOT_FOUND", message: "Deal not found" }, { status: 404 });
     if (deal.client_user_id !== user.id && deal.freelancer_user_id !== user.id) {
       return NextResponse.json({ ok: false, code: "FORBIDDEN", message: "Not a participant" }, { status: 403 });
@@ -65,6 +67,23 @@ export const PATCH = withApiHandler(
     } else {
       await supabase.from("milestone_change_proposals").update({ status: "rejected", responded_at: new Date().toISOString() }).eq("id", pid);
       await supabase.from("deal_activity_log").insert({ deal_id: id, user_id: null, entry_type: "system", content: `${displayName} rejected the milestone change` });
+    }
+
+    // Notify the proposer about the decision
+    const serviceClient = createServiceClient();
+    const { data: proposerProfile } = await serviceClient.from("user_profiles").select("email").eq("id", proposal.proposed_by).maybeSingle();
+    if (proposerProfile?.email) {
+      await sendAndLogNotification({
+        supabase: serviceClient,
+        type: "milestone_change_approved",
+        userId: proposal.proposed_by,
+        dealId: id,
+        email: proposerProfile.email,
+        data: {
+          dealTitle: deal.title || "Untitled Gig",
+          dealSlug: deal.deal_link_slug || "",
+        },
+      });
     }
 
     return NextResponse.json({ ok: true });

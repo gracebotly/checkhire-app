@@ -97,7 +97,7 @@ export const POST = withApiHandler(
       await supabase.from("deal_activity_log").insert({ deal_id: id, user_id: null, entry_type: "system", content: `${displayName} submitted work for review — 72-hour countdown started` });
     }
 
-    // Email the client
+    // Email the client — use milestone-specific template when applicable
     const { data: clientProfile } = await supabase
       .from("user_profiles")
       .select("email")
@@ -106,18 +106,35 @@ export const POST = withApiHandler(
 
     if (clientProfile?.email) {
       const serviceClient = createServiceClient();
-      await sendAndLogNotification({
-        supabase: serviceClient,
-        type: "work_submitted",
-        userId: deal.client_user_id,
-        dealId: id,
-        email: clientProfile.email,
-        data: {
-          dealTitle: deal.title,
-          dealSlug: deal.deal_link_slug,
-          amount: deal.total_amount,
-        },
-      });
+      if (milestone_id) {
+        const { data: ms } = await supabase.from("milestones").select("title, amount").eq("id", milestone_id).maybeSingle();
+        await sendAndLogNotification({
+          supabase: serviceClient,
+          type: "milestone_submitted",
+          userId: deal.client_user_id,
+          dealId: id,
+          email: clientProfile.email,
+          data: {
+            dealTitle: deal.title,
+            dealSlug: deal.deal_link_slug,
+            amount: ms?.amount || deal.total_amount,
+            milestoneTitle: ms?.title || "Milestone",
+          },
+        });
+      } else {
+        await sendAndLogNotification({
+          supabase: serviceClient,
+          type: "work_submitted",
+          userId: deal.client_user_id,
+          dealId: id,
+          email: clientProfile.email,
+          data: {
+            dealTitle: deal.title,
+            dealSlug: deal.deal_link_slug,
+            amount: deal.total_amount,
+          },
+        });
+      }
     }
 
     return NextResponse.json({ ok: true, auto_release_at: autoReleaseAt });

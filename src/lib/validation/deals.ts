@@ -12,6 +12,8 @@ export const createDealSchema = z
       .string()
       .min(1, "Deliverables are required")
       .max(1000),
+    description_brief_url: z.string().max(500).nullable().optional(),
+    deliverables_brief_url: z.string().max(500).nullable().optional(),
     total_amount: z
       .number()
       .int()

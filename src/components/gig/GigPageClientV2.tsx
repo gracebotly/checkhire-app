@@ -14,6 +14,7 @@ import {
   PenLine,
   Ban,
   CreditCard,
+  Paperclip,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -837,6 +838,17 @@ export function GigPageClientV2({
                   <p className="mt-1 text-sm text-slate-600 whitespace-pre-wrap">
                     {deal.description}
                   </p>
+                  {deal.description_brief_url && (
+                    <a
+                      href={`/api/deals/${deal.id}/brief?field=description`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-2 inline-flex items-center gap-1.5 text-xs text-brand cursor-pointer transition-colors duration-200 hover:text-brand-hover"
+                    >
+                      <Paperclip className="h-3.5 w-3.5" />
+                      View attached brief
+                    </a>
+                  )}
                 </div>
                 <Separator />
                 {deal.deliverables && (
@@ -848,6 +860,17 @@ export function GigPageClientV2({
                       <p className="mt-1 text-sm text-slate-600 whitespace-pre-wrap">
                         {deal.deliverables}
                       </p>
+                      {deal.deliverables_brief_url && (
+                        <a
+                          href={`/api/deals/${deal.id}/brief?field=deliverables`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-2 inline-flex items-center gap-1.5 text-xs text-brand cursor-pointer transition-colors duration-200 hover:text-brand-hover"
+                        >
+                          <Paperclip className="h-3.5 w-3.5" />
+                          View attached brief
+                        </a>
+                      )}
                     </div>
                     <Separator />
                   </>
@@ -942,6 +965,17 @@ export function GigPageClientV2({
                       <p className="mt-1 text-sm text-slate-600 whitespace-pre-wrap">
                         {deal.description}
                       </p>
+                      {deal.description_brief_url && (
+                        <a
+                          href={`/api/deals/${deal.id}/brief?field=description`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-2 inline-flex items-center gap-1.5 text-xs text-brand cursor-pointer transition-colors duration-200 hover:text-brand-hover"
+                        >
+                          <Paperclip className="h-3.5 w-3.5" />
+                          View attached brief
+                        </a>
+                      )}
                     </div>
                     <Separator />
                     {deal.deliverables && (
@@ -953,6 +987,17 @@ export function GigPageClientV2({
                           <p className="mt-1 text-sm text-slate-600 whitespace-pre-wrap">
                             {deal.deliverables}
                           </p>
+                          {deal.deliverables_brief_url && (
+                            <a
+                              href={`/api/deals/${deal.id}/brief?field=deliverables`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="mt-2 inline-flex items-center gap-1.5 text-xs text-brand cursor-pointer transition-colors duration-200 hover:text-brand-hover"
+                            >
+                              <Paperclip className="h-3.5 w-3.5" />
+                              View attached brief
+                            </a>
+                          )}
                         </div>
                         <Separator />
                       </>

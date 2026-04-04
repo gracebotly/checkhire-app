@@ -34,16 +34,64 @@ export const POST = withApiHandler(async (req: Request) => {
     );
   }
 
-  // ── Unfunded deal limit check ──
-  // Count active unfunded deals (not completed, cancelled, refunded, or expired)
+  // Parse body and validate first (no DB needed)
   const now = new Date();
-  const { count: unfundedCount, error: countError } = await supabase
-    .from("deals")
-    .select("id", { count: "exact", head: true })
-    .eq("client_user_id", user.id)
-    .eq("escrow_status", "unfunded")
-    .not("status", "in", "(completed,cancelled,refunded)")
-    .or(`expires_at.is.null,expires_at.gt.${now.toISOString()}`);
+  const body = await req.json();
+  const parsed = createDealSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      {
+        ok: false,
+        code: "VALIDATION_ERROR",
+        message: parsed.error.errors[0]?.message || "Invalid input",
+      },
+      { status: 400 }
+    );
+  }
+
+  const data = parsed.data;
+
+  // Compliance check — block prohibited gig content (no DB needed)
+  const contentToCheck = `${data.title} ${data.description} ${data.deliverables} ${data.other_category_description || ""}`;
+  const blockedTerm = checkBlocklist(contentToCheck);
+  if (blockedTerm) {
+    return NextResponse.json(
+      { ok: false, code: "BLOCKED_CONTENT", message: "This gig may not comply with our Acceptable Use Policy. Please review your description or contact support.", link: "/faq#acceptable-use" },
+      { status: 400 }
+    );
+  }
+
+  // ── Run all pre-insert checks in parallel ──
+  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+  const [unfundedResult, profileResult, existingCountResult, recentCountResult] = await Promise.all([
+    supabase
+      .from("deals")
+      .select("id", { count: "exact", head: true })
+      .eq("client_user_id", user.id)
+      .eq("escrow_status", "unfunded")
+      .not("status", "in", "(completed,cancelled,refunded)")
+      .or(`expires_at.is.null,expires_at.gt.${now.toISOString()}`),
+    supabase
+      .from("user_profiles")
+      .select("completed_deals_count, trust_badge, email, display_name")
+      .eq("id", user.id)
+      .maybeSingle(),
+    supabase
+      .from("deals")
+      .select("id", { count: "exact", head: true })
+      .eq("client_user_id", user.id),
+    supabase
+      .from("deals")
+      .select("id", { count: "exact", head: true })
+      .eq("client_user_id", user.id)
+      .gte("created_at", oneHourAgo),
+  ]);
+
+  const unfundedCount = unfundedResult.count;
+  const countError = unfundedResult.error;
+  const userProfile = profileResult.data;
+  const existingDealCount = existingCountResult.count;
+  const recentDealCount = recentCountResult.count;
 
   if (countError) {
     console.error("[deals/create] Failed to count unfunded deals:", countError);
@@ -60,49 +108,7 @@ export const POST = withApiHandler(async (req: Request) => {
     );
   }
 
-  const body = await req.json();
-  const parsed = createDealSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json(
-      {
-        ok: false,
-        code: "VALIDATION_ERROR",
-        message: parsed.error.errors[0]?.message || "Invalid input",
-      },
-      { status: 400 }
-    );
-  }
-
-  const data = parsed.data;
-
-  // Compliance check — block prohibited gig content
-  const contentToCheck = `${data.title} ${data.description} ${data.deliverables} ${data.other_category_description || ""}`;
-  const blockedTerm = checkBlocklist(contentToCheck);
-  if (blockedTerm) {
-    return NextResponse.json(
-      { ok: false, code: "BLOCKED_CONTENT", message: "This gig may not comply with our Acceptable Use Policy. Please review your description or contact support.", link: "/faq#acceptable-use" },
-      { status: 400 }
-    );
-  }
-
   // ── Risk-based moderation ──
-  const { data: userProfile } = await supabase
-    .from("user_profiles")
-    .select("completed_deals_count, trust_badge, email")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  const { count: existingDealCount } = await supabase
-    .from("deals")
-    .select("id", { count: "exact", head: true })
-    .eq("client_user_id", user.id);
-
-  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-  const { count: recentDealCount } = await supabase
-    .from("deals")
-    .select("id", { count: "exact", head: true })
-    .eq("client_user_id", user.id)
-    .gte("created_at", oneHourAgo);
 
   const riskAssessment = calculateRiskScore({
     completedDealsCount: userProfile?.completed_deals_count ?? 0,
@@ -164,6 +170,9 @@ export const POST = withApiHandler(async (req: Request) => {
     );
   }
 
+  // ── Run all post-insert operations in parallel ──
+  const postInsertPromises: PromiseLike<unknown>[] = [];
+
   // Insert acceptance criteria
   if (data.acceptance_criteria && data.acceptance_criteria.length > 0) {
     const criteriaRows = data.acceptance_criteria.map((c, i) => ({
@@ -172,14 +181,11 @@ export const POST = withApiHandler(async (req: Request) => {
       description: c.description,
       position: i,
     }));
-
-    const { error: criteriaError } = await supabase
-      .from("acceptance_criteria")
-      .insert(criteriaRows);
-
-    if (criteriaError) {
-      console.error("Acceptance criteria insert error:", criteriaError);
-    }
+    postInsertPromises.push(
+      supabase.from("acceptance_criteria").insert(criteriaRows).then(({ error }) => {
+        if (error) console.error("Acceptance criteria insert error:", error);
+      })
+    );
   }
 
   // Insert milestones if applicable
@@ -191,58 +197,57 @@ export const POST = withApiHandler(async (req: Request) => {
       amount: m.amount,
       position: i,
     }));
-
-    const { error: msError } = await supabase
-      .from("milestones")
-      .insert(milestoneRows);
-
-    if (msError) {
-      console.error("Milestone insert error:", msError);
-    }
+    postInsertPromises.push(
+      supabase.from("milestones").insert(milestoneRows).then(({ error }) => {
+        if (error) console.error("Milestone insert error:", error);
+      })
+    );
   }
 
   // Increment template use_count if from template
   if (data.template_id) {
-    const { data: tmpl } = await supabase
-      .from("deal_templates")
-      .select("use_count")
-      .eq("id", data.template_id)
-      .maybeSingle();
-
-    if (tmpl) {
-      await supabase
+    postInsertPromises.push(
+      supabase
         .from("deal_templates")
-        .update({ use_count: (tmpl.use_count || 0) + 1 })
-        .eq("id", data.template_id);
-    }
+        .select("use_count")
+        .eq("id", data.template_id)
+        .maybeSingle()
+        .then(({ data: tmpl }) => {
+          if (tmpl) {
+            return supabase
+              .from("deal_templates")
+              .update({ use_count: (tmpl.use_count || 0) + 1 })
+              .eq("id", data.template_id);
+          }
+        })
+    );
   }
 
-  // Insert system activity log
-  const { data: profile } = await supabase
-    .from("user_profiles")
-    .select("display_name, email")
-    .eq("id", user.id)
-    .maybeSingle();
+  // Activity log + email notification
+  postInsertPromises.push(
+    (async () => {
+      await supabase.from("deal_activity_log").insert({
+        deal_id: deal.id,
+        user_id: null,
+        entry_type: "system",
+        content: `Gig created by ${userProfile?.display_name || "Unknown"}`,
+      });
 
-  await supabase.from("deal_activity_log").insert({
-    deal_id: deal.id,
-    user_id: null,
-    entry_type: "system",
-    content: `Gig created by ${profile?.display_name || "Unknown"}`,
-  });
+      if (userProfile?.email) {
+        const serviceClient = createServiceClient();
+        await sendAndLogNotification({
+          supabase: serviceClient,
+          type: "deal_created",
+          userId: user.id,
+          dealId: deal.id,
+          email: userProfile.email,
+          data: { dealTitle: deal.title, dealSlug: deal.deal_link_slug },
+        });
+      }
+    })()
+  );
 
-  // Notify creator
-  if (profile?.email) {
-    const serviceClient = createServiceClient();
-    await sendAndLogNotification({
-      supabase: serviceClient,
-      type: "deal_created",
-      userId: user.id,
-      dealId: deal.id,
-      email: profile.email,
-      data: { dealTitle: deal.title, dealSlug: deal.deal_link_slug },
-    });
-  }
+  await Promise.allSettled(postInsertPromises);
 
   return NextResponse.json({ ok: true, deal, slug: deal.deal_link_slug });
 });

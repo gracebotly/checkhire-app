@@ -55,6 +55,7 @@ type InitialDraftData = {
   description_brief_name: string | null;
   deliverables_brief_name: string | null;
   screening_questions: unknown[];
+  max_applicants?: number | null;
 };
 
 type Props = {
@@ -267,6 +268,11 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, initialDraft
     options: string[];
     dealbreaker_answer: string;
   }[]) || []);
+  const [maxApplicants, setMaxApplicants] = useState<number>(
+    initialDraft?.max_applicants && [15, 30, 50].includes(initialDraft.max_applicants)
+      ? initialDraft.max_applicants
+      : 15
+  );
   const [hasMilestones, setHasMilestones] = useState(
     initialDraft?.has_milestones || initialTemplate?.has_milestones || false
   );
@@ -329,6 +335,7 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, initialDraft
           title, description, deliverables, category, otherCategoryDescription,
           paymentFrequency, amount, deadline, selectedTimeframe, customDeadline, hasMilestones,
           milestones, acceptanceCriteria, screeningQuestions,
+          maxApplicants,
           descriptionBriefUrl, descriptionBriefName,
           deliverablesBriefUrl, deliverablesBriefName,
           step,
@@ -344,6 +351,7 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, initialDraft
     title, description, deliverables, category, otherCategoryDescription,
     paymentFrequency, amount, deadline, selectedTimeframe, customDeadline, hasMilestones, milestones,
     acceptanceCriteria, screeningQuestions, step,
+    maxApplicants,
     descriptionBriefUrl, descriptionBriefName,
     deliverablesBriefUrl, deliverablesBriefName,
     initialTemplate, initialRepeatData,
@@ -383,6 +391,7 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, initialDraft
       if (draft.milestones?.length) setMilestones(draft.milestones);
       if (draft.acceptanceCriteria?.length) setAcceptanceCriteria(draft.acceptanceCriteria);
       if (draft.screeningQuestions?.length) setScreeningQuestions(draft.screeningQuestions);
+      if (draft.maxApplicants && [15, 30, 50].includes(draft.maxApplicants)) setMaxApplicants(draft.maxApplicants);
       if (draft.descriptionBriefUrl) setDescriptionBriefUrl(draft.descriptionBriefUrl);
       if (draft.descriptionBriefName) setDescriptionBriefName(draft.descriptionBriefName);
       if (draft.deliverablesBriefUrl) setDeliverablesBriefUrl(draft.deliverablesBriefUrl);
@@ -500,6 +509,7 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, initialDraft
       payment_frequency: paymentFrequency,
       deadline: deadline || null,
       deal_type: "public",
+      max_applicants: maxApplicants,
       has_milestones: hasMilestones,
       acceptance_criteria: acceptanceCriteria.map((c) => ({
         evidence_type: c.evidence_type,
@@ -567,6 +577,7 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, initialDraft
       payment_frequency: paymentFrequency,
       deadline: deadline || null,
       deal_type: "public",
+      max_applicants: maxApplicants,
       has_milestones: hasMilestones,
       is_draft: true,
       acceptance_criteria: acceptanceCriteria
@@ -1166,6 +1177,37 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, initialDraft
                     Add screening question
                   </button>
                 )}
+              </div>
+
+              {/* Application limit */}
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-slate-900">
+                  Application limit
+                </label>
+                <p className="mb-3 text-xs text-slate-600">
+                  How many applications do you want to receive? New applications close when the limit is reached. The gig stays visible.
+                </p>
+                <div className="flex gap-2">
+                  {[15, 30, 50].map((n) => (
+                    <button
+                      key={n}
+                      type="button"
+                      onClick={() => setMaxApplicants(n)}
+                      className={`flex-1 cursor-pointer rounded-lg border px-3 py-2.5 text-center text-sm font-semibold transition-colors duration-200 ${
+                        maxApplicants === n
+                          ? "border-brand bg-brand-muted text-brand"
+                          : "border-gray-200 bg-white text-slate-900 hover:border-gray-300 hover:bg-gray-50"
+                      }`}
+                    >
+                      {n}
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-1.5 text-xs text-slate-600">
+                  {maxApplicants === 15 && "Good for most gigs — fills fast, easy to review."}
+                  {maxApplicants === 30 && "Larger projects — more options to choose from."}
+                  {maxApplicants === 50 && "Cast a wide net — best for competitive or high-value gigs."}
+                </p>
               </div>
 
               {/* Trust line */}

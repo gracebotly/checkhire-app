@@ -73,6 +73,7 @@ type Props = {
   otherRating: Rating | null;
   interests: DealInterestWithUser[];
   userInterest: DealInterest | null;
+  applicantCount: number;
   disputeId: string | null;
   guestFreelancerName?: string | null;
   guestToken?: string | null;
@@ -117,6 +118,7 @@ export function GigPageClientV2({
   otherRating: initialOtherRating,
   interests,
   userInterest,
+  applicantCount,
   disputeId,
   guestFreelancerName = null,
   guestToken: initialGuestToken = null,
@@ -144,58 +146,53 @@ export function GigPageClientV2({
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [submitDialogOpen, setSubmitDialogOpen] = useState(false);
 
-  // Auto-submit pending pitch after auth return
+  // ── Restore saved application data after auth redirect ──
+  const [restoredApplication, setRestoredApplication] = useState<{
+    pitch: string;
+    portfolio_urls: string[];
+    screening_answers: { question_id: string; answer: string }[];
+  } | null>(null);
+
   useEffect(() => {
     if (!currentUserId || role !== "visitor" || deal.deal_type !== "public") return;
     if (deal.status !== "pending_acceptance" || deal.freelancer_user_id) return;
 
-    // Check URL param
     const url = new URL(window.location.href);
-    const shouldSubmit = url.searchParams.get("submit_pitch") === "true";
-    if (!shouldSubmit) return;
+    const shouldRestore = url.searchParams.get("submit_pitch") === "true";
+    if (!shouldRestore) return;
 
-    // Clean URL
     url.searchParams.delete("submit_pitch");
     window.history.replaceState(null, "", url.pathname + url.search);
 
-    // Read pitch from sessionStorage
-    let savedPitch: string | null = null;
     try {
-      savedPitch = sessionStorage.getItem(`checkhire_pending_pitch_${deal.id}`);
+      const savedJson = sessionStorage.getItem(`checkhire_pending_application_${deal.id}`);
+      if (savedJson) {
+        const parsed = JSON.parse(savedJson);
+        setRestoredApplication({
+          pitch: parsed.pitch || "",
+          portfolio_urls: parsed.portfolio_urls || [],
+          screening_answers: parsed.screening_answers || [],
+        });
+        sessionStorage.removeItem(`checkhire_pending_application_${deal.id}`);
+        sessionStorage.removeItem(`checkhire_pending_pitch_${deal.id}`);
+        toast("Welcome back! Review your application and submit when ready.", "info");
+        return;
+      }
+
+      const savedPitch = sessionStorage.getItem(`checkhire_pending_pitch_${deal.id}`);
+      if (savedPitch && savedPitch.trim().length >= 20) {
+        setRestoredApplication({
+          pitch: savedPitch.trim(),
+          portfolio_urls: [],
+          screening_answers: [],
+        });
+        sessionStorage.removeItem(`checkhire_pending_pitch_${deal.id}`);
+        toast("Welcome back! Review your application and submit when ready.", "info");
+      }
     } catch {
       // sessionStorage unavailable
     }
-
-    if (!savedPitch || savedPitch.trim().length < 20) return;
-
-    // Auto-submit the application
-    (async () => {
-      try {
-        const res = await fetch(`/api/deals/${deal.id}/interest`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            pitch_text: savedPitch!.trim(),
-            portfolio_urls: [],
-            screening_answers: [],
-            file_urls: [],
-          }),
-        });
-        const data = await res.json();
-        if (data.ok) {
-          try {
-            sessionStorage.removeItem(`checkhire_pending_pitch_${deal.id}`);
-          } catch {
-            // noop
-          }
-          toast("Application submitted!", "success");
-          router.refresh();
-        }
-      } catch {
-        // If auto-submit fails, user can still apply manually
-      }
-    })();
-  }, [currentUserId, deal.id, deal.deal_type, deal.status, deal.freelancer_user_id, role, router, toast]);
+  }, [currentUserId, deal.id, deal.deal_type, deal.status, deal.freelancer_user_id, role, toast]);
 
   const status = statusMap[deal.status] || statusMap.pending_acceptance;
   const dealUrl = typeof window !== "undefined" ? window.location.href : "";
@@ -536,46 +533,86 @@ export function GigPageClientV2({
     }
     // Visitor: Public deal — express interest
     if (role === "visitor" && deal.deal_type === "public" && currentUserId && deal.status === "pending_acceptance" && !deal.freelancer_user_id) {
+      if (deal.max_applicants && applicantCount >= deal.max_applicants) {
+        return (
+          <TimelineActionCard delayIndex={0}>
+            <div className="rounded-xl border border-gray-200 bg-white p-5 text-center">
+              <p className="text-sm font-semibold text-slate-900">Applications closed</p>
+              <p className="mt-1 text-xs text-slate-600">{applicantCount} of {deal.max_applicants} applicants submitted</p>
+            </div>
+          </TimelineActionCard>
+        );
+      }
       return (
         <TimelineActionCard delayIndex={0}>
-          <InterestForm
-            dealId={deal.id}
-            existingInterest={userInterest}
-            onSubmitted={() => router.refresh()}
-            currentUserId={currentUserId || ""}
-            screeningQuestions={
-              ((deal as Record<string, unknown>).screening_questions as {
-                id: string;
-                type: "yes_no" | "short_text" | "multiple_choice";
-                text: string;
-                options?: string[];
-                dealbreaker_answer?: string;
-              }[]) || []
-            }
-          />
+          <div className="space-y-3">
+            {deal.max_applicants ? (
+              <p className="text-xs text-slate-600">{applicantCount} of {deal.max_applicants} applicants</p>
+            ) : applicantCount > 0 ? (
+              <p className="text-xs text-slate-600">{applicantCount} {applicantCount === 1 ? "applicant" : "applicants"} so far</p>
+            ) : (
+              <p className="text-xs text-brand font-medium">Be the first to apply</p>
+            )}
+            <InterestForm
+              dealId={deal.id}
+              existingInterest={userInterest}
+              onSubmitted={() => router.refresh()}
+              currentUserId={currentUserId || ""}
+              initialPitch={restoredApplication?.pitch}
+              initialPortfolioUrls={restoredApplication?.portfolio_urls}
+              initialScreeningAnswers={restoredApplication?.screening_answers}
+              screeningQuestions={
+                ((deal as Record<string, unknown>).screening_questions as {
+                  id: string;
+                  type: "yes_no" | "short_text" | "multiple_choice";
+                  text: string;
+                  options?: string[];
+                  dealbreaker_answer?: string;
+                }[]) || []
+              }
+            />
+          </div>
         </TimelineActionCard>
       );
     }
     // Visitor: Public deal — unauthenticated (sign in to apply)
     if (role === "visitor" && deal.deal_type === "public" && !currentUserId && deal.status === "pending_acceptance" && !deal.freelancer_user_id) {
+      if (deal.max_applicants && applicantCount >= deal.max_applicants) {
+        return (
+          <TimelineActionCard delayIndex={0}>
+            <div className="rounded-xl border border-gray-200 bg-white p-5 text-center">
+              <p className="text-sm font-semibold text-slate-900">Applications closed ({applicantCount}/{deal.max_applicants})</p>
+            </div>
+          </TimelineActionCard>
+        );
+      }
       return (
         <TimelineActionCard delayIndex={0}>
-          <SignInToApplyCard
-            dealSlug={deal.deal_link_slug}
-            dealId={deal.id}
-            escrowFunded={deal.escrow_status === "funded"}
-            amountCents={deal.total_amount}
-            dealTitle={deal.title}
-            screeningQuestions={
-              ((deal as Record<string, unknown>).screening_questions as {
-                id: string;
-                type: "yes_no" | "short_text" | "multiple_choice";
-                text: string;
-                options?: string[];
-                dealbreaker_answer?: string;
-              }[]) || []
-            }
-          />
+          <div className="space-y-3">
+            {deal.max_applicants ? (
+              <p className="text-xs text-slate-600">{applicantCount} of {deal.max_applicants} applicants</p>
+            ) : applicantCount > 0 ? (
+              <p className="text-xs text-slate-600">{applicantCount} {applicantCount === 1 ? "applicant" : "applicants"} so far</p>
+            ) : (
+              <p className="text-xs text-brand font-medium">Be the first to apply</p>
+            )}
+            <SignInToApplyCard
+              dealSlug={deal.deal_link_slug}
+              dealId={deal.id}
+              escrowFunded={deal.escrow_status === "funded"}
+              amountCents={deal.total_amount}
+              dealTitle={deal.title}
+              screeningQuestions={
+                ((deal as Record<string, unknown>).screening_questions as {
+                  id: string;
+                  type: "yes_no" | "short_text" | "multiple_choice";
+                  text: string;
+                  options?: string[];
+                  dealbreaker_answer?: string;
+                }[]) || []
+              }
+            />
+          </div>
         </TimelineActionCard>
       );
     }

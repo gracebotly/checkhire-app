@@ -295,9 +295,12 @@ export function SignInToApplyCard({
           </div>
 
           {/* File upload note */}
-          <p className="mt-3 text-xs text-slate-600">
-            You can attach a resume or work samples after creating your account.
-          </p>
+          <div className="mt-3 rounded-lg border border-gray-200 bg-gray-50 p-3">
+            <p className="text-xs font-medium text-slate-900">Resume or work samples?</p>
+            <p className="mt-0.5 text-xs text-slate-600">
+              After you create your account, you&apos;ll be able to attach up to 3 files (PDF, images, documents — 20MB each) before submitting. Your pitch and portfolio links will be saved.
+            </p>
+          </div>
 
           <Button
             className="mt-4 w-full"

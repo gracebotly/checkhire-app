@@ -5,6 +5,7 @@ import { submitScamCheckSchema } from "@/lib/validation/scam-check";
 import { notifyAdmin } from "@/lib/slack/notify";
 import { scamCheckSubmitted } from "@/lib/slack/templates";
 import { sendScamCheckConfirmation } from "@/lib/email/scamCheckEmails";
+import { checkRateLimit, getClientIp } from "@/lib/api/rateLimit";
 
 function normalizeUrl(url: string): string {
   if (url.startsWith("http://") || url.startsWith("https://")) return url;
@@ -12,6 +13,16 @@ function normalizeUrl(url: string): string {
 }
 
 export const POST = withApiHandler(async (req: Request) => {
+  // Rate limit: 5 submissions per IP per hour
+  const ip = getClientIp(req);
+  const { allowed } = await checkRateLimit(`scam-check:${ip}`, 3600, 5);
+  if (!allowed) {
+    return NextResponse.json(
+      { ok: false, code: "RATE_LIMITED", message: "Too many submissions. Please try again later." },
+      { status: 429 }
+    );
+  }
+
   const body = await req.json();
   const parsed = submitScamCheckSchema.safeParse(body);
 

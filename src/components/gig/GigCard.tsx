@@ -80,7 +80,7 @@ export function GigCard({ deal, index, currentUserId }: Props) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25, ease: "easeOut", delay: index * 0.04 }}
     >
-      <Link href={`/deal/${deal.deal_link_slug}`}>
+      <Link href={deal.status === "draft" ? `/deal/new?draft=${deal.id}` : `/deal/${deal.deal_link_slug}`}>
         <div className="cursor-pointer rounded-xl border border-gray-200 bg-white px-4 py-3 transition-colors duration-200 hover:border-gray-300 hover:bg-gray-50/50">
           {/* Row 1: Title + Status badges */}
           <div className="flex items-center justify-between gap-3">

@@ -28,6 +28,7 @@ export default async function NewDealPage({
   searchParams: Promise<{
     template?: string;
     repeat_from?: string;
+    draft?: string;
     category?: string;
     title?: string;
     amount?: string;
@@ -49,6 +50,7 @@ export default async function NewDealPage({
   const {
     template: templateId,
     repeat_from: repeatFromId,
+    draft: draftDealId,
     category: wizardCategory,
     title: wizardTitle,
     amount: wizardAmount,
@@ -59,6 +61,23 @@ export default async function NewDealPage({
 
   let initialTemplate: DealTemplate | null = null;
   let initialRepeatData: RepeatDealData | null = null;
+  let initialDraftData: {
+    id: string;
+    title: string;
+    description: string;
+    deliverables: string | null;
+    total_amount: number;
+    category: string | null;
+    other_category_description: string | null;
+    payment_frequency: string;
+    deadline: string | null;
+    has_milestones: boolean;
+    description_brief_url: string | null;
+    deliverables_brief_url: string | null;
+    description_brief_name: string | null;
+    deliverables_brief_name: string | null;
+    screening_questions: unknown[];
+  } | null = null;
 
   if (templateId) {
     const { data } = await supabase
@@ -87,6 +106,36 @@ export default async function NewDealPage({
         deliverables: originalDeal.deliverables,
         total_amount: originalDeal.total_amount,
         category: originalDeal.category,
+      };
+    }
+  }
+
+  if (draftDealId) {
+    const { data: draftDeal } = await supabase
+      .from("deals")
+      .select("*")
+      .eq("id", draftDealId)
+      .eq("client_user_id", user.id)
+      .eq("status", "draft")
+      .maybeSingle();
+
+    if (draftDeal) {
+      initialDraftData = {
+        id: draftDeal.id,
+        title: draftDeal.title,
+        description: draftDeal.description,
+        deliverables: draftDeal.deliverables,
+        total_amount: draftDeal.total_amount,
+        category: draftDeal.category,
+        other_category_description: draftDeal.other_category_description,
+        payment_frequency: draftDeal.payment_frequency,
+        deadline: draftDeal.deadline,
+        has_milestones: draftDeal.has_milestones,
+        description_brief_url: draftDeal.description_brief_url,
+        deliverables_brief_url: draftDeal.deliverables_brief_url,
+        description_brief_name: null,
+        deliverables_brief_name: null,
+        screening_questions: draftDeal.screening_questions || [],
       };
     }
   }
@@ -133,6 +182,7 @@ export default async function NewDealPage({
               <GigCreateForm
                 initialTemplate={initialTemplate}
                 initialRepeatData={initialRepeatData}
+                initialDraft={initialDraftData}
                 wizardData={
                   fromWizard
                     ? {

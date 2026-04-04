@@ -39,7 +39,7 @@ export const GET = withApiHandler(async (req: Request) => {
     )
     .eq("deal_type", "public")
     .eq("review_status", "approved")
-    .not("status", "in", "(completed,cancelled,refunded,disputed)")
+    .not("status", "in", "(draft,completed,cancelled,refunded,disputed)")
     .is("freelancer_user_id", null)
     .or(`expires_at.is.null,expires_at.gt.${now}`);
 
@@ -94,7 +94,7 @@ export const GET = withApiHandler(async (req: Request) => {
 
   // Get interest counts for each deal
   const dealIds = (deals || []).map((d) => d.id);
-  let interestCounts: Record<string, number> = {};
+  const interestCounts: Record<string, number> = {};
 
   if (dealIds.length > 0) {
     const { data: interests } = await supabase

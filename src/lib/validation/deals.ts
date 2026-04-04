@@ -6,12 +6,13 @@ export const createDealSchema = z
     title: z.string().min(1, "Title is required").max(100, "Title too long"),
     description: z
       .string()
-      .min(1, "Description is required")
       .max(2000),
     deliverables: z
       .string()
-      .min(1, "Deliverables are required")
-      .max(1000),
+      .max(1000)
+      .nullable()
+      .optional(),
+    is_draft: z.boolean().optional(),
     description_brief_url: z.string().max(500).nullable().optional(),
     deliverables_brief_url: z.string().max(500).nullable().optional(),
     total_amount: z
@@ -90,6 +91,14 @@ export const createDealSchema = z
       message: "Please describe the type of work when selecting 'Other'",
       path: ["other_category_description"],
     }
+  )
+  .refine(
+    (data) => data.is_draft || (data.description && data.description.trim().length >= 1),
+    { message: "Description is required", path: ["description"] }
+  )
+  .refine(
+    (data) => data.is_draft || (data.deliverables && data.deliverables.trim().length >= 1),
+    { message: "Deliverables are required", path: ["deliverables"] }
   );
 
 export const updateProfileSchema = z.object({

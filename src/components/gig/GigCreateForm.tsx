@@ -482,6 +482,7 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, initialDraft
   };
 
   const handleSubmit = async () => {
+    if (submitting) return; // Prevent double-submit
     setError("");
     setSubmitting(true);
 
@@ -545,7 +546,6 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, initialDraft
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create gig");
       setErrorLink("");
-    } finally {
       setSubmitting(false);
     }
   };
@@ -686,6 +686,26 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, initialDraft
 
   return (
     <div className="mx-auto max-w-2xl">
+      {/* Full-screen overlay during deal creation */}
+      {submitting && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.2 }}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-white/90 backdrop-blur-sm"
+        >
+          <div className="text-center px-6">
+            <Loader2 className="mx-auto h-8 w-8 animate-spin text-brand" />
+            <p className="mt-4 font-display text-lg font-semibold text-slate-900">
+              Setting up your deal...
+            </p>
+            <p className="mt-1 text-sm text-slate-600">
+              {title}
+            </p>
+          </div>
+        </motion.div>
+      )}
+
       {/* Progress dots */}
       <div className="mb-8 flex items-center justify-center gap-2">
         {STEP_TITLES.map((_, i) => (
@@ -1511,15 +1531,24 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, initialDraft
                   onClick={handleSubmit}
                   disabled={submitting}
                 >
-                  {submitting ? "Creating..." : "Create Deal Link"}
+                  {submitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Creating your deal...
+                    </>
+                  ) : (
+                    "Create Deal Link"
+                  )}
                 </Button>
-                <button
-                  type="button"
-                  onClick={() => setTemplateDialogOpen(true)}
-                  className="w-full cursor-pointer text-center text-xs text-slate-600 transition-colors duration-200 hover:text-slate-900"
-                >
-                  Save this setup as a reusable template
-                </button>
+                {!submitting && (
+                  <button
+                    type="button"
+                    onClick={() => setTemplateDialogOpen(true)}
+                    className="w-full cursor-pointer text-center text-xs text-slate-600 transition-colors duration-200 hover:text-slate-900"
+                  >
+                    Save this setup as a reusable template
+                  </button>
+                )}
               </div>
             </div>
           )}

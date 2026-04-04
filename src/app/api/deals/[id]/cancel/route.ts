@@ -23,7 +23,7 @@ export const POST = withApiHandler(
     const isFreelancer = deal.freelancer_user_id === user.id;
     if (!isClient && !isFreelancer) return NextResponse.json({ ok: false, code: "FORBIDDEN", message: "Not a participant" }, { status: 403 });
 
-    const { data: profile } = await supabase.from("user_profiles").select("display_name").eq("id", user.id).maybeSingle();
+    const { data: profile } = await supabase.from("user_profiles").select("display_name, email").eq("id", user.id).maybeSingle();
     const displayName = profile?.display_name || "Unknown";
 
     // Terminal states: cannot cancel
@@ -44,6 +44,11 @@ export const POST = withApiHandler(
       await serviceClient.from("deals").update({ status: "cancelled", cancelled_at: new Date().toISOString() }).eq("id", id);
       await serviceClient.from("deal_activity_log").insert({ deal_id: id, user_id: null, entry_type: "system", content: `Gig cancelled by ${displayName}` });
 
+      // Notify client
+      if (profile?.email) {
+        await sendAndLogNotification({ supabase: serviceClient, type: "deal_cancelled", userId: user.id, dealId: id, email: profile.email, data: { dealTitle: deal.title, dealSlug: deal.deal_link_slug } });
+      }
+
       return NextResponse.json({ ok: true });
     }
 
@@ -53,6 +58,11 @@ export const POST = withApiHandler(
 
       await serviceClient.from("deals").update({ status: "cancelled", cancelled_at: new Date().toISOString() }).eq("id", id);
       await serviceClient.from("deal_activity_log").insert({ deal_id: id, user_id: null, entry_type: "system", content: `Gig cancelled by ${displayName}` });
+
+      // Notify client
+      if (profile?.email) {
+        await sendAndLogNotification({ supabase: serviceClient, type: "deal_cancelled", userId: user.id, dealId: id, email: profile.email, data: { dealTitle: deal.title, dealSlug: deal.deal_link_slug } });
+      }
 
       // Notify freelancer
       if (deal.freelancer_user_id) {
@@ -79,6 +89,11 @@ export const POST = withApiHandler(
       await serviceClient.from("deals").update({ status: "refunded", escrow_status: "refunded", cancelled_at: new Date().toISOString() }).eq("id", id);
       const amount = (deal.total_amount / 100).toFixed(2);
       await serviceClient.from("deal_activity_log").insert({ deal_id: id, user_id: null, entry_type: "system", content: `Gig cancelled — $${amount} refund processing` });
+
+      // Notify client with refund amount
+      if (profile?.email) {
+        await sendAndLogNotification({ supabase: serviceClient, type: "deal_cancelled", userId: user.id, dealId: id, email: profile.email, data: { dealTitle: deal.title, dealSlug: deal.deal_link_slug, refundAmount: deal.total_amount } });
+      }
 
       return NextResponse.json({ ok: true });
     }
@@ -135,6 +150,11 @@ export const POST = withApiHandler(
       await serviceClient.from("deals").update({ status: "refunded", escrow_status: "refunded", cancelled_at: new Date().toISOString() }).eq("id", id);
       const amount = (deal.total_amount / 100).toFixed(2);
       await serviceClient.from("deal_activity_log").insert({ deal_id: id, user_id: null, entry_type: "system", content: `Gig cancelled — no work evidence submitted. $${amount} refund processing.` });
+
+      // Notify client with refund amount
+      if (profile?.email) {
+        await sendAndLogNotification({ supabase: serviceClient, type: "deal_cancelled", userId: user.id, dealId: id, email: profile.email, data: { dealTitle: deal.title, dealSlug: deal.deal_link_slug, refundAmount: deal.total_amount } });
+      }
 
       // Notify freelancer
       if (deal.freelancer_user_id) {

@@ -353,7 +353,8 @@ const NOTIFICATION_CONFIG: Record<string, NotificationConfig> = {
         `<p style="margin: 0 0 4px 0; font-size: 13px; color: #475569;">2. They'll start working and upload evidence of progress</p>` +
         `<p style="margin: 0; font-size: 13px; color: #475569;">3. When work is submitted, you'll have 72 hours to review</p>` +
         `</div>` +
-        `<p style="margin: 16px 0 0 0; font-size: 13px; color: #475569;">Funds are held safely and will only be released when you confirm delivery — or auto-release after 72 hours if you don't respond.</p>` +
+        `<p style="margin: 16px 0 0 0; font-size: 13px; color: #475569;">Your funds are held securely by Stripe — CheckHire never touches your money. You can cancel for a full refund at any time before a freelancer accepts. Once a freelancer accepts, you have 24 hours to cancel if something doesn't feel right. After that, funds are locked until work is delivered, ensuring your freelancer can work with confidence.</p>` +
+        `<p style="margin: 12px 0 0 0; font-size: 13px; color: #475569;">If there's ever a problem, our dispute process has a real human review every case within 48 hours. If no one accepts within 30 days, your funds are automatically refunded.</p>` +
         buildCtaButton(link, "View Deal", "primary")
       );
     },

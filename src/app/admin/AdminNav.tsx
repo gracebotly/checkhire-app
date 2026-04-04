@@ -7,6 +7,7 @@ const tabs = [
   { label: "Deals", href: "/admin/deals" },
   { label: "Payments", href: "/admin/payments" },
   { label: "Disputes", href: "/admin/disputes" },
+  { label: "Scam Checks", href: "/admin/scam-checks" },
   { label: "Users", href: "/admin/users" },
   { label: "Stats", href: "/admin/stats" },
   { label: "Referrals", href: "/admin/referrals" },

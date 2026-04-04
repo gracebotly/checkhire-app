@@ -129,6 +129,7 @@ export type Deal = {
   revision_count: number;
   template_id: string | null;
   screening_questions: ScreeningQuestion[];
+  max_applicants: number | null;
   guest_freelancer_email: string | null;
   guest_freelancer_name: string | null;
   guest_freelancer_stripe_account_id: string | null;

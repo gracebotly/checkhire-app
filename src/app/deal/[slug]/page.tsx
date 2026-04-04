@@ -172,7 +172,7 @@ export default async function DealPage({ params, searchParams }: Props) {
       const { data: interestData } = await supabase
         .from("deal_interest")
         .select(
-          "*, user:user_profiles!deal_interest_user_id_profile_fkey(display_name, avatar_url, trust_badge, completed_deals_count, average_rating, profile_slug)"
+          "*, user:user_profiles!deal_interest_user_id_profile_fkey(display_name, avatar_url, trust_badge, completed_deals_count, average_rating, profile_slug), application_files(*)"
         )
         .eq("deal_id", deal.id)
         .order("created_at", { ascending: false });
@@ -187,6 +187,17 @@ export default async function DealPage({ params, searchParams }: Props) {
         .maybeSingle();
       userInterest = ownInterest;
     }
+  }
+
+  let applicantCount = 0;
+  if (deal.deal_type === "public") {
+    const countClient = createServiceClient();
+    const { count } = await countClient
+      .from("deal_interest")
+      .select("id", { count: "exact", head: true })
+      .eq("deal_id", deal.id)
+      .in("status", ["pending", "in_conversation"]);
+    applicantCount = count || 0;
   }
 
   return (
@@ -205,6 +216,7 @@ export default async function DealPage({ params, searchParams }: Props) {
             otherRating={otherRating}
             interests={interests}
             userInterest={userInterest}
+            applicantCount={applicantCount}
             disputeId={disputeId}
             guestFreelancerName={guestFreelancerName}
             guestToken={validGuestToken}

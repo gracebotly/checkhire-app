@@ -37,6 +37,9 @@ type Props = {
   onSubmitted: () => void;
   currentUserId: string;
   screeningQuestions?: ScreeningQuestion[];
+  initialPitch?: string;
+  initialPortfolioUrls?: string[];
+  initialScreeningAnswers?: { question_id: string; answer: string }[];
 };
 
 const statusLabels: Record<
@@ -56,12 +59,24 @@ export function InterestForm({
   onSubmitted,
   currentUserId,
   screeningQuestions = [],
+  initialPitch,
+  initialPortfolioUrls,
+  initialScreeningAnswers,
 }: Props) {
-  const [pitch, setPitch] = useState("");
-  const [portfolioUrls, setPortfolioUrls] = useState<string[]>([""]);
+  const [pitch, setPitch] = useState(initialPitch || "");
+  const [portfolioUrls, setPortfolioUrls] = useState<string[]>(
+    initialPortfolioUrls && initialPortfolioUrls.length > 0 ? initialPortfolioUrls : [""]
+  );
   const [uploadedFiles, setUploadedFiles] = useState<UploadedApplicationFile[]>([]);
   const [uploading, setUploading] = useState(false);
-  const [screeningAnswers, setScreeningAnswers] = useState<Record<string, string>>({});
+  const [screeningAnswers, setScreeningAnswers] = useState<Record<string, string>>(() => {
+    if (!initialScreeningAnswers || initialScreeningAnswers.length === 0) return {};
+    const map: Record<string, string> = {};
+    for (const a of initialScreeningAnswers) {
+      map[a.question_id] = a.answer;
+    }
+    return map;
+  });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [submitted, setSubmitted] = useState(false);
@@ -233,6 +248,12 @@ export function InterestForm({
       <p className="mt-1 text-xs text-slate-600">
         Stand out by sharing your work, experience, and relevant details. Clients review applications and may start a conversation before selecting.
       </p>
+      {initialPitch && (
+        <div className="mt-3 rounded-lg bg-brand-muted border border-brand/20 p-3">
+          <p className="text-sm font-medium text-brand">Your application has been restored</p>
+          <p className="mt-0.5 text-xs text-slate-600">Review your details below. You can now attach files before submitting.</p>
+        </div>
+      )}
 
       {error && (
         <Alert variant="danger" className="mt-3">

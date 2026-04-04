@@ -65,6 +65,11 @@ export const createDealSchema = z
       .nullable(),
     template_id: z.string().uuid().nullable().optional(),
     screening_questions: screeningQuestionsArraySchema.optional().default([]),
+    max_applicants: z
+      .number()
+      .int()
+      .refine((v) => [15, 30, 50].includes(v), "Must be 15, 30, or 50")
+      .default(15),
     referral_code: z.string().max(20).optional(),
   })
   .refine(

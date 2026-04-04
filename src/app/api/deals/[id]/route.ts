@@ -122,6 +122,8 @@ export const PATCH = withApiHandler(
           deadline: body.deadline ?? deal.deadline,
           deal_type: body.deal_type || deal.deal_type,
           has_milestones: body.has_milestones ?? deal.has_milestones,
+          screening_questions: body.screening_questions ?? deal.screening_questions,
+          max_applicants: body.max_applicants ?? deal.max_applicants,
         })
         .eq("id", id)
         .select()

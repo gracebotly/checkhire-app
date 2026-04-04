@@ -31,7 +31,7 @@ export const POST = withApiHandler(
     // Fetch deal
     const { data: deal } = await supabase
       .from("deals")
-      .select("id, title, deal_link_slug, deal_type, status, client_user_id, freelancer_user_id, total_amount")
+      .select("id, title, deal_link_slug, deal_type, status, client_user_id, freelancer_user_id, total_amount, max_applicants")
       .eq("id", id)
       .maybeSingle();
 
@@ -49,6 +49,23 @@ export const POST = withApiHandler(
 
     if (deal.client_user_id === user.id)
       return NextResponse.json({ ok: false, code: "SELF_INTEREST", message: "You cannot apply to your own gig" }, { status: 400 });
+
+    // Check applicant cap
+    if (deal.max_applicants) {
+      const serviceClient = createServiceClient();
+      const { count } = await serviceClient
+        .from("deal_interest")
+        .select("id", { count: "exact", head: true })
+        .eq("deal_id", id)
+        .in("status", ["pending", "in_conversation"]);
+
+      if ((count || 0) >= deal.max_applicants) {
+        return NextResponse.json(
+          { ok: false, code: "APPLICATIONS_FULL", message: "This gig has reached its application limit." },
+          { status: 400 }
+        );
+      }
+    }
 
     // Check existing interest
     const { data: existing } = await supabase

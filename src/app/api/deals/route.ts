@@ -152,6 +152,7 @@ export const POST = withApiHandler(async (req: Request) => {
       risk_score: riskAssessment.score,
       deadline: data.deadline,
       deal_type: data.deal_type,
+      max_applicants: data.max_applicants,
       deal_link_slug: slug,
       client_user_id: user.id,
       has_milestones: data.has_milestones,

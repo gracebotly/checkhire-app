@@ -370,7 +370,7 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, initialDraft
                   amount: Math.round((parseFloat(m.amount) || 0) * 100),
                 }))
             : null,
-          template_id: initialTemplate?.id || null,
+          template_id: null,
           screening_questions: screeningQuestions
             .filter((q) => q.text.trim())
             .map((q) => ({

@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
-import { AlertTriangle, CheckCircle, Shield } from "lucide-react";
+import { AlertTriangle, CheckCircle } from "lucide-react";
+import { Logo } from "@/components/icons/Logo";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
@@ -55,8 +56,8 @@ export function ResetPasswordForm() {
         transition={{ duration: 0.25, ease: "easeOut" }}
         className="rounded-xl border border-gray-200 bg-white p-6"
       >
-        <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-brand-muted">
-          <Shield className="h-5 w-5 text-brand" />
+        <div className="mb-4">
+          <Logo size={40} />
         </div>
 
         <h1 className="font-display text-xl font-bold text-slate-900">

@@ -44,7 +44,7 @@ function buildEmailHtml(options: {
   <tr><td style="height: 4px; background-color: ${accent}; font-size: 0; line-height: 0;">&nbsp;</td></tr>
   <!-- Header -->
   <tr><td style="padding: 24px 32px 16px 32px;">
-    <span style="font-size: 18px; font-weight: 700; color: #0f172a;">🛡️ CheckHire</span>
+    <img src="${APP_URL}/email-header.png" alt="CheckHire" width="180" height="48" style="display: block; border: 0; outline: none;" />
   </td></tr>
   <!-- Divider -->
   <tr><td style="padding: 0 32px;"><div style="height: 1px; background-color: #f1f5f9;"></div></td></tr>

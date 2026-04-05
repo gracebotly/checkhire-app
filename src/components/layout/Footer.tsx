@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Shield } from "lucide-react";
+import { Logo } from "@/components/icons/Logo";
 import { NewsletterSignup } from "@/components/newsletter/NewsletterSignup";
 
 const LINKS = {
@@ -36,9 +36,9 @@ export function Footer() {
           {/* Brand column */}
           <div className="col-span-2 md:col-span-1">
             <div className="flex items-center gap-2">
-              <Shield className="h-5 w-5 text-brand" />
+              <Logo size={28} />
               <span className="font-display text-lg font-bold text-slate-900">
-                CheckHire
+                Check<span className="text-brand">Hire</span>
               </span>
             </div>
             <p className="mt-3 text-sm text-slate-600">

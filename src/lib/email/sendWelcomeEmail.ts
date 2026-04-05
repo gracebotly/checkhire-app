@@ -37,19 +37,8 @@ export async function sendWelcomeEmail(params: WelcomeEmailParams) {
 
           <!-- Header -->
           <tr>
-            <td style="background-color: #297a6d; padding: 32px 32px 24px 32px; text-align: center;">
-              <table role="presentation" cellpadding="0" cellspacing="0" style="margin: 0 auto;">
-                <tr>
-                  <td style="vertical-align: middle; padding-right: 8px;">
-                    <div style="width: 28px; height: 28px; background-color: rgba(255,255,255,0.2); border-radius: 6px; text-align: center; line-height: 28px;">
-                      <span style="color: #ffffff; font-size: 16px; font-weight: bold;">&#x2713;</span>
-                    </div>
-                  </td>
-                  <td style="vertical-align: middle;">
-                    <span style="color: #ffffff; font-size: 22px; font-weight: 700; letter-spacing: -0.3px;">CheckHire</span>
-                  </td>
-                </tr>
-              </table>
+            <td style="background-color: #1A7A6D; padding: 32px 32px 24px 32px; text-align: center;">
+              <img src="${appUrl}/email-header.png" alt="CheckHire" width="180" height="48" style="display: block; border: 0; outline: none; margin: 0 auto; filter: brightness(0) invert(1);" />
               <p style="color: rgba(255,255,255,0.85); font-size: 14px; margin: 12px 0 0 0;">
                 Safe escrow for gig work
               </p>

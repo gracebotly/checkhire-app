@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
-  Shield,
   Menu,
   X,
   LogOut,
@@ -13,6 +12,7 @@ import {
   ChevronDown,
   ArrowLeftRight,
 } from "lucide-react";
+import { Logo } from "@/components/icons/Logo";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import {
@@ -110,9 +110,9 @@ export function Navbar() {
           href="/"
           className="flex cursor-pointer items-center gap-2 transition-colors duration-200"
         >
-          <Shield className="h-5 w-5 text-brand" />
+          <Logo size={28} />
           <span className="font-display text-lg font-bold text-slate-900">
-            CheckHire
+            Check<span className="text-brand">Hire</span>
           </span>
         </Link>
 

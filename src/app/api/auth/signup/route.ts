@@ -53,32 +53,53 @@ export const POST = withApiHandler(async function POST(request: NextRequest) {
   const params = new URLSearchParams({ intent: "signup" });
   const redirectTo = `${siteUrl(request)}/auth/callback?${params.toString()}`;
 
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: { name },
-      emailRedirectTo: redirectTo,
-    },
-  });
+  // Check if the user was already created by the client-side signUp call.
+  // If so, skip the server-side signUp to avoid sending a duplicate
+  // confirmation email.
+  const { data: existingUser } = await supabaseService
+    .from("user_profiles")
+    .select("id")
+    .eq("email", email)
+    .maybeSingle();
 
-  if (error) {
-    console.error("[auth/signup] Supabase error", {
-      message: error.message,
-      name: error.name,
+  let newUserId: string;
+  let hasSession = false;
+
+  if (existingUser) {
+    // User already exists (client-side signUp ran first).
+    // Skip signUp, just ensure profile data is complete.
+    newUserId = existingUser.id;
+  } else {
+    // No existing user — do the full signUp.
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { name },
+        emailRedirectTo: redirectTo,
+      },
     });
-    return NextResponse.json(
-      { ok: false, message: error.message },
-      { status: 400 },
-    );
-  }
 
-  const newUserId = data.user?.id;
-  if (!newUserId) {
-    return NextResponse.json(
-      { ok: false, message: "Signup succeeded but no user was returned." },
-      { status: 500 },
-    );
+    if (error) {
+      console.error("[auth/signup] Supabase error", {
+        message: error.message,
+        name: error.name,
+      });
+      return NextResponse.json(
+        { ok: false, message: error.message },
+        { status: 400 },
+      );
+    }
+
+    if (!data.user?.id) {
+      return NextResponse.json(
+        { ok: false, message: "Signup succeeded but no user was returned." },
+        { status: 500 },
+      );
+    }
+
+    newUserId = data.user.id;
+    hasSession = Boolean(data.session);
   }
 
   // Determine initial mode from context
@@ -163,5 +184,5 @@ export const POST = withApiHandler(async function POST(request: NextRequest) {
   // Send welcome email (non-blocking, non-fatal)
   sendWelcomeEmail({ to: email, userName: name || null }).catch(() => {});
 
-  return NextResponse.json({ ok: true, hasSession: Boolean(data?.session) });
+  return NextResponse.json({ ok: true, hasSession });
 });

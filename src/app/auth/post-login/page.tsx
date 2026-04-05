@@ -9,15 +9,20 @@ export default function PostLoginPage() {
 
   useEffect(() => {
     try {
-      const stored = sessionStorage.getItem("checkhire_wizard_data");
+      // Check for pending redirect (from SignInToApplyCard or other flows)
+      const pendingRedirect = sessionStorage.getItem("checkhire_post_auth_redirect");
+      if (pendingRedirect) {
+        sessionStorage.removeItem("checkhire_post_auth_redirect");
+        router.replace(pendingRedirect);
+        return;
+      }
 
+      // Check for wizard data (client creating a gig)
+      const stored = sessionStorage.getItem("checkhire_wizard_data");
       if (stored) {
         const params = new URLSearchParams(stored);
         const isFromWizard = params.get("from_wizard") === "1";
-
         if (isFromWizard) {
-          // Wizard data exists — redirect to the gig creation form
-          // The GigCreateForm will read from sessionStorage on mount
           sessionStorage.removeItem("checkhire_wizard_data");
           router.replace(`/deal/new?${params.toString()}`);
           return;
@@ -27,7 +32,7 @@ export default function PostLoginPage() {
       // sessionStorage unavailable — fall through to dashboard
     }
 
-    // No wizard data — normal signup, go to dashboard
+    // Default — go to dashboard
     router.replace("/dashboard");
   }, [router]);
 

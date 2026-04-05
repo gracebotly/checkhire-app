@@ -326,42 +326,71 @@ export default function AuthShell() {
       return;
     }
 
+    if (suPassword.length < 8) {
+      setSuError("Password must be at least 8 characters.");
+      setSuLoading(false);
+      return;
+    }
+
     try {
-      const res = await fetch("/api/auth/signup", {
+      // CRITICAL: signUp must run on the CLIENT-side Supabase SDK.
+      // The PKCE code_verifier cookie must be stored in the browser's
+      // cookie jar. If we call signUp via fetch() to a server API route,
+      // the Set-Cookie headers from the response are NOT written to the
+      // browser cookie jar — the code_verifier is lost, and the email
+      // confirmation callback fails with "PKCE code verifier not found."
+      const { data, error } = await supabase.auth.signUp({
+        email: suEmail.trim().toLowerCase(),
+        password: suPassword,
+        options: {
+          data: { name: suName.trim() || undefined },
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+
+      if (error) {
+        setSuError(error.message);
+        return;
+      }
+
+      if (data.session) {
+        // Auto-confirm is on — user gets a session immediately.
+        // Create their profile via the API (non-blocking), then redirect.
+        fetch("/api/auth/signup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: suName.trim(),
+            email: suEmail.trim().toLowerCase(),
+            password: suPassword,
+          }),
+        }).catch(() => {});
+
+        const redirectPath =
+          searchParams.get("redirect") ||
+          searchParams.get("next") ||
+          "/dashboard";
+        router.push(redirectPath);
+        router.refresh();
+        return;
+      }
+
+      // Email confirmation required — no session yet.
+      // Trigger profile creation + referral attribution in the background.
+      // The auth callback also handles this as a fallback.
+      fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: suName,
-          email: suEmail,
+          name: suName.trim(),
+          email: suEmail.trim().toLowerCase(),
           password: suPassword,
         }),
-      });
-      const body = await res.json();
+      }).catch(() => {});
 
-      if (!res.ok || !body.ok) {
-        setSuError(body?.message || "Sign up failed.");
-        return;
-      }
-
-      // Establish a browser-side session by signing in with the same
-      // credentials. The server-side signup sets cookies, but the
-      // browser Supabase client needs its own session to work.
-      // This is the same pattern used by CreateWizard and it works.
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: suEmail,
-        password: suPassword,
-      });
-
-      if (signInError) {
-        setSuSuccess(true);
-        return;
-      }
-
-      const redirectPath = searchParams.get("redirect") || searchParams.get("next") || "/dashboard";
-      router.push(redirectPath);
-      router.refresh();
+      setSuSuccess(true);
     } catch {
-      setSuError("Network error during signup.");
+      setSuError("Something went wrong. Please try again.");
     } finally {
       setSuLoading(false);
     }

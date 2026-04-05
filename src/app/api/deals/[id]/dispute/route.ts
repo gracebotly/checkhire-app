@@ -6,6 +6,8 @@ import { openDisputeSchema } from "@/lib/validation/disputes";
 import { sendAndLogNotification } from "@/lib/email/logNotification";
 import { notifyAdmin } from "@/lib/email/adminNotify";
 import { verifyGuestToken } from "@/lib/deals/guestToken";
+import { notifyAdmin as slackNotifyAdmin } from "@/lib/slack/notify";
+import { disputeOpened } from "@/lib/slack/templates";
 
 export const POST = withApiHandler(
   async (req: Request, { params }: { params: Promise<{ id: string }> }) => {
@@ -233,6 +235,18 @@ export const POST = withApiHandler(
       `,
       dealSlug: deal.deal_link_slug,
     });
+
+
+    // Slack: notify admin of dispute
+    void slackNotifyAdmin(disputeOpened({
+      deal_id: id,
+      deal_title: deal.title,
+      deal_link_slug: deal.deal_link_slug,
+      deal_amount: deal.total_amount,
+      category,
+      initiated_by_name: initiatorName,
+      initiated_by_role: isClient ? "client" : "freelancer",
+    }));
 
     return NextResponse.json({ ok: true, dispute });
   }

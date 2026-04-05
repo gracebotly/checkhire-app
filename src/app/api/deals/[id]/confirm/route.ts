@@ -6,6 +6,8 @@ import { withApiHandler } from "@/lib/api/withApiHandler";
 import { confirmDeliverySchema } from "@/lib/validation/escrow";
 import { sendAndLogNotification } from "@/lib/email/logNotification";
 import { calculateReferralCommission } from "@/lib/referrals/commission";
+import { notifyAdmin } from "@/lib/slack/notify";
+import { payoutCompleted } from "@/lib/slack/templates";
 
 export const POST = withApiHandler(
   async (req: Request, { params }: { params: Promise<{ id: string }> }) => {
@@ -168,6 +170,16 @@ export const POST = withApiHandler(
           },
         });
       }
+
+      // Slack: notify admin of completed payout
+      void notifyAdmin(payoutCompleted({
+        id: id,
+        title: deal.title,
+        deal_link_slug: deal.deal_link_slug,
+        total_amount: releaseAmount,
+        freelancer_name: freelancerProfile.display_name || freelancerProfile.email || "Freelancer",
+        payout_method: "standard",
+      }));
     }
 
     return NextResponse.json({ ok: true });

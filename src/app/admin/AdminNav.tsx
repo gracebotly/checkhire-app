@@ -4,9 +4,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const tabs = [
+  { label: "Home", href: "/admin" },
   { label: "Deals", href: "/admin/deals" },
   { label: "Payments", href: "/admin/payments" },
   { label: "Disputes", href: "/admin/disputes" },
+  { label: "Scam Checks", href: "/admin/scam-checks" },
   { label: "Users", href: "/admin/users" },
   { label: "Stats", href: "/admin/stats" },
   { label: "Referrals", href: "/admin/referrals" },
@@ -19,7 +21,9 @@ export function AdminNav() {
     <nav className="mx-auto max-w-6xl overflow-x-auto px-6">
       <div className="flex gap-6">
         {tabs.map((tab) => {
-          const active = pathname.startsWith(tab.href);
+          const active = tab.href === "/admin"
+            ? pathname === "/admin"
+            : pathname.startsWith(tab.href);
           return (
             <Link
               key={tab.href}

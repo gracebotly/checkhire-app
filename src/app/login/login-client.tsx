@@ -11,8 +11,8 @@ import {
   EyeOff,
   ChevronLeft,
   ArrowLeft,
-  Shield,
 } from "lucide-react";
+import { Logo } from "@/components/icons/Logo";
 
 const EMAIL_RE =
   /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?(\.[a-zA-Z]{2,})+$/;
@@ -422,8 +422,10 @@ export default function AuthShell() {
 
           <div className="relative z-10">
             <div className="flex items-center gap-2">
-              <Shield className="h-7 w-7 text-teal-400" />
-              <span className="font-display text-lg font-bold text-white">CheckHire</span>
+              <Logo size={32} />
+              <span className="font-display text-lg font-bold text-white">
+                Check<span className="text-teal-400">Hire</span>
+              </span>
             </div>
           </div>
 

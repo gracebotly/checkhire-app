@@ -23,6 +23,7 @@ const PUBLIC_PATHS = [
   "/faq",
   "/for-freelancers",
   "/for-clients",
+  "/for-creators",
 ];
 
 export async function updateSession(request: NextRequest) {

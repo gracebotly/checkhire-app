@@ -155,10 +155,7 @@ export function BrowseGigsContent() {
                 <SelectItem value="design">Design & Branding</SelectItem>
                 <SelectItem value="writing">Writing & Content</SelectItem>
                 <SelectItem value="video">Video & Animation</SelectItem>
-                <SelectItem value="marketing">Marketing & Ads</SelectItem>
-                <SelectItem value="content_creation">Content Creation</SelectItem>
-                <SelectItem value="influencer">Influencer & Creator</SelectItem>
-                <SelectItem value="social_media">Social Media Mgmt</SelectItem>
+                <SelectItem value="marketing">Marketing & Social</SelectItem>
                 <SelectItem value="virtual_assistant">Virtual Assistant</SelectItem>
                 <SelectItem value="audio">Audio & Music</SelectItem>
                 <SelectItem value="translation">Translation</SelectItem>

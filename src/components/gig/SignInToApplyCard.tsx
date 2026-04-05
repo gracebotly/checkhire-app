@@ -116,11 +116,24 @@ export function SignInToApplyCard({
     setLoading(true);
     setError("");
     try {
+      // Store the return URL in sessionStorage BEFORE OAuth redirect.
+      // Supabase strips custom query params from redirectTo during the
+      // OAuth chain, so we can't rely on ?redirect= in the callback URL.
+      // The post-login router reads this and redirects accordingly.
+      try {
+        sessionStorage.setItem(
+          "checkhire_post_auth_redirect",
+          `/deal/${dealSlug}?submit_pitch=true`
+        );
+      } catch {
+        // sessionStorage unavailable
+      }
+
       const supabase = createClient();
       const { error: authError } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/auth/callback?intent=signup&redirect=/deal/${dealSlug}?submit_pitch=true`,
+          redirectTo: `${window.location.origin}/auth/callback`,
         },
       });
       if (authError) setError(authError.message);
@@ -344,7 +357,19 @@ export function SignInToApplyCard({
               {loading ? "Redirecting..." : "Continue with Google"}
             </button>
 
-            <a href={loginUrl}>
+            <a
+              href={loginUrl}
+              onClick={() => {
+                try {
+                  sessionStorage.setItem(
+                    "checkhire_post_auth_redirect",
+                    `/deal/${dealSlug}?submit_pitch=true`
+                  );
+                } catch {
+                  // sessionStorage unavailable
+                }
+              }}
+            >
               <Button variant="default" className="w-full">
                 Sign up with email
                 <ArrowRight className="ml-1.5 h-3.5 w-3.5" />

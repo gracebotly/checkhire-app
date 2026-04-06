@@ -9,6 +9,9 @@ import {
   Clock,
   DollarSign,
   Users,
+  Camera,
+  Briefcase,
+  Building2,
   ArrowRight,
 } from "lucide-react";
 
@@ -16,7 +19,7 @@ const differentiators = [
   {
     title: "A payment link, not a marketplace",
     description:
-      "CheckHire is not a job board. You find each other wherever you already are — Reddit, Discord, Facebook, WhatsApp, Twitter, email. We give you a payment link that locks funds in escrow before work starts. Share it anywhere a URL works.",
+      "CheckHire is not a job board or a marketplace. You find each other wherever you already are — Reddit, Instagram DMs, Discord, Facebook, WhatsApp, email. We give you a payment link that locks funds in escrow before work starts. Share it anywhere a URL works.",
     icon: Link2,
   },
   {
@@ -28,7 +31,7 @@ const differentiators = [
   {
     title: "72-hour auto-release",
     description:
-      "When the freelancer submits their work, the client has 72 hours to confirm delivery or open a dispute. If they do nothing, funds auto-release to the freelancer. No more ghost clients sitting on your money.",
+      "When the work is submitted, the paying party has 72 hours to confirm delivery or open a dispute. If they do nothing, funds auto-release automatically. No more chasing payments or waiting on someone who ghosted.",
     icon: Clock,
   },
 ] as const;
@@ -36,11 +39,11 @@ const differentiators = [
 const stats = [
   {
     value: "$0",
-    label: "freelancer fees — the client covers everything",
+    label: "creator & freelancer fees — the paying party covers everything",
   },
   {
     value: "72hrs",
-    label: "auto-release protects freelancers from ghost clients",
+    label: "auto-release protects you from clients and brands that ghost",
   },
   {
     value: "46+",
@@ -58,16 +61,17 @@ export function AboutContent() {
         transition={{ duration: 0.25, ease: "easeOut" }}
       >
         <h1 className="font-display text-3xl font-bold text-slate-900 md:text-4xl">
-          We built CheckHire because strangers shouldn&apos;t have to trust each
-          other with money.
+          We built CheckHire because doing the work shouldn&apos;t mean
+          gambling on getting paid.
         </h1>
         <p className="mt-4 text-base leading-relaxed text-slate-600">
-          Every day, millions of people hire freelancers through Reddit, Discord,
-          Facebook groups, and WhatsApp. The work gets done over DMs. The payment
-          happens on faith. And when it goes wrong — ghosting, scams,
-          disappearing clients — there&apos;s no recourse. CheckHire exists to
-          fix that. We built an escrow payment link that works everywhere you
-          find each other.
+          Every day, creators shoot brand content that never gets paid for.
+          Freelancers build websites for clients who disappear. Gig workers
+          deliver results and then spend weeks chasing invoices. The work
+          happens on DMs and handshake agreements — and when it goes wrong,
+          there&apos;s no recourse. CheckHire exists to fix that. We built an
+          escrow payment link that works everywhere you find work — whether
+          that&apos;s Reddit, Instagram, Discord, Facebook, or a cold email.
         </p>
       </motion.section>
 
@@ -163,8 +167,9 @@ export function AboutContent() {
               1
             </span>
             <span>
-              <strong className="text-slate-900">Client creates a gig</strong>{" "}
-              — title, description, deliverables, budget, and deadline.
+              <strong className="text-slate-900">Create a payment link</strong>{" "}
+              — describe the work, set the budget, and define what &ldquo;done&rdquo;
+              looks like. Takes under 2 minutes.
             </span>
           </li>
           <li className="flex gap-3">
@@ -172,9 +177,10 @@ export function AboutContent() {
               2
             </span>
             <span>
-              <strong className="text-slate-900">Client funds escrow</strong>{" "}
-              — pay with card, Apple Pay, Google Pay, PayPal, or bank transfer.
-              5% fee from the client. Freelancer pays nothing.
+              <strong className="text-slate-900">Payment gets locked</strong>{" "}
+              — the paying party funds escrow via Stripe. Card, Apple Pay, Google
+              Pay, PayPal, or bank transfer. 5% fee from the paying party. You
+              pay nothing.
             </span>
           </li>
           <li className="flex gap-3">
@@ -182,9 +188,9 @@ export function AboutContent() {
               3
             </span>
             <span>
-              <strong className="text-slate-900">Share the link anywhere</strong>{" "}
-              — Reddit, Discord, WhatsApp, Facebook, Twitter, email, text.
-              Freelancer clicks, accepts with just an email. No account needed.
+              <strong className="text-slate-900">Share the link</strong>{" "}
+              — send it over DM, email, or text. The other person clicks, accepts
+              with just an email. No account needed.
             </span>
           </li>
           <li className="flex gap-3">
@@ -192,9 +198,9 @@ export function AboutContent() {
               4
             </span>
             <span>
-              <strong className="text-slate-900">Work gets done</strong>{" "}
-              — freelancer uploads evidence as they go, building a paper trail.
-              Marks work complete when finished.
+              <strong className="text-slate-900">Do the work</strong>{" "}
+              — upload evidence as you go. Screenshots, files, links — everything
+              timestamped. This is your proof of delivery.
             </span>
           </li>
           <li className="flex gap-3">
@@ -202,47 +208,108 @@ export function AboutContent() {
               5
             </span>
             <span>
-              <strong className="text-slate-900">Payment releases</strong>{" "}
-              — client confirms delivery and funds go to the freelancer. If client
-              ghosts, funds auto-release after 72 hours.
+              <strong className="text-slate-900">Get paid</strong>{" "}
+              — payment releases when delivery is confirmed. If the other party
+              ghosts, funds auto-release after 72 hours. Instant payout to your
+              debit card available 24/7.
             </span>
           </li>
         </ol>
       </motion.section>
 
-      {/* Community */}
+      {/* Who It's For */}
       <motion.section
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.25, ease: "easeOut", delay: 0.16 }}
-        className="mt-12 rounded-xl border border-gray-200 bg-white p-6"
+        className="mt-12"
       >
-        <div className="flex items-start gap-3">
-          <div className="rounded-lg bg-brand-muted p-2">
-            <Users className="h-5 w-5 text-brand" />
-          </div>
-          <div>
-            <h2 className="font-display text-2xl font-semibold text-slate-900">
-              The Community
-            </h2>
-            <p className="mt-2 text-sm leading-relaxed text-slate-600">
-              We also run{" "}
-              <a
-                href="https://reddit.com/r/checkhire"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="cursor-pointer font-semibold text-brand transition-colors duration-200 hover:text-brand-hover"
-              >
-                r/checkhire
-              </a>{" "}
-              — the first hiring subreddit where every job poster is verified.
-              Every hiring post must be backed by locked escrow money or a video
-              of the poster. No unverified posts get through. Scammers
-              won&apos;t put up real money or show their face, so they go
-              somewhere else.
+        <h2 className="font-display text-2xl font-semibold text-slate-900">
+          Who It&apos;s For
+        </h2>
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, ease: "easeOut", delay: 0.16 }}
+            className="rounded-xl border border-gray-200 bg-white p-5"
+          >
+            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-brand-muted">
+              <Camera className="h-5 w-5 text-brand" />
+            </div>
+            <h3 className="text-sm font-semibold text-slate-900">Creators</h3>
+            <p className="mt-2 text-xs text-slate-600 leading-relaxed">
+              Lock payment before you shoot a single frame of brand content. No
+              more creating for free.
             </p>
-          </div>
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, ease: "easeOut", delay: 0.2 }}
+            className="rounded-xl border border-gray-200 bg-white p-5"
+          >
+            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-brand-muted">
+              <Users className="h-5 w-5 text-brand" />
+            </div>
+            <h3 className="text-sm font-semibold text-slate-900">
+              Freelancers
+            </h3>
+            <p className="mt-2 text-xs text-slate-600 leading-relaxed">
+              Send your client a payment link instead of an invoice and a prayer.
+              See funds locked before you start.
+            </p>
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, ease: "easeOut", delay: 0.24 }}
+            className="rounded-xl border border-gray-200 bg-white p-5"
+          >
+            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-brand-muted">
+              <Briefcase className="h-5 w-5 text-brand" />
+            </div>
+            <h3 className="text-sm font-semibold text-slate-900">
+              Gig Workers
+            </h3>
+            <p className="mt-2 text-xs text-slate-600 leading-relaxed">
+              Protect yourself when the person hiring you is a stranger on the
+              internet. Payment secured before work starts.
+            </p>
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, ease: "easeOut", delay: 0.28 }}
+            className="rounded-xl border border-gray-200 bg-white p-5"
+          >
+            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-brand-muted">
+              <Building2 className="h-5 w-5 text-brand" />
+            </div>
+            <h3 className="text-sm font-semibold text-slate-900">
+              Brands &amp; Clients
+            </h3>
+            <p className="mt-2 text-xs text-slate-600 leading-relaxed">
+              Your money is protected too. Funds only release when you confirm
+              delivery. Dispute resolution if anything goes wrong.
+            </p>
+          </motion.div>
         </div>
+        <p className="mt-4 rounded-xl border border-gray-200 bg-white p-5 text-xs text-slate-600 leading-relaxed">
+          We also run{" "}
+          <a
+            href="https://reddit.com/r/checkhire"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="cursor-pointer font-semibold text-brand transition-colors duration-200 hover:text-brand-hover"
+          >
+            r/checkhire
+          </a>{" "}
+          the first hiring community where every job poster is verified. Every
+          post must be backed by locked escrow or a video of the poster. We also
+          investigate suspicious job postings for free. Submit any link and our
+          team will tell you if it&apos;s safe.
+        </p>
       </motion.section>
 
       {/* Mission */}
@@ -257,10 +324,12 @@ export function AboutContent() {
         </h2>
         <p className="mt-3 text-sm leading-relaxed text-slate-600">
           CheckHire exists to make safe transactions between strangers as easy
-          as sharing a link. We believe every freelancer deserves to see locked
-          funds before starting work, every client deserves refund protection if
-          work isn&apos;t delivered, and nobody should lose money to a stranger
-          on the internet. We&apos;re building the payment link we wish existed.
+          as sharing a link. We believe every creator deserves to see locked
+          funds before producing content, every freelancer deserves payment
+          protection before starting work, and every client deserves a refund
+          if work isn&apos;t delivered. Nobody should lose money to a stranger
+          on the internet. We&apos;re building the payment infrastructure we
+          wish existed when we needed it.
         </p>
         <div className="mt-4">
           <Link

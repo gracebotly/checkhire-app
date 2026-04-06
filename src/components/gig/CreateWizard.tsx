@@ -15,8 +15,6 @@ import {
   Languages,
   MoreHorizontal,
   ArrowRight,
-  Globe,
-  Link2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,7 +47,6 @@ export function CreateWizard() {
   // Payment frequency removed from wizard — set in GigCreateForm (budget step)
   const [title, setTitle] = useState("");
   const [budget, setBudget] = useState("");
-  const [isPublic, setIsPublic] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -76,7 +73,7 @@ export function CreateWizard() {
     if (title) wizardParams.set("title", title);
     if (budget) wizardParams.set("amount", budget);
     if (selectedCategory === "other" && otherDescription) wizardParams.set("other_desc", otherDescription);
-    wizardParams.set("deal_type", isPublic ? "public" : "private");
+    wizardParams.set("deal_type", "private");
     wizardParams.set("from_wizard", "1");
     return wizardParams;
   };
@@ -365,42 +362,6 @@ export function CreateWizard() {
                   </div>
                 </motion.div>
               )}
-
-              {/* Visibility toggle */}
-              <div className="mt-4 flex items-center justify-between rounded-xl border border-gray-200 bg-white p-4">
-                <div className="flex items-center gap-2">
-                  {isPublic ? (
-                    <Globe className="h-4 w-4 text-brand" />
-                  ) : (
-                    <Link2 className="h-4 w-4 text-slate-600" />
-                  )}
-                  <div>
-                    <span className="text-sm font-medium text-slate-900">
-                      {isPublic ? "Public gig" : "Payment link"}
-                    </span>
-                    <p className="text-xs text-slate-600">
-                      {isPublic
-                        ? "Freelancers can find and apply on CheckHire"
-                        : "Only people with the link can see this deal"}
-                    </p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsPublic(!isPublic)}
-                  className={`relative h-6 w-11 cursor-pointer rounded-full transition-colors duration-200 ${
-                    isPublic ? "bg-brand" : "bg-gray-200"
-                  }`}
-                  role="switch"
-                  aria-checked={isPublic}
-                >
-                  <span
-                    className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${
-                      isPublic ? "translate-x-5" : "translate-x-0"
-                    }`}
-                  />
-                </button>
-              </div>
 
               {/* Live link preview */}
               {title.length >= 3 && (

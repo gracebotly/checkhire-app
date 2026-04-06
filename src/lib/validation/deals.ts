@@ -71,6 +71,8 @@ export const createDealSchema = z
       .refine((v) => [15, 30, 50].includes(v), "Must be 15, 30, or 50")
       .default(15),
     referral_code: z.string().max(20).optional(),
+    recipient_email: z.string().email().max(255).nullable().optional(),
+    recipient_name: z.string().max(100).nullable().optional(),
   })
   .refine(
     (data) =>

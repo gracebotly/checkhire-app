@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
-import { Pencil, X, Plus, Shield, Paperclip, Upload, Loader2, Globe } from "lucide-react";
+import { Globe, Link2, Loader2, Paperclip, Pencil, Plus, Shield, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -736,6 +736,43 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, initialDraft
         </motion.div>
       )}
 
+      <h1 className="mb-2 text-center font-display text-2xl font-bold text-slate-900">
+        {isPublic ? "Post a Gig" : "Create Payment Link"}
+      </h1>
+
+      {/* Deal type tabs */}
+      <div className="mx-auto mb-2 flex max-w-xs rounded-lg border border-gray-200 bg-white p-1">
+        <button
+          type="button"
+          onClick={() => setIsPublic(false)}
+          className={`flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md px-3 py-2 text-xs font-semibold transition-colors duration-200 ${
+            !isPublic
+              ? "bg-brand-muted text-brand"
+              : "text-slate-600 hover:text-slate-900"
+          }`}
+        >
+          <Link2 className="h-3.5 w-3.5" />
+          Payment Link
+        </button>
+        <button
+          type="button"
+          onClick={() => setIsPublic(true)}
+          className={`flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md px-3 py-2 text-xs font-semibold transition-colors duration-200 ${
+            isPublic
+              ? "bg-brand-muted text-brand"
+              : "text-slate-600 hover:text-slate-900"
+          }`}
+        >
+          <Globe className="h-3.5 w-3.5" />
+          Public Gig
+        </button>
+      </div>
+      <p className="mb-4 text-center text-xs text-slate-600">
+        {isPublic
+          ? "Post publicly — freelancers can find and apply"
+          : "Create a private link to send to someone specific"}
+      </p>
+
       {/* Progress dots */}
       <div className="mb-8 flex items-center justify-center gap-2">
         {STEP_TITLES.map((_, i) => (
@@ -1012,8 +1049,8 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, initialDraft
                 </p>
               </div>
 
-              {/* Screening Questions (optional) */}
-              <div>
+              {/* Screening Questions (optional) — public gigs only */}
+              {isPublic && (<div>
                 <label className="mb-1.5 block text-sm font-medium text-slate-900">
                   Screening questions <span className="font-normal text-slate-600">(optional)</span>
                 </label>
@@ -1178,9 +1215,10 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, initialDraft
                   </button>
                 )}
               </div>
+              )}
 
-              {/* Application limit */}
-              <div>
+              {/* Application limit — public gigs only */}
+              {isPublic && (<div>
                 <label className="mb-1.5 block text-sm font-medium text-slate-900">
                   Application limit
                 </label>
@@ -1209,6 +1247,7 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, initialDraft
                   {maxApplicants === 50 && "Cast a wide net — best for competitive or high-value gigs."}
                 </p>
               </div>
+              )}
 
               {/* Trust line */}
               <div className="flex items-center gap-2 rounded-lg bg-gray-50 px-3 py-2.5">

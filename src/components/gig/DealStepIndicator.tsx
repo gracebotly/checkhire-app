@@ -19,6 +19,7 @@ type Props = {
   dealStatus: DealStatus;
   escrowStatus: EscrowStatus;
   hasFreelancer: boolean;
+  dealType?: "private" | "public";
 };
 
 const STEPS: { key: DealStep; label: string; icon: React.ElementType }[] = [
@@ -45,18 +46,21 @@ function getDealStep(
   return "created";
 }
 
-export function DealStepIndicator({ dealStatus, escrowStatus, hasFreelancer }: Props) {
+export function DealStepIndicator({ dealStatus, escrowStatus, hasFreelancer, dealType }: Props) {
   if (dealStatus === "cancelled" || dealStatus === "refunded") return null;
 
   const isDisputed = dealStatus === "disputed";
-  const currentStep = getDealStep(dealStatus, escrowStatus, hasFreelancer);
-  const currentIndex = STEPS.findIndex((s) => s.key === currentStep);
+  const isPrivate = dealType === "private";
+  const visibleSteps = isPrivate ? STEPS.filter((s) => s.key !== "accepted") : STEPS;
+  const rawStep = getDealStep(dealStatus, escrowStatus, hasFreelancer);
+  const currentStep = isPrivate && rawStep === "accepted" ? "created" : rawStep;
+  const currentIndex = visibleSteps.findIndex((s) => s.key === currentStep);
 
   return (
     <div className="mb-6 overflow-x-auto" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
       <style>{`.deal-step-scroll::-webkit-scrollbar { display: none; }`}</style>
       <div className="deal-step-scroll flex min-w-[400px] items-center px-1 py-2">
-        {STEPS.map((step, i) => {
+        {visibleSteps.map((step, i) => {
           const isCompleted = i < currentIndex;
           const isCurrent = i === currentIndex;
           const Icon = step.icon;
@@ -92,7 +96,7 @@ export function DealStepIndicator({ dealStatus, escrowStatus, hasFreelancer }: P
                   {isDisputed && isCurrent ? "Disputed" : step.label}
                 </span>
               </div>
-              {i < STEPS.length - 1 && (
+              {i < visibleSteps.length - 1 && (
                 <div className={`mx-1 h-0.5 flex-1 rounded-full transition-colors duration-200 ${isCompleted ? "bg-brand" : "bg-gray-200"}`} />
               )}
             </div>

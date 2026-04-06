@@ -16,6 +16,7 @@ import {
   MoreHorizontal,
   ArrowRight,
   Globe,
+  Link2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -368,10 +369,21 @@ export function CreateWizard() {
               {/* Visibility toggle */}
               <div className="mt-4 flex items-center justify-between rounded-xl border border-gray-200 bg-white p-4">
                 <div className="flex items-center gap-2">
-                  <Globe className="h-4 w-4 text-slate-600" />
-                  <span className="text-sm font-medium text-slate-900">
-                    List publicly
-                  </span>
+                  {isPublic ? (
+                    <Globe className="h-4 w-4 text-brand" />
+                  ) : (
+                    <Link2 className="h-4 w-4 text-slate-600" />
+                  )}
+                  <div>
+                    <span className="text-sm font-medium text-slate-900">
+                      {isPublic ? "Public gig" : "Payment link"}
+                    </span>
+                    <p className="text-xs text-slate-600">
+                      {isPublic
+                        ? "Freelancers can find and apply on CheckHire"
+                        : "Only people with the link can see this deal"}
+                    </p>
+                  </div>
                 </div>
                 <button
                   type="button"
@@ -389,11 +401,6 @@ export function CreateWizard() {
                   />
                 </button>
               </div>
-              <p className="mt-1.5 text-xs text-slate-600">
-                {isPublic
-                  ? "This deal will appear on the public browse page"
-                  : "Only people with the link can see this deal"}
-              </p>
 
               {/* Live link preview */}
               {title.length >= 3 && (

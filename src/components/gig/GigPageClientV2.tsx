@@ -792,7 +792,7 @@ export function GigPageClientV2({
             )}
 
           {/* ZONE 2: Step Indicator */}
-          <DealStepIndicator dealStatus={deal.status} escrowStatus={deal.escrow_status} hasFreelancer={hasFreelancer} />
+          <DealStepIndicator dealStatus={deal.status} escrowStatus={deal.escrow_status} hasFreelancer={hasFreelancer} dealType={deal.deal_type} />
 
           {/* ZONE 3: ShareHub — client only, pending/funded deals */}
           {role === "client" && (deal.status === "pending_acceptance" || deal.status === "funded") && (

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "motion/react";
-import { Calendar, CircleDashed, Lock } from "lucide-react";
+import { Calendar, CircleDashed, Lock, Link2, Globe } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { TrustBadge } from "@/components/gig/TrustBadge";
 import { categoryLabels } from "@/lib/categories";
@@ -88,6 +88,17 @@ export function GigCard({ deal, index, currentUserId }: Props) {
               {deal.title}
             </h3>
             <div className="flex shrink-0 items-center gap-1.5">
+              {deal.deal_type === "private" ? (
+                <Badge variant="outline">
+                  <Link2 className="mr-1 h-3 w-3" />
+                  Private
+                </Badge>
+              ) : (
+                <Badge variant="outline">
+                  <Globe className="mr-1 h-3 w-3" />
+                  Public
+                </Badge>
+              )}
               {escrowBadge && (
                 <Badge variant={escrowBadge.variant}>
                   {escrowBadge.icon === "lock" && (
@@ -117,7 +128,11 @@ export function GigCard({ deal, index, currentUserId }: Props) {
                 <TrustBadge badge={otherParty.trust_badge} size="sm" />
               </span>
             ) : (
-              <span>Waiting for applicants</span>
+              <span>
+                {deal.deal_type === "private"
+                  ? "Waiting for someone to accept"
+                  : "Waiting for applicants"}
+              </span>
             )}
             {deal.deadline && (
               <span className="flex items-center gap-1">

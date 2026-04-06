@@ -254,27 +254,31 @@ export const POST = withApiHandler(async (req: Request) => {
   if (data.deal_type === "private" && data.recipient_email) {
     postInsertPromises.push(
       (async () => {
-        const serviceClient = createServiceClient();
-        await sendAndLogNotification({
-          supabase: serviceClient,
-          type: "guest_deal_invite",
-          userId: "guest",
-          dealId: deal.id,
-          email: data.recipient_email!,
-          data: {
-            dealTitle: deal.title,
-            dealSlug: deal.deal_link_slug,
-            amount: deal.total_amount,
-          },
-        });
+        try {
+          const serviceClient = createServiceClient();
+          await sendAndLogNotification({
+            supabase: serviceClient,
+            type: "guest_deal_invite",
+            userId: user.id,
+            dealId: deal.id,
+            email: data.recipient_email!,
+            data: {
+              dealTitle: deal.title,
+              dealSlug: deal.deal_link_slug,
+              amount: deal.total_amount,
+            },
+          });
 
-        // Log recipient info in activity log
-        await serviceClient.from("deal_activity_log").insert({
-          deal_id: deal.id,
-          user_id: null,
-          entry_type: "system",
-          content: `Payment link sent to ${data.recipient_name || "recipient"} (${data.recipient_email})`,
-        });
+          // Log recipient info in activity log
+          await serviceClient.from("deal_activity_log").insert({
+            deal_id: deal.id,
+            user_id: null,
+            entry_type: "system",
+            content: `Payment link sent to ${data.recipient_name || "recipient"} (${data.recipient_email})`,
+          });
+        } catch (err) {
+          console.error("[deals/create] Failed to send invite email:", err);
+        }
       })()
     );
   }

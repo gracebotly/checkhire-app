@@ -23,6 +23,7 @@ const PUBLIC_PATHS = [
   "/faq",
   "/for-freelancers",
   "/for-clients",
+  "/scam-check",
   "/for-creators",
 ];
 

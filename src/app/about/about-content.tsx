@@ -9,6 +9,9 @@ import {
   Clock,
   DollarSign,
   Users,
+  Camera,
+  Briefcase,
+  Building2,
   ArrowRight,
 } from "lucide-react";
 
@@ -219,45 +222,94 @@ export function AboutContent() {
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.25, ease: "easeOut", delay: 0.16 }}
-        className="mt-12 rounded-xl border border-gray-200 bg-white p-6"
+        className="mt-12"
       >
-        <div className="flex items-start gap-3">
-          <div className="rounded-lg bg-brand-muted p-2">
-            <Users className="h-5 w-5 text-brand" />
-          </div>
-          <div>
-            <h2 className="font-display text-2xl font-semibold text-slate-900">
-              Who It&apos;s For
-            </h2>
-            <p className="mt-2 text-sm leading-relaxed text-slate-600">
-              <strong className="text-slate-900">Creators</strong> — lock
-              payment before you shoot a single frame of brand content. No more
-              creating for free.{" "}
-              <strong className="text-slate-900">Freelancers</strong> — send
-              your client a payment link instead of an invoice and a prayer.{" "}
-              <strong className="text-slate-900">Gig workers</strong> — protect
-              yourself when the person hiring you is a stranger on the internet.{" "}
-              <strong className="text-slate-900">Brands and clients</strong> —
-              your money is protected too. Funds only release when you confirm
-              delivery.
+        <h2 className="font-display text-2xl font-semibold text-slate-900">
+          Who It&apos;s For
+        </h2>
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, ease: "easeOut", delay: 0.16 }}
+            className="rounded-xl border border-gray-200 bg-white p-5"
+          >
+            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-brand-muted">
+              <Camera className="h-5 w-5 text-brand" />
+            </div>
+            <h3 className="text-sm font-semibold text-slate-900">Creators</h3>
+            <p className="mt-2 text-xs text-slate-600 leading-relaxed">
+              Lock payment before you shoot a single frame of brand content. No
+              more creating for free.
             </p>
-            <p className="mt-3 text-sm leading-relaxed text-slate-600">
-              We also run{" "}
-              <a
-                href="https://reddit.com/r/checkhire"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="cursor-pointer font-semibold text-brand transition-colors duration-200 hover:text-brand-hover"
-              >
-                r/checkhire
-              </a>{" "}
-              — the first hiring community where every job poster is verified.
-              Every post must be backed by locked escrow or a video of the
-              poster. And we investigate suspicious job postings for free — submit
-              any link and our team will tell you if it&apos;s safe.
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, ease: "easeOut", delay: 0.2 }}
+            className="rounded-xl border border-gray-200 bg-white p-5"
+          >
+            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-brand-muted">
+              <Users className="h-5 w-5 text-brand" />
+            </div>
+            <h3 className="text-sm font-semibold text-slate-900">
+              Freelancers
+            </h3>
+            <p className="mt-2 text-xs text-slate-600 leading-relaxed">
+              Send your client a payment link instead of an invoice and a prayer.
+              See funds locked before you start.
             </p>
-          </div>
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, ease: "easeOut", delay: 0.24 }}
+            className="rounded-xl border border-gray-200 bg-white p-5"
+          >
+            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-brand-muted">
+              <Briefcase className="h-5 w-5 text-brand" />
+            </div>
+            <h3 className="text-sm font-semibold text-slate-900">
+              Gig Workers
+            </h3>
+            <p className="mt-2 text-xs text-slate-600 leading-relaxed">
+              Protect yourself when the person hiring you is a stranger on the
+              internet. Payment secured before work starts.
+            </p>
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, ease: "easeOut", delay: 0.28 }}
+            className="rounded-xl border border-gray-200 bg-white p-5"
+          >
+            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-brand-muted">
+              <Building2 className="h-5 w-5 text-brand" />
+            </div>
+            <h3 className="text-sm font-semibold text-slate-900">
+              Brands &amp; Clients
+            </h3>
+            <p className="mt-2 text-xs text-slate-600 leading-relaxed">
+              Your money is protected too. Funds only release when you confirm
+              delivery. Dispute resolution if anything goes wrong.
+            </p>
+          </motion.div>
         </div>
+        <p className="mt-4 rounded-xl border border-gray-200 bg-white p-5 text-xs text-slate-600 leading-relaxed">
+          We also run{" "}
+          <a
+            href="https://reddit.com/r/checkhire"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="cursor-pointer font-semibold text-brand transition-colors duration-200 hover:text-brand-hover"
+          >
+            r/checkhire
+          </a>{" "}
+          the first hiring community where every job poster is verified. Every
+          post must be backed by locked escrow or a video of the poster. We also
+          investigate suspicious job postings for free. Submit any link and our
+          team will tell you if it&apos;s safe.
+        </p>
       </motion.section>
 
       {/* Mission */}

@@ -6,7 +6,7 @@ import { AboutContent } from "./about-content";
 export const metadata: Metadata = {
   title: "About — CheckHire",
   description:
-    "CheckHire is the escrow payment link for gig work. Learn how we protect freelancers and clients from scams in online communities.",
+    "CheckHire is the escrow payment link for creators, freelancers, and gig workers. Lock payment before work starts. Keep 100% of what you earn.",
 };
 
 export default function AboutPage() {

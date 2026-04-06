@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
-import { Pencil, X, Plus, Shield, Paperclip, Upload, Loader2 } from "lucide-react";
+import { Pencil, X, Plus, Shield, Paperclip, Upload, Loader2, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -48,6 +48,7 @@ type InitialDraftData = {
   category: string | null;
   other_category_description: string | null;
   payment_frequency: string;
+  deal_type?: "private" | "public" | null;
   deadline: string | null;
   has_milestones: boolean;
   description_brief_url: string | null;
@@ -198,6 +199,11 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, initialDraft
   const [paymentFrequency, setPaymentFrequency] = useState(
     initialDraft?.payment_frequency || wizardData?.frequency || "one_time"
   );
+  const [isPublic, setIsPublic] = useState(() => {
+    if (initialDraft?.deal_type) return initialDraft.deal_type === "public";
+    if (wizardData) return false;
+    return true;
+  });
   const [showDescriptionUpload, setShowDescriptionUpload] = useState(false);
   const [descriptionBriefUrl, setDescriptionBriefUrl] = useState<string | null>(initialDraft?.description_brief_url || null);
   const [descriptionBriefName, setDescriptionBriefName] = useState<string | null>(initialDraft?.description_brief_name || null);
@@ -242,6 +248,9 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, initialDraft
       if (recoveredAmount) setAmount(recoveredAmount);
       if (recoveredOtherDesc) setOtherCategoryDescription(recoveredOtherDesc);
       if (recoveredFrequency) setPaymentFrequency(recoveredFrequency);
+      const recoveredDealType = params.get("deal_type");
+      if (recoveredDealType === "private") setIsPublic(false);
+      if (recoveredDealType === "public") setIsPublic(true);
 
       // Clear sessionStorage after recovery — one-time use
       sessionStorage.removeItem("checkhire_wizard_data");
@@ -351,7 +360,7 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, initialDraft
           other_category_description: category === "other" ? otherCategoryDescription.trim() : null,
           payment_frequency: paymentFrequency,
           deadline: deadline || null,
-          deal_type: "public",
+          deal_type: isPublic ? "public" : "private",
           max_applicants: maxApplicants,
           has_milestones: hasMilestones,
           is_draft: true,
@@ -407,7 +416,7 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, initialDraft
     return () => clearTimeout(timer);
   }, [
     title, description, deliverables, category, otherCategoryDescription,
-    paymentFrequency, amount, deadline, hasMilestones, milestones,
+    paymentFrequency, isPublic, amount, deadline, hasMilestones, milestones,
     acceptanceCriteria, screeningQuestions,
     maxApplicants,
     descriptionBriefUrl, deliverablesBriefUrl,
@@ -520,7 +529,7 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, initialDraft
       other_category_description: category === "other" ? otherCategoryDescription.trim() : null,
       payment_frequency: paymentFrequency,
       deadline: deadline || null,
-      deal_type: "public",
+      deal_type: isPublic ? "public" : "private",
       max_applicants: maxApplicants,
       has_milestones: hasMilestones,
       acceptance_criteria: acceptanceCriteria.map((c) => ({
@@ -587,7 +596,7 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, initialDraft
       other_category_description: category === "other" ? otherCategoryDescription.trim() : null,
       payment_frequency: paymentFrequency,
       deadline: deadline || null,
-      deal_type: "public",
+      deal_type: isPublic ? "public" : "private",
       max_applicants: maxApplicants,
       has_milestones: hasMilestones,
       is_draft: true,
@@ -1528,8 +1537,39 @@ export function GigCreateForm({ initialTemplate, initialRepeatData, initialDraft
                   </button>
                 </div>
 
-</div>
+              </div>
 
+              {/* Visibility toggle */}
+              <div className="flex items-center justify-between rounded-xl border border-gray-200 bg-white p-4">
+                <div className="flex items-center gap-2">
+                  <Globe className="h-4 w-4 text-slate-600" />
+                  <div>
+                    <span className="text-sm font-medium text-slate-900">
+                      List publicly
+                    </span>
+                    <p className="text-xs text-slate-600">
+                      {isPublic
+                        ? "This deal will appear on the public browse page"
+                        : "Only people with the link can see this deal"}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsPublic(!isPublic)}
+                  className={`relative h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors duration-200 ${
+                    isPublic ? "bg-brand" : "bg-gray-200"
+                  }`}
+                  role="switch"
+                  aria-checked={isPublic}
+                >
+                  <span
+                    className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${
+                      isPublic ? "translate-x-5" : "translate-x-0"
+                    }`}
+                  />
+                </button>
+              </div>
 
               {/* Optional Referral Code — only show if user has no referrer */}
               {!userProfile?.referred_by && (

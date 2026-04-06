@@ -877,7 +877,7 @@ export function GigPageClientV2({
                   </p>
                   {deal.description_brief_url && (
                     <a
-                      href={`/api/deals/${deal.id}/brief?field=description`}
+                      href={`/api/deals/${deal.id}/brief?field=description${guestToken ? `&guest_token=${encodeURIComponent(guestToken)}` : ""}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="mt-2 inline-flex items-center gap-1.5 text-xs text-brand cursor-pointer transition-colors duration-200 hover:text-brand-hover"
@@ -899,7 +899,7 @@ export function GigPageClientV2({
                       </p>
                       {deal.deliverables_brief_url && (
                         <a
-                          href={`/api/deals/${deal.id}/brief?field=deliverables`}
+                          href={`/api/deals/${deal.id}/brief?field=deliverables${guestToken ? `&guest_token=${encodeURIComponent(guestToken)}` : ""}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="mt-2 inline-flex items-center gap-1.5 text-xs text-brand cursor-pointer transition-colors duration-200 hover:text-brand-hover"
@@ -1004,7 +1004,7 @@ export function GigPageClientV2({
                       </p>
                       {deal.description_brief_url && (
                         <a
-                          href={`/api/deals/${deal.id}/brief?field=description`}
+                          href={`/api/deals/${deal.id}/brief?field=description${guestToken ? `&guest_token=${encodeURIComponent(guestToken)}` : ""}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="mt-2 inline-flex items-center gap-1.5 text-xs text-brand cursor-pointer transition-colors duration-200 hover:text-brand-hover"
@@ -1026,7 +1026,7 @@ export function GigPageClientV2({
                           </p>
                           {deal.deliverables_brief_url && (
                             <a
-                              href={`/api/deals/${deal.id}/brief?field=deliverables`}
+                              href={`/api/deals/${deal.id}/brief?field=deliverables${guestToken ? `&guest_token=${encodeURIComponent(guestToken)}` : ""}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="mt-2 inline-flex items-center gap-1.5 text-xs text-brand cursor-pointer transition-colors duration-200 hover:text-brand-hover"

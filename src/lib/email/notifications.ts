@@ -879,7 +879,7 @@ const NOTIFICATION_CONFIG: Record<string, NotificationConfig> = {
       const link = dealUrl(data.dealSlug);
       return (
         buildHeroAmount(data.amount!, "secured") +
-        `<p style="margin: 20px 0 0 0; font-size: 14px; color: #475569;">Someone wants to hire you for <strong>${title}</strong>. ${amount} is secured in escrow — the money is real and waiting for you. No account needed to get started.</p>` +
+        `<p style="margin: 20px 0 0 0; font-size: 14px; color: #475569;">Someone wants to hire you for <strong>${title}</strong>. ${amount} is secured in escrow. No account needed to get started.</p>` +
         `<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; text-align: center; margin: 16px 0;">` +
         `<div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; font-weight: 600; margin-bottom: 4px;">YOUR GIG LINK</div>` +
         `<a href="${link}" style="font-size: 14px; color: #0d9488; text-decoration: none; word-break: break-all;">${link}</a>` +

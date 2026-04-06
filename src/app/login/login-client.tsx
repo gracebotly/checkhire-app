@@ -128,6 +128,157 @@ function FieldError({ msg }: { msg: string | null }) {
   return <p className="mt-1 text-xs text-red-500">{msg}</p>;
 }
 
+
+function EmailConfirmationScreen({
+  email,
+  onChangeEmail,
+  onGoToSignIn,
+}: {
+  email: string;
+  onChangeEmail: () => void;
+  onGoToSignIn: () => void;
+}) {
+  const [resending, setResending] = useState(false);
+  const [resent, setResent] = useState(false);
+  const [resendError, setResendError] = useState<string | null>(null);
+  const [cooldown, setCooldown] = useState(0);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = setTimeout(() => setCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [cooldown]);
+
+  const handleResend = async () => {
+    if (resending || cooldown > 0) return;
+    setResending(true);
+    setResendError(null);
+    setResent(false);
+
+    try {
+      const res = await fetch("/api/auth/resend-confirmation", {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!data.ok) {
+        setResendError(data.message || "Failed to resend. Please try again.");
+      } else {
+        setResent(true);
+        setCooldown(60);
+      }
+    } catch {
+      setResendError("Something went wrong. Please try again.");
+    } finally {
+      setResending(false);
+    }
+  };
+
+  // Mask the middle of the email for visual emphasis
+  // e.g., "be****04@gmail.com" — helps user spot typos at a glance
+  const [localPart, domainPart] = email.split("@");
+  const maskedEmail =
+    localPart.length > 4
+      ? `${localPart.slice(0, 2)}${"•".repeat(Math.min(localPart.length - 4, 6))}${localPart.slice(-2)}@${domainPart}`
+      : email;
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, ease: "easeOut" }}
+        className="w-full max-w-sm rounded-2xl border border-gray-200 bg-white px-8 py-10 text-center shadow-sm"
+      >
+        {/* Icon */}
+        <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-brand-muted">
+          <Mail className="h-6 w-6 text-brand" />
+        </div>
+
+        {/* Title */}
+        <h1 className="text-lg font-semibold tracking-tight text-slate-900">
+          Check your inbox
+        </h1>
+
+        {/* Email display */}
+        <p className="mt-2 text-sm leading-relaxed text-slate-600">
+          We sent a confirmation link to
+        </p>
+        <p className="mt-1 text-sm font-semibold text-slate-900">{email}</p>
+
+        {/* Typo warning + change email button */}
+        <button
+          type="button"
+          onClick={onChangeEmail}
+          className="mt-1.5 cursor-pointer text-xs font-medium text-brand transition-colors duration-200 hover:text-brand-hover"
+        >
+          Wrong email? Go back and fix it
+        </button>
+
+        <div className="mx-auto my-5 h-px w-16 bg-gray-200" />
+
+        {/* Instructions */}
+        <div className="space-y-2 text-xs leading-relaxed text-slate-600">
+          <p>Open the email and click the link to activate your account.</p>
+          <p>
+            Don&apos;t see it? Check your{" "}
+            <span className="font-medium text-slate-900">spam</span>,{" "}
+            <span className="font-medium text-slate-900">promotions</span>, or{" "}
+            <span className="font-medium text-slate-900">updates</span> folder.
+          </p>
+        </div>
+
+        {/* Resend button */}
+        <div className="mt-5">
+          {resent && !resendError ? (
+            <motion.p
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2 }}
+              className="text-xs font-medium text-green-700"
+            >
+              Confirmation email resent!
+              {cooldown > 0 && (
+                <span className="ml-1 text-slate-600 font-normal">
+                  Resend again in {cooldown}s
+                </span>
+              )}
+            </motion.p>
+          ) : (
+            <button
+              type="button"
+              onClick={handleResend}
+              disabled={resending || cooldown > 0}
+              className="cursor-pointer text-xs font-medium text-brand transition-colors duration-200 hover:text-brand-hover disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {resending
+                ? "Sending..."
+                : cooldown > 0
+                  ? `Resend in ${cooldown}s`
+                  : "Resend confirmation email"}
+            </button>
+          )}
+          {resendError && (
+            <p className="mt-1.5 text-xs text-red-600">{resendError}</p>
+          )}
+        </div>
+
+        {/* Divider */}
+        <div className="mx-auto my-5 h-px w-16 bg-gray-200" />
+
+        {/* Already confirmed? Sign in */}
+        <button
+          type="button"
+          onClick={onGoToSignIn}
+          className="flex w-full cursor-pointer items-center justify-center gap-1 text-xs font-medium text-slate-600 transition-colors duration-200 hover:text-slate-900"
+        >
+          <ArrowLeft className="h-3 w-3" />
+          Already confirmed? Sign in
+        </button>
+      </motion.div>
+    </div>
+  );
+}
+
 export default function AuthShell() {
   const supabase = createClient();
   const router = useRouter();
@@ -398,47 +549,19 @@ export default function AuthShell() {
 
   // ── Check-email success screen ──
   if (suSuccess) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, ease: "easeOut" }}
-          className="w-full max-w-sm rounded-2xl border border-gray-200 bg-white px-8 py-10 text-center shadow-sm"
-        >
-          <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-brand-muted">
-            <Mail className="h-6 w-6 text-brand" />
-          </div>
-          <h1 className="text-lg font-semibold tracking-tight text-slate-900">
-            Confirm your email
-          </h1>
-          <p className="mt-2 text-sm leading-relaxed text-slate-600">
-            We sent a confirmation link to
-          </p>
-          <p className="text-sm font-medium text-slate-900">{suEmail}</p>
-          <div className="mx-auto my-5 h-px w-16 bg-gray-200" />
-          <div className="space-y-2 text-xs leading-relaxed text-slate-600">
-            <p>Open the email and click the link to activate your account.</p>
-            <p>
-              Don&apos;t see it? Check your{" "}
-              <span className="font-medium text-slate-900">spam or promotions</span>{" "}
-              folder.
-            </p>
-          </div>
-          <div className="mt-6">
-            <button
-              onClick={() => {
-                setSuSuccess(false);
-                setTab("signin");
-              }}
-              className="cursor-pointer text-xs font-medium text-brand transition-colors duration-200 hover:text-brand-hover"
-            >
-              Go to sign in
-            </button>
-          </div>
-        </motion.div>
-      </div>
-    );
+    return <EmailConfirmationScreen
+      email={suEmail}
+      onChangeEmail={() => {
+        setSuSuccess(false);
+        setSuError(null);
+        // Stay on signup tab so they can fix the email
+        setTab("signup");
+      }}
+      onGoToSignIn={() => {
+        setSuSuccess(false);
+        setTab("signin");
+      }}
+    />;
   }
 
   return (

@@ -438,7 +438,8 @@ export type NotificationType =
   | 'moderation_changes_requested'
   | 'moderation_rejected'
   | 'account_suspended'
-  | 'account_unsuspended';
+  | 'account_unsuspended'
+  | 'guest_accepted_welcome';
 
 export type EmailNotification = {
   id: string;

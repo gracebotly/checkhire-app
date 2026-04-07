@@ -42,10 +42,47 @@ export const POST = withApiHandler(
       );
     }
 
-    // Get freelancer's Stripe account
-    const { data: freelancerProfile } = await supabase.from("user_profiles").select("stripe_connected_account_id, stripe_onboarding_complete, email, display_name").eq("id", deal.freelancer_user_id!).maybeSingle();
-    if (!freelancerProfile?.stripe_connected_account_id || !freelancerProfile.stripe_onboarding_complete) {
-      return NextResponse.json({ ok: false, code: "STRIPE_NOT_CONNECTED", message: "Freelancer must connect their Stripe account to receive payment" }, { status: 400 });
+    // Get freelancer's Stripe account — handle both authenticated and guest freelancers
+    let destinationAccountId: string | null = null;
+    let freelancerEmail: string | null = null;
+    let freelancerDisplayName: string | null = null;
+    let freelancerUserId: string | null = null;
+    const isGuestFreelancer = !deal.freelancer_user_id && !!deal.guest_freelancer_email;
+
+    if (deal.freelancer_user_id) {
+      // Authenticated freelancer
+      const { data: freelancerProfile } = await supabase
+        .from("user_profiles")
+        .select("stripe_connected_account_id, stripe_onboarding_complete, email, display_name")
+        .eq("id", deal.freelancer_user_id)
+        .maybeSingle();
+      if (!freelancerProfile?.stripe_connected_account_id || !freelancerProfile.stripe_onboarding_complete) {
+        return NextResponse.json({ ok: false, code: "STRIPE_NOT_CONNECTED", message: "Freelancer must connect their Stripe account to receive payment" }, { status: 400 });
+      }
+      destinationAccountId = freelancerProfile.stripe_connected_account_id;
+      freelancerEmail = freelancerProfile.email;
+      freelancerDisplayName = freelancerProfile.display_name;
+      freelancerUserId = deal.freelancer_user_id;
+    } else if (isGuestFreelancer) {
+      // Guest freelancer — check Stripe account live since we don't store onboarding flag
+      if (!deal.guest_freelancer_stripe_account_id) {
+        return NextResponse.json({ ok: false, code: "STRIPE_NOT_CONNECTED", message: "Freelancer must connect their Stripe account to receive payment" }, { status: 400 });
+      }
+      try {
+        const account = await stripe.accounts.retrieve(deal.guest_freelancer_stripe_account_id);
+        if (!account.details_submitted || !account.charges_enabled) {
+          return NextResponse.json({ ok: false, code: "STRIPE_NOT_CONNECTED", message: "Freelancer must complete Stripe onboarding before payment can be released" }, { status: 400 });
+        }
+      } catch (err) {
+        console.error("[confirm] Failed to retrieve guest Stripe account:", err);
+        return NextResponse.json({ ok: false, code: "STRIPE_ERROR", message: "Could not verify freelancer payment account" }, { status: 500 });
+      }
+      destinationAccountId = deal.guest_freelancer_stripe_account_id;
+      freelancerEmail = deal.guest_freelancer_email;
+      freelancerDisplayName = deal.guest_freelancer_name || "Freelancer";
+      freelancerUserId = null;
+    } else {
+      return NextResponse.json({ ok: false, code: "NO_FREELANCER", message: "This deal has no freelancer assigned" }, { status: 400 });
     }
 
     const serviceClient = createServiceClient();
@@ -66,7 +103,7 @@ export const POST = withApiHandler(
       await stripe.transfers.create({
         amount: releaseAmount,
         currency: "usd",
-        destination: freelancerProfile.stripe_connected_account_id,
+        destination: destinationAccountId!,
         metadata: { deal_id: id, milestone_id },
       });
 
@@ -91,7 +128,7 @@ export const POST = withApiHandler(
       await stripe.transfers.create({
         amount: releaseAmount,
         currency: "usd",
-        destination: freelancerProfile.stripe_connected_account_id,
+        destination: destinationAccountId!,
         metadata: { deal_id: id },
       });
 
@@ -101,20 +138,20 @@ export const POST = withApiHandler(
     // Activity log
     await serviceClient.from("deal_activity_log").insert({ deal_id: id, user_id: null, entry_type: "system", content: activityMessage });
 
-    // Email freelancer about release
-    if (freelancerProfile.email) {
+    // Email freelancer about release — works for both auth and guest
+    if (freelancerEmail) {
       await sendAndLogNotification({
         supabase: serviceClient,
         type: milestone_id ? "milestone_approved" : "funds_released",
-        userId: deal.freelancer_user_id!,
+        userId: freelancerUserId,
         dealId: id,
-        email: freelancerProfile.email,
+        email: freelancerEmail,
         data: {
           dealTitle: deal.title,
           dealSlug: deal.deal_link_slug,
           amount: releaseAmount,
           milestoneTitle,
-          isGuestFreelancer: !!deal.guest_freelancer_email,
+          isGuestFreelancer,
         },
       });
     }
@@ -128,11 +165,6 @@ export const POST = withApiHandler(
         .select("completed_deals_count, email, display_name")
         .eq("id", deal.client_user_id)
         .maybeSingle();
-      const { data: freelancerData } = await serviceClient
-        .from("user_profiles")
-        .select("completed_deals_count")
-        .eq("id", deal.freelancer_user_id!)
-        .maybeSingle();
 
       if (clientData) {
         await serviceClient
@@ -140,11 +172,20 @@ export const POST = withApiHandler(
           .update({ completed_deals_count: (clientData.completed_deals_count || 0) + 1 })
           .eq("id", deal.client_user_id);
       }
-      if (freelancerData) {
-        await serviceClient
+
+      if (deal.freelancer_user_id) {
+        const { data: freelancerData } = await serviceClient
           .from("user_profiles")
-          .update({ completed_deals_count: (freelancerData.completed_deals_count || 0) + 1 })
-          .eq("id", deal.freelancer_user_id!);
+          .select("completed_deals_count")
+          .eq("id", deal.freelancer_user_id)
+          .maybeSingle();
+
+        if (freelancerData) {
+          await serviceClient
+            .from("user_profiles")
+            .update({ completed_deals_count: (freelancerData.completed_deals_count || 0) + 1 })
+            .eq("id", deal.freelancer_user_id);
+        }
       }
 
       // Credit referral commission (if client was referred)
@@ -166,7 +207,7 @@ export const POST = withApiHandler(
           data: {
             dealTitle: deal.title,
             dealSlug: deal.deal_link_slug,
-            otherPartyName: freelancerProfile.display_name || "the freelancer",
+            otherPartyName: freelancerDisplayName || "the freelancer",
           },
         });
       }
@@ -177,7 +218,7 @@ export const POST = withApiHandler(
         title: deal.title,
         deal_link_slug: deal.deal_link_slug,
         total_amount: releaseAmount,
-        freelancer_name: freelancerProfile.display_name || freelancerProfile.email || "Freelancer",
+        freelancer_name: freelancerDisplayName || freelancerEmail || "Freelancer",
         payout_method: "standard",
       }));
     }

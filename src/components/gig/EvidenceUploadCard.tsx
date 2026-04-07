@@ -12,6 +12,12 @@ type Props = {
   onUploaded: () => void;
   dealStatus: string;
   acceptanceCriteria?: Array<{ id: string; evidence_type: string; description: string }>;
+  /** Whether the deal already has at least one piece of submission evidence uploaded */
+  hasEvidence?: boolean;
+  /** Called when user clicks the Submit Work CTA */
+  onSubmitClick?: () => void;
+  /** Whether a submit is currently in progress */
+  submitting?: boolean;
 };
 
 const MAX_SIZE = 10 * 1024 * 1024;
@@ -23,6 +29,9 @@ export function EvidenceUploadCard({
   onUploaded,
   dealStatus,
   acceptanceCriteria,
+  hasEvidence = false,
+  onSubmitClick,
+  submitting = false,
 }: Props) {
   const [file, setFile] = useState<File | null>(null);
   const [isEvidence, setIsEvidence] = useState(
@@ -91,10 +100,44 @@ export function EvidenceUploadCard({
   };
 
   return (
-    <div
-      className="border-dashed border-2 border-gray-300 rounded-xl p-5 cursor-pointer transition-colors duration-200 hover:border-gray-400"
-      onClick={() => !file && fileRef.current?.click()}
-    >
+    <div className="space-y-4">
+      {/* Ready-to-submit CTA — only when evidence exists AND parent provided callback */}
+      {hasEvidence && onSubmitClick && (
+        <div className="rounded-xl border border-brand/30 bg-brand-muted p-4">
+          <div className="flex items-start gap-3">
+            <div className="rounded-lg bg-white p-2">
+              <svg className="h-4 w-4 text-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-slate-900">
+                Ready to submit?
+              </p>
+              <p className="mt-1 text-xs text-slate-600 leading-relaxed">
+                You&apos;ve uploaded your work. Submit it for review and the client will have 72 hours to confirm delivery.
+              </p>
+              <Button
+                onClick={onSubmitClick}
+                disabled={submitting}
+                size="sm"
+                className="mt-3"
+              >
+                {submitting ? "Submitting..." : "Submit Work for Review"}
+              </Button>
+              <p className="mt-2 text-xs text-slate-600">
+                You can still upload more evidence below before submitting.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Upload dropzone */}
+      <div
+        className="border-dashed border-2 border-gray-300 rounded-xl p-5 cursor-pointer transition-colors duration-200 hover:border-gray-400"
+        onClick={() => !file && fileRef.current?.click()}
+      >
       <div className="text-center mb-4">
         <Upload className="h-8 w-8 text-slate-600 mx-auto mb-2" />
         <p className="text-base font-semibold text-slate-900">
@@ -172,6 +215,7 @@ export function EvidenceUploadCard({
           </Button>
         </div>
       )}
+    </div>
     </div>
   );
 }

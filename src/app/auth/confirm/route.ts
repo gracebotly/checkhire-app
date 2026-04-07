@@ -77,7 +77,7 @@ export async function GET(request: Request) {
   // Gated strictly on signup type + new profile + real email address,
   // so it does NOT fire on password recovery, email change, invites,
   // or re-confirmations.
-  if (type === "signup" && profileWasMissing && user.email) {
+  if ((type === "email" || type === "signup") && profileWasMissing && user.email) {
     sendWelcomeEmail({
       to: user.email,
       userName: welcomeDisplayName,

@@ -58,7 +58,7 @@ export const POST = withApiHandler(async function POST(req: Request) {
     email,
     options: {
       shouldCreateUser: true,
-      emailRedirectTo: `${siteUrl(req)}/auth/callback?intent=signin`,
+      emailRedirectTo: `${siteUrl(req)}/auth/confirm?next=/auth/post-login`,
     },
   });
 

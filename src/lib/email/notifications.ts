@@ -1195,6 +1195,111 @@ const NOTIFICATION_CONFIG: Record<string, NotificationConfig> = {
   },
 
 
+  // ── Mutual Cancellation Templates ──
+  cancellation_requested: {
+    accent: "#0d9488",
+    subject: (data) =>
+      `Cancellation requested — ${escapeHtml(data.dealTitle)}`,
+    body: (data) => {
+      const title = escapeHtml(data.dealTitle);
+      const requester = escapeHtml(data.requesterName || "The other party");
+      const refund = data.proposedClientRefund || 0;
+      const payout = data.proposedFreelancerPayout || 0;
+      const reasonHtml = data.cancellationReason
+        ? `<p style="margin: 12px 0 0 0; font-size: 14px; color: #475569;"><strong>Reason:</strong> ${escapeHtml(data.cancellationReason)}</p>`
+        : "";
+      const link = `${APP_URL}/deal/${escapeHtml(data.dealSlug)}`;
+      return (
+        `<h2 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 700; color: #0f172a;">Mutual Cancellation Requested</h2>` +
+        `<p style="margin: 0 0 12px 0; font-size: 14px; color: #475569;">${requester} has requested to mutually cancel <strong>${title}</strong>.</p>` +
+        `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 16px 0;">` +
+          `<tr><td style="padding: 16px; background-color: #f0faf8; border-radius: 8px;">` +
+            `<p style="margin: 0 0 8px 0; font-size: 13px; font-weight: 600; color: #297a6d; text-transform: uppercase; letter-spacing: 0.5px;">Proposed Split</p>` +
+            `<p style="margin: 0; font-size: 14px; color: #0f172a;">${formatAmount(refund)} refunded to client</p>` +
+            `<p style="margin: 4px 0 0 0; font-size: 14px; color: #0f172a;">${formatAmount(payout)} paid to freelancer</p>` +
+          `</td></tr>` +
+        `</table>` +
+        reasonHtml +
+        `<p style="margin: 16px 0 0 0; font-size: 14px; color: #475569;">You have <strong>72 hours</strong> to respond. If you don't respond in time, this will automatically escalate to a formal dispute.</p>` +
+        buildCtaButton(link, "Review Request", "primary")
+      );
+    },
+  },
+
+  cancellation_accepted: {
+    accent: "#22c55e",
+    subject: (data) =>
+      `Cancellation accepted — ${escapeHtml(data.dealTitle)}`,
+    body: (data) => {
+      const title = escapeHtml(data.dealTitle);
+      const refund = data.proposedClientRefund || 0;
+      const payout = data.proposedFreelancerPayout || 0;
+      return (
+        `<h2 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 700; color: #0f172a;">Cancellation Accepted</h2>` +
+        `<p style="margin: 0 0 12px 0; font-size: 14px; color: #475569;">The mutual cancellation for <strong>${title}</strong> has been accepted.</p>` +
+        `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 16px 0;">` +
+          `<tr><td style="padding: 16px; background-color: #f0fdf4; border-radius: 8px;">` +
+            `<p style="margin: 0 0 8px 0; font-size: 13px; font-weight: 600; color: #166534; text-transform: uppercase; letter-spacing: 0.5px;">Final Split</p>` +
+            `<p style="margin: 0; font-size: 14px; color: #0f172a;">${formatAmount(refund)} refunded to client</p>` +
+            `<p style="margin: 4px 0 0 0; font-size: 14px; color: #0f172a;">${formatAmount(payout)} to freelancer</p>` +
+          `</td></tr>` +
+        `</table>` +
+        `<p style="margin: 16px 0 0 0; font-size: 14px; color: #475569;">Refunds typically take 5-10 business days to reach the client's payment method. If a freelancer payout is included and Stripe is connected, it will be transferred immediately.</p>` +
+        buildCtaButton(`${APP_URL}/deal/${escapeHtml(data.dealSlug)}`, "View Deal", "neutral")
+      );
+    },
+  },
+
+  cancellation_rejected: {
+    accent: "#64748b",
+    subject: (data) =>
+      `Cancellation rejected — ${escapeHtml(data.dealTitle)}`,
+    body: (data) => {
+      const title = escapeHtml(data.dealTitle);
+      const responder = escapeHtml(data.otherPartyName || "The other party");
+      const reasonHtml = data.cancellationResponseReason
+        ? `<p style="margin: 12px 0 0 0; font-size: 14px; color: #475569;"><strong>Reason given:</strong> ${escapeHtml(data.cancellationResponseReason)}</p>`
+        : "";
+      return (
+        `<h2 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 700; color: #0f172a;">Cancellation Rejected</h2>` +
+        `<p style="margin: 0 0 12px 0; font-size: 14px; color: #475569;">${responder} rejected the mutual cancellation request for <strong>${title}</strong>. The deal is back to its previous state.</p>` +
+        reasonHtml +
+        `<p style="margin: 16px 0 0 0; font-size: 14px; color: #475569;">If you can't reach an agreement, you can open a formal dispute from the deal page.</p>` +
+        buildCtaButton(`${APP_URL}/deal/${escapeHtml(data.dealSlug)}`, "View Deal", "neutral")
+      );
+    },
+  },
+
+  cancellation_escalated: {
+    accent: "#dc2626",
+    subject: (data) =>
+      `Cancellation escalated to dispute — ${escapeHtml(data.dealTitle)}`,
+    body: (data) => {
+      const title = escapeHtml(data.dealTitle);
+      const responder = escapeHtml(data.otherPartyName || "The other party");
+      return (
+        `<h2 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 700; color: #0f172a;">Escalated to Formal Dispute</h2>` +
+        `<p style="margin: 0 0 12px 0; font-size: 14px; color: #475569;">${responder} chose to escalate the mutual cancellation request for <strong>${title}</strong> to a formal dispute. Both parties can now provide evidence and propose a resolution through the dispute system.</p>` +
+        buildCtaButton(`${APP_URL}/deal/${escapeHtml(data.dealSlug)}`, "Open Dispute", "primary")
+      );
+    },
+  },
+
+  cancellation_auto_escalated: {
+    accent: "#dc2626",
+    subject: (data) =>
+      `Cancellation auto-escalated — ${escapeHtml(data.dealTitle)}`,
+    body: (data) => {
+      const title = escapeHtml(data.dealTitle);
+      return (
+        `<h2 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 700; color: #0f172a;">Auto-Escalated to Formal Dispute</h2>` +
+        `<p style="margin: 0 0 12px 0; font-size: 14px; color: #475569;">The mutual cancellation request for <strong>${title}</strong> was not responded to within 72 hours, so it has been automatically escalated to a formal dispute. Both parties can now provide evidence and propose a resolution.</p>` +
+        buildCtaButton(`${APP_URL}/deal/${escapeHtml(data.dealSlug)}`, "View Dispute", "primary")
+      );
+    },
+  },
+
+
 };
 
 // ══════════════════════════════════════════════════════════════════════════════

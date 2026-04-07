@@ -3,7 +3,6 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { withApiHandler } from "@/lib/api/withApiHandler";
 import { generateReferralCode } from "@/lib/referrals/generate-code";
-import { sendWelcomeEmail } from "@/lib/email/sendWelcomeEmail";
 import { notifyAdmin } from "@/lib/slack/notify";
 import { newUserSignup } from "@/lib/slack/templates";
 
@@ -193,8 +192,11 @@ export const POST = withApiHandler(async function POST(request: NextRequest) {
     }),
   );
 
-  // Send welcome email (non-blocking, non-fatal)
-  sendWelcomeEmail({ to: email, userName: name || null }).catch(() => {});
+  // NOTE: Welcome email is NOT sent here — it fires from
+  // src/app/auth/confirm/route.ts after the user clicks the email
+  // confirmation link and their account becomes usable. Sending it
+  // here would lie to the user ("your account is ready") before they
+  // have actually confirmed their email.
 
   return NextResponse.json({ ok: true, hasSession });
 });

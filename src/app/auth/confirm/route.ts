@@ -1,5 +1,6 @@
 import { type EmailOtpType, createClient as createServiceClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
+import { sendWelcomeEmail } from "@/lib/email/sendWelcomeEmail";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
@@ -46,12 +47,17 @@ export async function GET(request: Request) {
     .eq("id", user.id)
     .maybeSingle();
 
+  let welcomeDisplayName: string | null = null;
+  const profileWasMissing = !profile;
+
   if (!profile) {
     const displayName =
       user.user_metadata?.name ||
       user.user_metadata?.full_name ||
       user.email?.split("@")[0] ||
       "User";
+
+    welcomeDisplayName = displayName;
 
     const profileSlug =
       displayName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") +
@@ -64,6 +70,19 @@ export async function GET(request: Request) {
       display_name: displayName,
       email: user.email || null,
       profile_slug: profileSlug,
+    });
+  }
+
+  // Fire the welcome email AFTER email confirmation succeeds.
+  // Gated strictly on signup type + new profile + real email address,
+  // so it does NOT fire on password recovery, email change, invites,
+  // or re-confirmations.
+  if (type === "signup" && profileWasMissing && user.email) {
+    sendWelcomeEmail({
+      to: user.email,
+      userName: welcomeDisplayName,
+    }).catch((err) => {
+      console.error("[auth/confirm] Welcome email failed:", err);
     });
   }
 

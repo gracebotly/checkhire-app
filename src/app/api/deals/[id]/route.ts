@@ -40,7 +40,7 @@ export const PATCH = withApiHandler(
     // Fetch acting user's profile
     const { data: profile } = await supabase
       .from("user_profiles")
-      .select("display_name")
+      .select("display_name, email")
       .eq("id", user.id)
       .maybeSingle();
 
@@ -97,10 +97,43 @@ export const PATCH = withApiHandler(
         content: `Gig published by ${displayName}`,
       });
 
-      // NOTE: Invite email is NO LONGER fired automatically on draft publish.
-      // The recipient fields are persisted in the update above, and the client
-      // manually fires the invite via POST /api/deals/[id]/send-invite once
-      // they're ready.
+      // Fire the "your gig is live" email here — this is the actual moment
+      // the deal transitions from draft to pending_acceptance. The POST
+      // handler in src/app/api/deals/route.ts intentionally does NOT fire
+      // this email on draft inserts (because the wizard auto-saves drafts
+      // every 30 seconds), so the publish handler is responsible for it.
+      if (profile?.email) {
+        const serviceClient = createServiceClient();
+        const hasRecipient =
+          updatedDeal.deal_type === "private" &&
+          typeof updatedDeal.recipient_name === "string" &&
+          updatedDeal.recipient_name.trim().length > 0;
+
+        await sendAndLogNotification({
+          supabase: serviceClient,
+          type: hasRecipient
+            ? "deal_published_with_recipient"
+            : "deal_published_no_recipient",
+          userId: user.id,
+          dealId: id,
+          email: profile.email,
+          data: {
+            dealTitle: updatedDeal.title,
+            dealSlug: updatedDeal.deal_link_slug,
+            amount: updatedDeal.total_amount,
+            recipientName: hasRecipient ? updatedDeal.recipient_name : undefined,
+            recipientEmail: hasRecipient
+              ? updatedDeal.recipient_email || undefined
+              : undefined,
+          },
+        });
+      }
+
+      // NOTE: Invite email to the recipient is NOT fired here. The recipient
+      // fields are persisted in the update above, and the client manually
+      // fires the invite via POST /api/deals/[id]/send-invite once they're
+      // ready. This guarantees the invite email is honest about whether
+      // escrow is funded at the moment of sending.
 
       return NextResponse.json({ ok: true, deal: updatedDeal, slug: updatedDeal.deal_link_slug });
     }

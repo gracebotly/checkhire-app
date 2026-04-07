@@ -410,7 +410,9 @@ export type TimelineNodeVariant =
 // ─── Email Notifications ───
 
 export type NotificationType =
-  | 'deal_created'
+  | 'deal_created' // legacy alias — kept for historical email_notifications rows; new sends use the two below
+  | 'deal_published_with_recipient'
+  | 'deal_published_no_recipient'
   | 'deal_accepted'
   | 'milestone_funded'
   | 'work_submitted'
@@ -511,6 +513,10 @@ export type NotificationData = {
   cancellationReason?: string;
   cancellationResponseReason?: string;
   requesterName?: string;
+
+  // Recipient acknowledgment for private deals
+  recipientName?: string;
+  recipientEmail?: string;
 };
 
 // ─── Dispute with Deal Info (Admin Views) ───

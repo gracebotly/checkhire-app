@@ -243,7 +243,75 @@ const NOTIFICATION_CONFIG: Record<string, NotificationConfig> = {
     },
   },
 
-  // ── Template 2: deal_created ──
+  // ── Template 2a: deal_published_no_recipient ──
+  // Sent when a deal is published WITHOUT a private recipient (public deals,
+  // or private deals where the user didn't fill in the "Who are you sending
+  // this to?" section). User shares the link wherever they want.
+  deal_published_no_recipient: {
+    accent: "#0d9488",
+    subject: () => "Your gig is live — share your payment link",
+    body: (data) => {
+      const title = escapeHtml(data.dealTitle);
+      const link = dealUrl(data.dealSlug);
+      const amountLine = data.amount
+        ? `<p style="margin: 16px 0 0 0; font-size: 14px; color: #0f172a;">Budget: <strong>${formatAmount(data.amount)}</strong></p>`
+        : "";
+      return (
+        `<h2 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 700; color: #0f172a;">Your Gig is Live</h2>` +
+        `<p style="margin: 0 0 16px 0; font-size: 14px; color: #475569;">Your gig <strong>${title}</strong> is ready to share. Send your payment link to find a freelancer.</p>` +
+        `<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; text-align: center;">` +
+        `<div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; font-weight: 600; margin-bottom: 4px;">YOUR PAYMENT LINK</div>` +
+        `<a href="${link}" style="font-size: 14px; color: #0d9488; text-decoration: none; word-break: break-all;">${link}</a>` +
+        `</div>` +
+        amountLine +
+        buildCtaButton(link, "View Your Gig", "primary")
+      );
+    },
+  },
+
+  // ── Template 2b: deal_published_with_recipient ──
+  // Sent when a deal is published WITH a private recipient. The recipient
+  // has NOT been notified yet — that happens through a separate manual
+  // "Send invite" flow. This email tells the user the link is ready and
+  // reminds them to send it when they're ready.
+  deal_published_with_recipient: {
+    accent: "#0d9488",
+    subject: (data) =>
+      `Your payment link for ${escapeHtml(data.recipientName || "your recipient")} is ready`,
+    body: (data) => {
+      const title = escapeHtml(data.dealTitle);
+      const link = dealUrl(data.dealSlug);
+      const recipient = escapeHtml(data.recipientName || "your recipient");
+      const recipientEmail = data.recipientEmail
+        ? `<p style="margin: 4px 0 0 0; font-size: 13px; color: #64748b;">${escapeHtml(data.recipientEmail)}</p>`
+        : "";
+      const amountLine = data.amount
+        ? `<p style="margin: 16px 0 0 0; font-size: 14px; color: #0f172a;">Budget: <strong>${formatAmount(data.amount)}</strong></p>`
+        : "";
+      return (
+        `<h2 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 700; color: #0f172a;">Your Payment Link is Ready</h2>` +
+        `<p style="margin: 0 0 16px 0; font-size: 14px; color: #475569;">Your gig <strong>${title}</strong> is ready to send to:</p>` +
+        `<div style="background: #f0faf8; border: 1px solid #ccebe6; border-radius: 8px; padding: 12px 16px; margin: 0 0 16px 0;">` +
+        `<p style="margin: 0; font-size: 14px; font-weight: 600; color: #0f172a;">${recipient}</p>` +
+        recipientEmail +
+        `</div>` +
+        `<p style="margin: 0 0 16px 0; font-size: 14px; color: #475569;">When you're ready, send them the invite from the deal page. They haven't been notified yet.</p>` +
+        `<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; text-align: center;">` +
+        `<div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; font-weight: 600; margin-bottom: 4px;">YOUR PAYMENT LINK</div>` +
+        `<a href="${link}" style="font-size: 14px; color: #0d9488; text-decoration: none; word-break: break-all;">${link}</a>` +
+        `</div>` +
+        amountLine +
+        buildCtaButton(link, "View Your Gig", "primary")
+      );
+    },
+  },
+
+  // ── Template 2 (legacy alias): deal_created ──
+  // Kept registered so historical email_notifications rows and any
+  // unanticipated reference still resolve. New sends should use either
+  // deal_published_with_recipient or deal_published_no_recipient instead.
+  // This alias intentionally points at the no-recipient template since
+  // it preserves the old behavior exactly.
   deal_created: {
     accent: "#0d9488",
     subject: () => "Your gig is live — share your payment link",

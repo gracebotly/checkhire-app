@@ -238,15 +238,37 @@ export const POST = withApiHandler(async (req: Request) => {
         content: `Gig created by ${userProfile?.display_name || "Unknown"}`,
       });
 
-      if (userProfile?.email) {
+      // CRITICAL: Do NOT fire the publish email on draft inserts. The wizard
+      // auto-saves drafts every 30 seconds via this same POST endpoint. Firing
+      // the celebratory email on a draft creates a confusing UX where the
+      // user receives "Your Gig is Live" before they've even finished typing.
+      // The publish email fires from the publish_draft PATCH handler instead.
+      // Direct (non-draft) POSTs — i.e. someone publishing in one shot without
+      // the wizard's draft step — still get the email here.
+      if (!data.is_draft && userProfile?.email) {
         const serviceClient = createServiceClient();
+        const hasRecipient =
+          deal.deal_type === "private" &&
+          typeof deal.recipient_name === "string" &&
+          deal.recipient_name.trim().length > 0;
+
         await sendAndLogNotification({
           supabase: serviceClient,
-          type: "deal_created",
+          type: hasRecipient
+            ? "deal_published_with_recipient"
+            : "deal_published_no_recipient",
           userId: user.id,
           dealId: deal.id,
           email: userProfile.email,
-          data: { dealTitle: deal.title, dealSlug: deal.deal_link_slug },
+          data: {
+            dealTitle: deal.title,
+            dealSlug: deal.deal_link_slug,
+            amount: deal.total_amount,
+            recipientName: hasRecipient ? deal.recipient_name : undefined,
+            recipientEmail: hasRecipient
+              ? deal.recipient_email || undefined
+              : undefined,
+          },
         });
       }
     })()

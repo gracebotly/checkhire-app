@@ -50,7 +50,16 @@ export const POST = withApiHandler(async function POST(request: NextRequest) {
     );
   }
 
+  // When the signup comes from the gig creation wizard, the email
+  // confirmation link must land on /auth/post-login so the wizard data
+  // stored in sessionStorage can resume the flow into /deal/new.
+  // For all other signups, land on /auth/callback as before.
+  const intentValue = (body?.intent ?? "").toString().trim();
   const params = new URLSearchParams({ intent: "signup" });
+  const isWizardSignup = intentValue === "wizard";
+  if (isWizardSignup) {
+    params.set("next", "/auth/post-login");
+  }
   const redirectTo = `${siteUrl(request)}/auth/callback?${params.toString()}`;
 
   // Check if the user was already created by the client-side signUp call.
@@ -105,9 +114,12 @@ export const POST = withApiHandler(async function POST(request: NextRequest) {
   // Determine initial mode from context
   // If the user signed up from an application flow, they're a freelancer
   // If they signed up from the create wizard, they're a client
-  const intent = (body?.intent ?? "").toString().trim();
   const initialMode =
-    intent === "freelancer" ? "freelancer" : intent === "client" ? "client" : null;
+    intentValue === "freelancer"
+      ? "freelancer"
+      : intentValue === "client" || intentValue === "wizard"
+        ? "client"
+        : null;
 
   const { error: profileError } = await supabaseService
     .from("user_profiles")

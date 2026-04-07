@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -15,6 +15,8 @@ import {
   Languages,
   MoreHorizontal,
   ArrowRight,
+  Mail,
+  ArrowLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,6 +54,17 @@ export function CreateWizard() {
   const [name, setName] = useState("");
   const [authError, setAuthError] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
+  const [signupPending, setSignupPending] = useState(false); // show "check your email" screen
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendSent, setResendSent] = useState(false);
+  const [resendError, setResendError] = useState("");
+  const [resendCooldown, setResendCooldown] = useState(0);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setTimeout(() => setResendCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [resendCooldown]);
 
   const budgetNum = parseFloat(budget) || 0;
   const platformFee = budgetNum * 0.05;
@@ -123,39 +136,105 @@ export function CreateWizard() {
       return;
     }
 
+    // Save wizard data to sessionStorage BEFORE signup so the flow can
+    // resume whether the user confirms email now (new window) or later.
+    const wizardParams = buildWizardParams();
+    try {
+      sessionStorage.setItem("checkhire_wizard_data", wizardParams.toString());
+    } catch {
+      // sessionStorage unavailable — non-fatal
+    }
+
     try {
       const res = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim(), password, name: name.trim() }),
+        body: JSON.stringify({
+          email: email.trim().toLowerCase(),
+          password,
+          name: name.trim(),
+          intent: "wizard",
+        }),
       });
       const data = await res.json();
-      if (!data.ok) throw new Error(data.message || "Signup failed");
 
-      // After signup, sign in immediately
-      const supabase = createClient();
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password,
-      });
-      if (signInError) throw new Error(signInError.message);
+      if (!data.ok) {
+        // If the user already exists but hasn't confirmed their email yet
+        // (common when retrying signup after not receiving the first mail),
+        // still route them to the check-your-email screen instead of showing
+        // a raw error.
+        const msg = (data.message || "").toLowerCase();
+        const isUnconfirmedExisting =
+          msg.includes("not confirmed") ||
+          msg.includes("already registered") ||
+          msg.includes("already been registered") ||
+          msg.includes("user already registered");
 
-      // Save wizard data to sessionStorage as backup
-      const wizardParams = buildWizardParams();
-      try {
-        sessionStorage.setItem("checkhire_wizard_data", wizardParams.toString());
-      } catch {
-        // sessionStorage unavailable
+        if (isUnconfirmedExisting) {
+          setSignupPending(true);
+          setAuthError("");
+          return;
+        }
+
+        setAuthError(data.message || "Signup failed");
+        return;
       }
 
-      // Hard navigation ensures the auth cookie is sent with the request.
-      // router.push + router.refresh causes a race condition where the
-      // server component at /deal/new may not have the session cookie yet.
+      // Signup succeeded on the server.
+      // If email confirmation is required, hasSession will be false.
+      // Show the "check your email" screen — do NOT attempt signInWithPassword,
+      // because Supabase will reject it until the email is confirmed.
+      if (!data.hasSession) {
+        setSignupPending(true);
+        return;
+      }
+
+      // Auto-confirm path (hasSession === true). Sign in client-side so the
+      // auth cookie is set in the browser, then hard-navigate to /deal/new.
+      const supabase = createClient();
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password,
+      });
+      if (signInError) {
+        // Edge case: server created user with session but client sign-in
+        // still failed. Fall back to the check-your-email screen rather than
+        // blocking the user with a raw error.
+        setSignupPending(true);
+        return;
+      }
+
       window.location.href = `/deal/new?${wizardParams.toString()}`;
     } catch (err) {
       setAuthError(err instanceof Error ? err.message : "Signup failed");
     } finally {
       setAuthLoading(false);
+    }
+  };
+
+  const handleResendConfirmation = async () => {
+    if (resendLoading || resendCooldown > 0) return;
+    setResendLoading(true);
+    setResendError("");
+    setResendSent(false);
+
+    try {
+      const res = await fetch("/api/auth/resend-confirmation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim().toLowerCase() }),
+      });
+      const data = await res.json();
+      if (!data.ok) {
+        setResendError(data.message || "Failed to resend. Please try again.");
+      } else {
+        setResendSent(true);
+        setResendCooldown(60);
+      }
+    } catch {
+      setResendError("Something went wrong. Please try again.");
+    } finally {
+      setResendLoading(false);
     }
   };
 
@@ -407,7 +486,98 @@ export function CreateWizard() {
           )}
 
           {/* Screen 3 — Auth gate */}
-          {screen === 3 && (
+          {screen === 3 && signupPending && (
+            <div>
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.25, ease: "easeOut" }}
+                className="rounded-xl border border-gray-200 bg-white p-6 text-center"
+              >
+                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-brand-muted">
+                  <Mail className="h-6 w-6 text-brand" />
+                </div>
+
+                <h2 className="font-display text-xl font-bold text-slate-900">
+                  Check your inbox
+                </h2>
+                <p className="mt-2 text-sm text-slate-600">
+                  We sent a confirmation link to
+                </p>
+                <p className="mt-1 text-sm font-semibold text-slate-900 break-all">
+                  {email}
+                </p>
+
+                <div className="mx-auto my-5 h-px w-16 bg-gray-200" />
+
+                <div className="space-y-2 text-xs leading-relaxed text-slate-600">
+                  <p>
+                    Click the link in the email to confirm your account. You&apos;ll come
+                    right back here to publish your deal — your progress is saved.
+                  </p>
+                  <p>
+                    Don&apos;t see it? Check your{" "}
+                    <span className="font-medium text-slate-900">spam</span>,{" "}
+                    <span className="font-medium text-slate-900">promotions</span>, or{" "}
+                    <span className="font-medium text-slate-900">updates</span> folder.
+                  </p>
+                </div>
+
+                <div className="mt-5">
+                  {resendSent && !resendError ? (
+                    <motion.p
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="text-xs font-medium text-green-700"
+                    >
+                      Confirmation email resent!
+                      {resendCooldown > 0 && (
+                        <span className="ml-1 font-normal text-slate-600">
+                          Resend again in {resendCooldown}s
+                        </span>
+                      )}
+                    </motion.p>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleResendConfirmation}
+                      disabled={resendLoading || resendCooldown > 0}
+                      className="cursor-pointer text-xs font-medium text-brand transition-colors duration-200 hover:text-brand-hover disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {resendLoading
+                        ? "Sending..."
+                        : resendCooldown > 0
+                          ? `Resend in ${resendCooldown}s`
+                          : "Resend confirmation email"}
+                    </button>
+                  )}
+                  {resendError && (
+                    <p className="mt-1.5 text-xs text-red-600">{resendError}</p>
+                  )}
+                </div>
+
+                <div className="mx-auto my-5 h-px w-16 bg-gray-200" />
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSignupPending(false);
+                    setAuthError("");
+                    setResendSent(false);
+                    setResendError("");
+                    setResendCooldown(0);
+                  }}
+                  className="flex w-full cursor-pointer items-center justify-center gap-1 text-xs font-medium text-slate-600 transition-colors duration-200 hover:text-slate-900"
+                >
+                  <ArrowLeft className="h-3 w-3" />
+                  Wrong email? Go back
+                </button>
+              </motion.div>
+            </div>
+          )}
+
+          {screen === 3 && !signupPending && (
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">Last step</p>
               <h2 className="mt-1 font-display text-xl font-bold text-slate-900">Your deal is almost live</h2>

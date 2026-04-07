@@ -28,6 +28,32 @@ export const POST = withApiHandler(async function POST(request: NextRequest) {
   const email = (body?.email ?? "").toString().trim().toLowerCase();
   const password = (body?.password ?? "").toString();
 
+  // Wizard data is sent by CreateWizard during signup-from-wizard flows.
+  // It's persisted to user_profiles.pending_wizard_data so /auth/post-login
+  // can restore the wizard state after email confirmation, even when the
+  // confirmation link opens in a new browser tab.
+  // Validate it's a plain object with no nested objects (defensive — the
+  // wizard only sends flat string key/value pairs).
+  let wizardDataForDb: Record<string, string> | null = null;
+  const rawWizardData = body?.wizard_data;
+  if (
+    rawWizardData &&
+    typeof rawWizardData === "object" &&
+    !Array.isArray(rawWizardData)
+  ) {
+    const cleaned: Record<string, string> = {};
+    for (const [key, value] of Object.entries(rawWizardData)) {
+      // Only accept primitive string values, max 500 chars, max 20 keys
+      if (typeof value === "string" && value.length <= 500) {
+        cleaned[key] = value;
+      }
+      if (Object.keys(cleaned).length >= 20) break;
+    }
+    if (Object.keys(cleaned).length > 0) {
+      wizardDataForDb = cleaned;
+    }
+  }
+
   if (!email || !password) {
     return NextResponse.json(
       { ok: false, message: "Email and password are required." },
@@ -127,6 +153,9 @@ export const POST = withApiHandler(async function POST(request: NextRequest) {
         full_name: name || null,
         display_name: name || null,
         current_mode: initialMode,
+        // Persist wizard data so /auth/post-login can restore it after
+        // email confirmation. NULL for non-wizard signups.
+        pending_wizard_data: wizardDataForDb,
       },
       { onConflict: "id" },
     );

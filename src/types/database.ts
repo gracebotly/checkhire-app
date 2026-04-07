@@ -25,8 +25,23 @@ export type UserProfile = {
   referral_code: string | null;
   referral_slug: string | null;
   referred_by: string | null;
+  pending_wizard_data: PendingWizardData | null;
   created_at: string;
   updated_at: string;
+};
+
+/**
+ * Wizard form state captured during signup, restored after email confirmation.
+ * Set by /api/auth/signup, read and cleared by /auth/post-login.
+ * All fields optional because the wizard can be completed partially.
+ */
+export type PendingWizardData = {
+  category?: string;
+  title?: string;
+  amount?: string;
+  other_desc?: string;
+  deal_type?: "private" | "public";
+  from_wizard: "1";
 };
 
 

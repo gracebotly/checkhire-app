@@ -136,8 +136,10 @@ export function CreateWizard() {
       return;
     }
 
-    // Save wizard data to sessionStorage BEFORE signup so the flow can
-    // resume whether the user confirms email now (new window) or later.
+    // Save wizard data BEFORE the signup request so the flow resumes
+    // whether the user confirms the email in this browser, a different
+    // browser, or after a delay. /auth/post-login reads this and routes
+    // the user back into /deal/new with the wizard params restored.
     const wizardParams = buildWizardParams();
     try {
       sessionStorage.setItem("checkhire_wizard_data", wizardParams.toString());
@@ -159,10 +161,8 @@ export function CreateWizard() {
       const data = await res.json();
 
       if (!data.ok) {
-        // If the user already exists but hasn't confirmed their email yet
-        // (common when retrying signup after not receiving the first mail),
-        // still route them to the check-your-email screen instead of showing
-        // a raw error.
+        // If the user already exists but hasn't confirmed yet, route them
+        // to the check-your-email screen rather than showing a raw error.
         const msg = (data.message || "").toLowerCase();
         const isUnconfirmedExisting =
           msg.includes("not confirmed") ||
@@ -180,31 +180,11 @@ export function CreateWizard() {
         return;
       }
 
-      // Signup succeeded on the server.
-      // If email confirmation is required, hasSession will be false.
-      // Show the "check your email" screen — do NOT attempt signInWithPassword,
-      // because Supabase will reject it until the email is confirmed.
-      if (!data.hasSession) {
-        setSignupPending(true);
-        return;
-      }
-
-      // Auto-confirm path (hasSession === true). Sign in client-side so the
-      // auth cookie is set in the browser, then hard-navigate to /deal/new.
-      const supabase = createClient();
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: email.trim().toLowerCase(),
-        password,
-      });
-      if (signInError) {
-        // Edge case: server created user with session but client sign-in
-        // still failed. Fall back to the check-your-email screen rather than
-        // blocking the user with a raw error.
-        setSignupPending(true);
-        return;
-      }
-
-      window.location.href = `/deal/new?${wizardParams.toString()}`;
+      // Signup succeeded. Show the check-your-email screen. The user will
+      // click the link in their inbox, land on /auth/confirm via the
+      // email template (now using token_hash + verifyOtp), and be routed
+      // to /auth/post-login which restores the wizard flow.
+      setSignupPending(true);
     } catch (err) {
       setAuthError(err instanceof Error ? err.message : "Signup failed");
     } finally {

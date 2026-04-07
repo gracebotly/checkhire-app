@@ -1,0 +1,227 @@
+name: Scheduled Cron Jobs
+
+# IMPORTANT: GitHub Actions schedules are best-effort and may run a few minutes
+# late during peak load. This is fine for all jobs in this workflow because the
+# endpoints are idempotent and the time windows they check have buffer built in.
+#
+# Required GitHub Actions secrets (configure in repo Settings → Secrets → Actions):
+#   CRON_SECRET    — same value as the CRON_SECRET in Vercel env vars
+#   CRON_BASE_URL  — production base URL with no trailing slash, e.g. https://checkhire.co
+
+on:
+  schedule:
+    # Every 15 minutes — money flow (auto-release + cancellation expiry)
+    - cron: '*/15 * * * *'
+    # Every 30 minutes — auto-release warnings
+    - cron: '*/30 * * * *'
+    # Every hour at minute 5 — bulk cleanups
+    - cron: '5 * * * *'
+    # Every 2 hours at minute 10 — rating reminders
+    - cron: '10 */2 * * *'
+  # Allow manual triggering from the GitHub Actions UI for testing
+  workflow_dispatch:
+    inputs:
+      job:
+        description: 'Which job to run manually'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - money-flow
+          - auto-release-warnings
+          - hourly-cleanups
+          - rating-reminders
+
+jobs:
+  # Job 1 — Money flow (every 15 min)
+  money-flow:
+    if: |
+      github.event.schedule == '*/15 * * * *' ||
+      (github.event_name == 'workflow_dispatch' && (github.event.inputs.job == 'all' || github.event.inputs.job == 'money-flow'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Validate secrets
+        run: |
+          if [ -z "${{ secrets.CRON_SECRET }}" ]; then
+            echo "::error::CRON_SECRET is not set in repository secrets"
+            exit 1
+          fi
+          if [ -z "${{ secrets.CRON_BASE_URL }}" ]; then
+            echo "::error::CRON_BASE_URL is not set in repository secrets"
+            exit 1
+          fi
+
+      - name: Hit money-flow endpoints in parallel
+        continue-on-error: false
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          CRON_BASE_URL: ${{ secrets.CRON_BASE_URL }}
+        run: |
+          set -u
+
+          call_endpoint() {
+            local endpoint="$1"
+            echo "Calling ${endpoint} at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            response=$(curl -sS -w "\n%{http_code}" \
+              -H "Authorization: Bearer $CRON_SECRET" \
+              "$CRON_BASE_URL${endpoint}")
+            http_code=$(echo "$response" | tail -n1)
+            body=$(echo "$response" | sed '$d')
+            echo "${endpoint} -> HTTP ${http_code}"
+            echo "${endpoint} -> Response: ${body}"
+            if [ "$http_code" != "200" ]; then
+              echo "::error::${endpoint} returned HTTP ${http_code}"
+              return 1
+            fi
+            return 0
+          }
+
+          call_endpoint "/api/cron/auto-release" &
+          pid1=$!
+          call_endpoint "/api/cron/expire-cancellation-requests" &
+          pid2=$!
+
+          wait "$pid1"
+          s1=$?
+          wait "$pid2"
+          s2=$?
+
+          if [ "$s1" -ne 0 ] || [ "$s2" -ne 0 ]; then
+            exit 1
+          fi
+
+  # Job 2 — Auto-release warnings (every 30 min)
+  auto-release-warnings:
+    if: |
+      github.event.schedule == '*/30 * * * *' ||
+      (github.event_name == 'workflow_dispatch' && (github.event.inputs.job == 'all' || github.event.inputs.job == 'auto-release-warnings'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Validate secrets
+        run: |
+          if [ -z "${{ secrets.CRON_SECRET }}" ]; then
+            echo "::error::CRON_SECRET is not set in repository secrets"
+            exit 1
+          fi
+          if [ -z "${{ secrets.CRON_BASE_URL }}" ]; then
+            echo "::error::CRON_BASE_URL is not set in repository secrets"
+            exit 1
+          fi
+
+      - name: Hit auto-release-warnings
+        continue-on-error: false
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          CRON_BASE_URL: ${{ secrets.CRON_BASE_URL }}
+        run: |
+          echo "Calling /api/cron/auto-release-warnings at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          response=$(curl -sS -w "\n%{http_code}" \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            "$CRON_BASE_URL/api/cron/auto-release-warnings")
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | sed '$d')
+          echo "HTTP $http_code"
+          echo "Response: $body"
+          if [ "$http_code" != "200" ]; then
+            echo "::error::auto-release-warnings returned HTTP $http_code"
+            exit 1
+          fi
+
+  # Job 3 — Hourly cleanups (auto-expire + expiration warnings)
+  hourly-cleanups:
+    if: |
+      github.event.schedule == '5 * * * *' ||
+      (github.event_name == 'workflow_dispatch' && (github.event.inputs.job == 'all' || github.event.inputs.job == 'hourly-cleanups'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Validate secrets
+        run: |
+          if [ -z "${{ secrets.CRON_SECRET }}" ]; then
+            echo "::error::CRON_SECRET is not set in repository secrets"
+            exit 1
+          fi
+          if [ -z "${{ secrets.CRON_BASE_URL }}" ]; then
+            echo "::error::CRON_BASE_URL is not set in repository secrets"
+            exit 1
+          fi
+
+      - name: Hit hourly cleanup endpoints in parallel
+        continue-on-error: false
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          CRON_BASE_URL: ${{ secrets.CRON_BASE_URL }}
+        run: |
+          set -u
+
+          call_endpoint() {
+            local endpoint="$1"
+            echo "Calling ${endpoint} at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            response=$(curl -sS -w "\n%{http_code}" \
+              -H "Authorization: Bearer $CRON_SECRET" \
+              "$CRON_BASE_URL${endpoint}")
+            http_code=$(echo "$response" | tail -n1)
+            body=$(echo "$response" | sed '$d')
+            echo "${endpoint} -> HTTP ${http_code}"
+            echo "${endpoint} -> Response: ${body}"
+            if [ "$http_code" != "200" ]; then
+              echo "::error::${endpoint} returned HTTP ${http_code}"
+              return 1
+            fi
+            return 0
+          }
+
+          call_endpoint "/api/cron/auto-expire" &
+          pid1=$!
+          call_endpoint "/api/cron/expiration-warnings" &
+          pid2=$!
+
+          wait "$pid1"
+          s1=$?
+          wait "$pid2"
+          s2=$?
+
+          if [ "$s1" -ne 0 ] || [ "$s2" -ne 0 ]; then
+            exit 1
+          fi
+
+  # Job 4 — Rating reminders (every 2 hours)
+  rating-reminders:
+    if: |
+      github.event.schedule == '10 */2 * * *' ||
+      (github.event_name == 'workflow_dispatch' && (github.event.inputs.job == 'all' || github.event.inputs.job == 'rating-reminders'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Validate secrets
+        run: |
+          if [ -z "${{ secrets.CRON_SECRET }}" ]; then
+            echo "::error::CRON_SECRET is not set in repository secrets"
+            exit 1
+          fi
+          if [ -z "${{ secrets.CRON_BASE_URL }}" ]; then
+            echo "::error::CRON_BASE_URL is not set in repository secrets"
+            exit 1
+          fi
+
+      - name: Hit rating-reminders
+        continue-on-error: false
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          CRON_BASE_URL: ${{ secrets.CRON_BASE_URL }}
+        run: |
+          echo "Calling /api/cron/rating-reminders at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          response=$(curl -sS -w "\n%{http_code}" \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            "$CRON_BASE_URL/api/cron/rating-reminders")
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | sed '$d')
+          echo "HTTP $http_code"
+          echo "Response: $body"
+          if [ "$http_code" != "200" ]; then
+            echo "::error::rating-reminders returned HTTP $http_code"
+            exit 1
+          fi

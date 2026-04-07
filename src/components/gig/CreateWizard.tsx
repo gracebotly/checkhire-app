@@ -136,15 +136,22 @@ export function CreateWizard() {
       return;
     }
 
-    // Save wizard data BEFORE the signup request so the flow resumes
-    // whether the user confirms the email in this browser, a different
-    // browser, or after a delay. /auth/post-login reads this and routes
-    // the user back into /deal/new with the wizard params restored.
+    // Build wizard data as a structured object. We persist this in TWO
+    // places:
+    //   1. Database (via /api/auth/signup) — survives across tabs and
+    //      devices, this is the primary store
+    //   2. sessionStorage — fast path for same-tab Google OAuth flows
+    //      where we never leave the browser context
     const wizardParams = buildWizardParams();
+    const wizardDataObject: Record<string, string> = {};
+    wizardParams.forEach((value, key) => {
+      wizardDataObject[key] = value;
+    });
+
     try {
       sessionStorage.setItem("checkhire_wizard_data", wizardParams.toString());
     } catch {
-      // sessionStorage unavailable — non-fatal
+      // sessionStorage unavailable — non-fatal, database persistence still works
     }
 
     try {
@@ -156,6 +163,7 @@ export function CreateWizard() {
           password,
           name: name.trim(),
           intent: "wizard",
+          wizard_data: wizardDataObject,
         }),
       });
       const data = await res.json();
@@ -181,9 +189,10 @@ export function CreateWizard() {
       }
 
       // Signup succeeded. Show the check-your-email screen. The user will
-      // click the link in their inbox, land on /auth/confirm via the
-      // email template (now using token_hash + verifyOtp), and be routed
-      // to /auth/post-login which restores the wizard flow.
+      // click the link in their inbox, land on /auth/confirm, then
+      // /auth/post-login, which reads pending_wizard_data from their
+      // user_profiles row and routes them back to /deal/new with the
+      // wizard data restored.
       setSignupPending(true);
     } catch (err) {
       setAuthError(err instanceof Error ? err.message : "Signup failed");

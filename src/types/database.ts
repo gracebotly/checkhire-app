@@ -458,7 +458,12 @@ export type NotificationType =
   | 'moderation_rejected'
   | 'account_suspended'
   | 'account_unsuspended'
-  | 'guest_accepted_welcome';
+  | 'guest_accepted_welcome'
+  | 'cancellation_requested'
+  | 'cancellation_accepted'
+  | 'cancellation_rejected'
+  | 'cancellation_escalated'
+  | 'cancellation_auto_escalated';
 
 export type EmailNotification = {
   id: string;
@@ -499,6 +504,13 @@ export type NotificationData = {
   reviewStatus?: string;
   suspensionReason?: string;
   displayName?: string;
+
+  // Mutual cancellation
+  proposedClientRefund?: number;       // cents
+  proposedFreelancerPayout?: number;   // cents
+  cancellationReason?: string;
+  cancellationResponseReason?: string;
+  requesterName?: string;
 };
 
 // ─── Dispute with Deal Info (Admin Views) ───
@@ -508,6 +520,32 @@ export type DisputeWithDealInfo = Dispute & {
   client: Pick<UserProfile, 'display_name' | 'email' | 'trust_badge' | 'completed_deals_count'>;
   freelancer: Pick<UserProfile, 'display_name' | 'email' | 'trust_badge' | 'completed_deals_count'> | null;
   initiator: Pick<UserProfile, 'display_name'>;
+};
+
+// ─── Cancellation Requests ───
+
+export type CancellationRequestStatus =
+  | 'pending'
+  | 'accepted'
+  | 'rejected'
+  | 'escalated';
+
+export type CancellationRequest = {
+  id: string;
+  deal_id: string;
+  requested_by: string;
+  requested_by_role: 'client' | 'freelancer';
+  proposed_client_refund_cents: number;
+  proposed_freelancer_payout_cents: number;
+  reason: string | null;
+  status: CancellationRequestStatus;
+  responded_by: string | null;
+  response_reason: string | null;
+  responded_at: string | null;
+  escalated_dispute_id: string | null;
+  expires_at: string;
+  created_at: string;
+  updated_at: string;
 };
 
 // ─── Platform Stats ───

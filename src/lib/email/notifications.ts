@@ -877,23 +877,55 @@ const NOTIFICATION_CONFIG: Record<string, NotificationConfig> = {
     },
   },
 
-  // ── Template 35: guest_deal_invite ──
+  // ── Template 35: guest_deal_invite (FUNDED escrow case) ──
+  // Fires from /api/deals/[id]/send-invite when the client clicks "Send invite"
+  // AND the deal's escrow_status is "funded". The body honestly claims the
+  // amount is secured because at the moment of sending, it actually is.
   guest_deal_invite: {
     accent: "#16a34a",
     subject: (data) =>
-      `You've been invited to a gig — ${formatAmount(data.amount!)}`,
+      `You've been invited to a gig — ${formatAmount(data.amount!)} secured`,
     body: (data) => {
       const title = escapeHtml(data.dealTitle);
       const amount = formatAmount(data.amount!);
       const link = dealUrl(data.dealSlug);
       return (
         buildHeroAmount(data.amount!, "secured") +
-        `<p style="margin: 20px 0 0 0; font-size: 14px; color: #475569;">Someone wants to hire you for <strong>${title}</strong>. ${amount} is secured in escrow. No account needed to get started.</p>` +
+        `<p style="margin: 20px 0 0 0; font-size: 14px; color: #475569;">Someone wants to hire you for <strong>${title}</strong>. ${amount} is locked in escrow right now — you're protected before you start any work. No account needed to get started.</p>` +
         `<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; text-align: center; margin: 16px 0;">` +
         `<div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; font-weight: 600; margin-bottom: 4px;">YOUR GIG LINK</div>` +
         `<a href="${link}" style="font-size: 14px; color: #0d9488; text-decoration: none; word-break: break-all;">${link}</a>` +
         `</div>` +
         buildCtaButton(link, "View & Accept", "success")
+      );
+    },
+  },
+
+  // ── Template 35b: guest_deal_invite_unfunded (UNFUNDED escrow case) ──
+  // Fires from /api/deals/[id]/send-invite when the client clicks "Send invite"
+  // BEFORE funding escrow. Tells the truth: the client hasn't funded yet, but
+  // here's the link to review the gig. No fake "secured" badge, no green hero.
+  guest_deal_invite_unfunded: {
+    accent: "#d97706",
+    subject: (data) =>
+      `You've been invited to a gig — ${formatAmount(data.amount!)} (payment pending)`,
+    body: (data) => {
+      const title = escapeHtml(data.dealTitle);
+      const amount = formatAmount(data.amount!);
+      const link = dealUrl(data.dealSlug);
+      return (
+        `<h2 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 700; color: #0f172a;">You've been invited to a gig</h2>` +
+        `<p style="margin: 0 0 12px 0; font-size: 14px; color: #475569;">Someone wants to hire you for <strong>${title}</strong>. The amount will be <strong>${amount}</strong>.</p>` +
+        `<div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 12px 16px; margin: 16px 0;">` +
+        `<p style="margin: 0; font-size: 13px; color: #92400e; font-weight: 600;">Payment is not yet locked in escrow.</p>` +
+        `<p style="margin: 6px 0 0 0; font-size: 13px; color: #92400e;">The client hasn't funded escrow yet. CheckHire will lock the full amount in your name before you start any work. You're under no obligation until the money is secured.</p>` +
+        `</div>` +
+        `<p style="margin: 0 0 16px 0; font-size: 14px; color: #475569;">You can review the gig details now and decide if it's a fit. If you want to proceed, you'll be notified the moment the client funds escrow.</p>` +
+        `<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; text-align: center; margin: 16px 0;">` +
+        `<div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; font-weight: 600; margin-bottom: 4px;">YOUR GIG LINK</div>` +
+        `<a href="${link}" style="font-size: 14px; color: #0d9488; text-decoration: none; word-break: break-all;">${link}</a>` +
+        `</div>` +
+        buildCtaButton(link, "Review the gig", "primary")
       );
     },
   },

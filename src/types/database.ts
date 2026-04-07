@@ -149,6 +149,9 @@ export type Deal = {
   guest_freelancer_name: string | null;
   guest_freelancer_stripe_account_id: string | null;
   guest_email_verified_at: string | null;
+  recipient_email: string | null;
+  recipient_name: string | null;
+  recipient_invited_at: string | null;
   expires_at: string | null;
   created_at: string;
   funded_at: string | null;
@@ -438,6 +441,7 @@ export type NotificationType =
   | 'freelancer_ghost_nudge_7d'
   | 'freelancer_ghost_warning_14d'
   | 'guest_deal_invite'
+  | 'guest_deal_invite_unfunded'
   | 'dispute_proposal_received'
   | 'dispute_auto_resolved'
   | 'dispute_negotiation_round'

@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { CheckCircle, Shield } from "lucide-react";
+import { CheckCircle, Shield, Mail, ArrowRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -192,58 +192,86 @@ export function GuestAcceptCard({
               </div>
             ) : (
               <>
-                <div>
+                {/* Header — leads with the no-account framing */}
+                <div className="text-center">
+                  <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-white">
+                    <Mail className="h-6 w-6 text-brand" />
+                  </div>
                   <h3 className="text-lg font-semibold text-slate-900">
-                    Accept This Gig
+                    You&apos;ve been invited to a gig
                   </h3>
-                  <div className="mt-2">
+                  <p className="mt-1 text-sm text-slate-600">
+                    No account needed — we&apos;ll send a 6-digit code to verify it&apos;s you.
+                  </p>
+                  <div className="mt-3 flex justify-center">
                     <Badge variant="success">
                       ${(amountCents! / 100).toFixed(2)} secured in escrow
                     </Badge>
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={handleGoogleAuth}
-                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#4285f4] px-4 py-2.5 text-sm font-medium text-white cursor-pointer transition-colors duration-200 hover:bg-[#3574d4]"
-                >
-                  <GoogleIcon />
-                  Continue with Google
-                </button>
-
-                <div className="flex items-center gap-3">
-                  <div className="h-px flex-1 bg-gray-300" />
-                  <span className="text-xs text-slate-600">
-                    or verify with email
-                  </span>
-                  <div className="h-px flex-1 bg-gray-300" />
-                </div>
-
+                {/* PRIMARY: email form */}
                 <div className="space-y-3">
-                  <Input
-                    placeholder="Your name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                  />
-                  <Input
-                    type="email"
-                    placeholder="your@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
+                  <div className="space-y-1">
+                    <label className="block text-xs font-medium text-slate-900">
+                      Your name
+                    </label>
+                    <Input
+                      placeholder="Jane Doe"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block text-xs font-medium text-slate-900">
+                      Email
+                    </label>
+                    <Input
+                      type="email"
+                      placeholder="you@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                    />
+                  </div>
                   <Button
                     className="w-full"
                     onClick={handleSendCode}
                     disabled={!name.trim() || !email.trim() || loading}
                   >
-                    {loading ? "Sending..." : "Continue →"}
+                    {loading ? (
+                      "Sending..."
+                    ) : (
+                      <>
+                        Send me a 6-digit code
+                        <ArrowRight className="ml-1.5 h-4 w-4" />
+                      </>
+                    )}
                   </Button>
+                  <p className="text-xs text-slate-600 text-center leading-relaxed">
+                    After verifying, you&apos;ll see the full deal details and any files the client uploaded.
+                  </p>
                 </div>
 
                 {error && (
                   <p className="text-sm text-red-600 text-center">{error}</p>
                 )}
+
+                {/* Divider */}
+                <div className="flex items-center gap-3">
+                  <div className="h-px flex-1 bg-gray-200" />
+                  <span className="text-xs text-slate-600">or</span>
+                  <div className="h-px flex-1 bg-gray-200" />
+                </div>
+
+                {/* SECONDARY: Google */}
+                <button
+                  type="button"
+                  onClick={handleGoogleAuth}
+                  className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-900 transition-colors duration-200 hover:bg-gray-50"
+                >
+                  <GoogleIcon />
+                  Continue with Google
+                </button>
 
                 <p className="text-xs text-slate-600 text-center">
                   By accepting, you agree to CheckHire&apos;s terms of service.

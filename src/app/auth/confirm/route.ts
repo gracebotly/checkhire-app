@@ -88,16 +88,36 @@ export async function GET(request: Request) {
 
   // Handle redirect based on OTP type and next parameter
   const next = searchParams.get("next");
+  const requestUrl = new URL(request.url);
 
   // Recovery flow → always go to reset password page
   if (type === "recovery") {
     return NextResponse.redirect(new URL("/auth/reset-password", request.url));
   }
 
-  // If a valid next path was provided, redirect there
-  if (next && next.startsWith("/")) {
-    return NextResponse.redirect(new URL(next, request.url));
+  if (next) {
+    try {
+      // Relative path like "/auth/post-login"
+      if (next.startsWith("/")) {
+        return NextResponse.redirect(new URL(next, request.url));
+      }
+
+      // Absolute URL like "https://www.checkhire.co/auth/post-login"
+      const nextUrl = new URL(next);
+      if (nextUrl.origin === requestUrl.origin) {
+        return NextResponse.redirect(nextUrl);
+      }
+
+      console.warn("[auth/confirm] Rejected cross-origin next redirect:", {
+        next,
+        requestOrigin: requestUrl.origin,
+      });
+    } catch (err) {
+      console.warn("[auth/confirm] Invalid next redirect:", { next, err });
+    }
   }
 
-  return NextResponse.redirect(new URL("/dashboard", request.url));
+  // Safe default for all non-recovery confirmations:
+  // let /auth/post-login decide between restored wizard flow vs /settings.
+  return NextResponse.redirect(new URL("/auth/post-login", request.url));
 }

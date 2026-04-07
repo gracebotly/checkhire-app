@@ -73,12 +73,14 @@ export function GigCard({ deal, index, currentUserId }: Props) {
   const isClient = deal.client_user_id === currentUserId;
   const otherParty = isClient ? deal.freelancer : deal.client;
   const otherPartyLabel = isClient ? "Freelancer" : "Client";
+  const isDead = deal.status === "cancelled" || deal.status === "refunded";
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25, ease: "easeOut", delay: index * 0.04 }}
+      className={isDead ? "opacity-60" : ""}
     >
       <Link href={deal.status === "draft" ? `/deal/new?draft=${deal.id}` : `/deal/${deal.deal_link_slug}`}>
         <div className="cursor-pointer rounded-xl border border-gray-200 bg-white px-4 py-3 transition-colors duration-200 hover:border-gray-300 hover:bg-gray-50/50">

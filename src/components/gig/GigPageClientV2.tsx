@@ -39,6 +39,7 @@ import { AccountNudgeBanner } from "@/components/gig/AccountNudgeBanner";
 import { CancelRefundDialog } from "@/components/gig/CancelRefundDialog";
 import { ShareButton } from "@/components/gig/ShareButton";
 import { ShareHub } from "@/components/gig/ShareHub";
+import { SendInviteCard } from "@/components/gig/SendInviteCard";
 import { CountdownTimer } from "@/components/gig/CountdownTimer";
 import { StripeConnectPrompt } from "@/components/gig/StripeConnectPrompt";
 import { CompletionCard } from "@/components/gig/CompletionCard";
@@ -930,6 +931,16 @@ export function GigPageClientV2({
           {/* ZONE 3: ShareHub — client only, pending/funded deals */}
           {role === "client" && (deal.status === "pending_acceptance" || deal.status === "funded") && (
             <div className="mb-6 space-y-3">
+              {deal.deal_type === "private" && !hasFreelancer && (
+                <SendInviteCard
+                  dealId={deal.id}
+                  escrowFunded={deal.escrow_status === "funded"}
+                  initialRecipientEmail={deal.recipient_email}
+                  initialRecipientName={deal.recipient_name}
+                  invitedAt={deal.recipient_invited_at}
+                  onInviteSent={() => router.refresh()}
+                />
+              )}
               <ShareHub dealSlug={deal.deal_link_slug} dealTitle={deal.title} amountCents={deal.total_amount} deadline={deal.deadline} category={deal.category} description={deal.description} clientName={deal.client.display_name || "Client"} escrowFunded={deal.escrow_status === "funded"} onShare={handleLockSlug} />
               <div className="rounded-lg bg-gray-50 px-3 py-2">
                 {editingSlug && role === "client" ? (

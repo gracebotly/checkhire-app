@@ -69,6 +69,14 @@ export const PATCH = withApiHandler(
         description_brief_url: body.description_brief_url ?? deal.description_brief_url,
         deliverables_brief_url: body.deliverables_brief_url ?? deal.deliverables_brief_url,
         deal_type: body.deal_type || deal.deal_type,
+        recipient_email:
+          typeof body.recipient_email === "string" && body.recipient_email.trim()
+            ? body.recipient_email.trim()
+            : null,
+        recipient_name:
+          typeof body.recipient_name === "string" && body.recipient_name.trim()
+            ? body.recipient_name.trim()
+            : null,
       };
 
       const { data: updatedDeal, error: updateError } = await supabase
@@ -89,41 +97,10 @@ export const PATCH = withApiHandler(
         content: `Gig published by ${displayName}`,
       });
 
-      // Send invite email to recipient if provided (private deals only)
-      if (
-        updatedDeal.deal_type === "private" &&
-        body.recipient_email &&
-        typeof body.recipient_email === "string" &&
-        body.recipient_email.trim()
-      ) {
-        const recipientEmail = body.recipient_email.trim();
-        const recipientName = (body.recipient_name || "").trim() || "recipient";
-
-        try {
-          const serviceClient = createServiceClient();
-          await sendAndLogNotification({
-            supabase: serviceClient,
-            type: "guest_deal_invite",
-            userId: user.id,
-            dealId: id,
-            email: recipientEmail,
-            data: {
-              dealTitle: updatedDeal.title,
-              dealSlug: updatedDeal.deal_link_slug,
-              amount: updatedDeal.total_amount,
-            },
-          });
-
-          await serviceClient.from("deal_activity_log").insert({
-            deal_id: id,
-            user_id: null,
-            entry_type: "system",
-            content: `Payment link sent to ${recipientName} (${recipientEmail})`,
-          });
-        } catch (err) {
-          console.error("[publish_draft] Failed to send invite email:", err);
-        }
-      }
+      // NOTE: Invite email is NO LONGER fired automatically on draft publish.
+      // The recipient fields are persisted in the update above, and the client
+      // manually fires the invite via POST /api/deals/[id]/send-invite once
+      // they're ready.
 
       return NextResponse.json({ ok: true, deal: updatedDeal, slug: updatedDeal.deal_link_slug });
     }

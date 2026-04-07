@@ -154,6 +154,8 @@ export const POST = withApiHandler(async (req: Request) => {
       risk_score: riskAssessment.score,
       deadline: data.deadline,
       deal_type: data.deal_type,
+      recipient_email: data.deal_type === "private" ? data.recipient_email || null : null,
+      recipient_name: data.deal_type === "private" ? data.recipient_name || null : null,
       max_applicants: data.max_applicants,
       deal_link_slug: slug,
       client_user_id: user.id,
@@ -250,38 +252,11 @@ export const POST = withApiHandler(async (req: Request) => {
     })()
   );
 
-  // Send invite email to recipient if provided (private deals only)
-  if (data.deal_type === "private" && data.recipient_email) {
-    postInsertPromises.push(
-      (async () => {
-        try {
-          const serviceClient = createServiceClient();
-          await sendAndLogNotification({
-            supabase: serviceClient,
-            type: "guest_deal_invite",
-            userId: user.id,
-            dealId: deal.id,
-            email: data.recipient_email!,
-            data: {
-              dealTitle: deal.title,
-              dealSlug: deal.deal_link_slug,
-              amount: deal.total_amount,
-            },
-          });
-
-          // Log recipient info in activity log
-          await serviceClient.from("deal_activity_log").insert({
-            deal_id: deal.id,
-            user_id: null,
-            entry_type: "system",
-            content: `Payment link sent to ${data.recipient_name || "recipient"} (${data.recipient_email})`,
-          });
-        } catch (err) {
-          console.error("[deals/create] Failed to send invite email:", err);
-        }
-      })()
-    );
-  }
+  // NOTE: Invite email is NO LONGER fired automatically on deal creation.
+  // The recipient_email is stored on the deal row above, and the client
+  // manually fires the invite via POST /api/deals/[id]/send-invite once
+  // they're ready. This guarantees the email is honest about whether
+  // escrow is funded at the moment of sending.
 
   await Promise.allSettled(postInsertPromises);
 

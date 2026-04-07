@@ -49,17 +49,15 @@ export const POST = withApiHandler(async function POST(request: NextRequest) {
     );
   }
 
-  // When the signup comes from the gig creation wizard, the email
-  // confirmation link must land on /auth/post-login so the wizard data
-  // stored in sessionStorage can resume the flow into /deal/new.
-  // For all other signups, land on /auth/callback as before.
+  // emailRedirectTo is passed to Supabase as the {{ .RedirectTo }}
+  // variable in the email template. The template (configured in the
+  // Supabase dashboard) builds a link like:
+  //   {{ .SiteURL }}/auth/confirm?token_hash=...&type=signup&next={{ .RedirectTo }}
+  // So whatever we pass here becomes the post-confirmation landing page.
+  // All signups go through /auth/post-login, which restores wizard data
+  // from sessionStorage if present and otherwise lands on /dashboard.
   const intentValue = (body?.intent ?? "").toString().trim();
-  const params = new URLSearchParams({ intent: "signup" });
-  const isWizardSignup = intentValue === "wizard";
-  if (isWizardSignup) {
-    params.set("next", "/auth/post-login");
-  }
-  const redirectTo = `${siteUrl(request)}/auth/callback?${params.toString()}`;
+  const redirectTo = `${siteUrl(request)}/auth/post-login`;
 
   // Check if the user was already created by the client-side signUp call.
   // If so, skip the server-side signUp to avoid sending a duplicate

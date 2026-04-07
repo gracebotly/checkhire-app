@@ -5,6 +5,7 @@ import { GigPageClientV2 as GigPageClient } from "@/components/gig/GigPageClient
 import { Navbar } from "@/components/layout/Navbar";
 import { ToastProvider } from "@/components/ui/toast";
 import { verifyGuestToken } from "@/lib/deals/guestToken";
+import { getGuestSessionFromCookie } from "@/lib/deals/guestSession";
 import type { Metadata } from "next";
 import type { ActivityLogEntryWithUser, Milestone, Rating, DealInterest, DealInterestWithUser, AcceptanceCriteria } from "@/types/database";
 
@@ -61,12 +62,21 @@ export default async function DealPage({ params, searchParams }: Props) {
     else if (deal.freelancer_user_id === user.id) role = "freelancer";
   }
 
-  // Guest token verification
+  // Guest token verification — check URL param first, then cookie fallback
   let validGuestToken: string | null = null;
   let guestFreelancerName: string | null = null;
-  if (guest_token && deal.guest_freelancer_email) {
-    if (verifyGuestToken(guest_token, deal.id, deal.guest_freelancer_email)) {
-      validGuestToken = guest_token;
+
+  // Try URL param first (covers email links and fresh shares)
+  let candidateToken: string | null = guest_token || null;
+
+  // Fall back to httpOnly cookie if no URL param
+  if (!candidateToken && deal.guest_freelancer_email) {
+    candidateToken = await getGuestSessionFromCookie(deal.id);
+  }
+
+  if (candidateToken && deal.guest_freelancer_email) {
+    if (verifyGuestToken(candidateToken, deal.id, deal.guest_freelancer_email)) {
+      validGuestToken = candidateToken;
       guestFreelancerName = deal.guest_freelancer_name || null;
       if (role === "visitor") role = "freelancer";
     }

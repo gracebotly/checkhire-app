@@ -14,6 +14,8 @@ interface Props {
   escrowStatus?: string;
   onConnect?: () => Promise<void> | void;
   loading?: boolean;
+  /** Guest token — when provided, component connects via /api/stripe/guest-connect instead of onConnect callback */
+  guestToken?: string | null;
 }
 
 export function StripeConnectPrompt({
@@ -25,10 +27,36 @@ export function StripeConnectPrompt({
   escrowStatus,
   onConnect,
   loading = false,
+  guestToken = null,
 }: Props) {
   void dealSlug;
   const [fundingLoading, setFundingLoading] = useState(false);
+  const [guestConnecting, setGuestConnecting] = useState(false);
   const [error, setError] = useState("");
+
+  const handleGuestConnect = async () => {
+    if (!dealId || !guestToken) return;
+    setGuestConnecting(true);
+    setError("");
+    try {
+      const res = await fetch("/api/stripe/guest-connect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ deal_id: dealId, guest_token: guestToken }),
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.message || "Failed to start Stripe onboarding");
+      if (data.already_connected) {
+        // Already onboarded — refresh the page so the timeline re-renders without this prompt
+        window.location.reload();
+        return;
+      }
+      window.location.href = data.url;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to connect Stripe");
+      setGuestConnecting(false);
+    }
+  };
 
   const amountCents = totalAmountCents ?? 0;
   const platformFee = Math.round(amountCents * 0.05);
@@ -54,6 +82,47 @@ export function StripeConnectPrompt({
       setFundingLoading(false);
     }
   };
+
+  // Guest freelancer mode — render when guestToken is provided and we need Stripe connected
+  // Note: this takes priority over onConnect mode (which is for authenticated clients funding escrow)
+  if (guestToken && !stripeConnected) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.25, ease: "easeOut" }}
+        className="rounded-xl border border-amber-200 bg-amber-50 p-5"
+      >
+        <div className="flex items-start gap-3">
+          <div className="rounded-lg bg-amber-100 p-2">
+            <Shield className="h-5 w-5 text-amber-700" />
+          </div>
+          <div className="flex-1">
+            <h3 className="text-sm font-semibold text-slate-900">
+              Connect Stripe to receive payment
+            </h3>
+            <p className="mt-1 text-xs text-slate-600 leading-relaxed">
+              You need to connect a Stripe account to receive your payment when the client confirms delivery. No CheckHire account needed — Stripe handles everything. Takes about 2 minutes.
+            </p>
+            <Button
+              size="sm"
+              onClick={handleGuestConnect}
+              disabled={guestConnecting || loading}
+              className="mt-3"
+            >
+              {guestConnecting ? (
+                <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+              ) : (
+                <CreditCard className="mr-1.5 h-4 w-4" />
+              )}
+              {guestConnecting ? "Connecting..." : "Connect Stripe"}
+            </Button>
+            {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
 
   if (escrowStatus === "funded" || escrowStatus === "released") return null;
 

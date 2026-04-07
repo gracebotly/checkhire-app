@@ -114,6 +114,7 @@ function buildReferralNudge(): string {
 
 type HeroVariant =
   | "secured"
+  | "locked in escrow"
   | "released"
   | "milestone"
   | "refund"
@@ -129,6 +130,12 @@ function buildHeroAmount(amountCents: number, variant: HeroVariant): string {
       color: "#0d9488",
       bg: "#f0fdfa",
       label: "Held securely in escrow",
+    },
+    "locked in escrow": {
+      icon: "🔒",
+      color: "#0d9488",
+      bg: "#f0fdfa",
+      label: "Locked in escrow",
     },
     released: {
       icon: "✅",
@@ -303,18 +310,20 @@ const NOTIFICATION_CONFIG: Record<string, NotificationConfig> = {
     },
   },
 
-  // ── Template 6: escrow_funded_after_accept (same as escrow_funded) ──
+  // ── Template 6: escrow_funded_after_accept ──
   escrow_funded_after_accept: {
     accent: "#16a34a",
     subject: (data) =>
-      `💰 ${formatAmount(data.amount!)} secured — ${escapeHtml(data.dealTitle)}`,
+      `Payment locked for ${escapeHtml(data.dealTitle)} — you're ready to start`,
     body: (data) => {
       const title = escapeHtml(data.dealTitle);
       const link = dealUrl(data.dealSlug);
       return (
-        buildHeroAmount(data.amount!, "secured") +
-        `<p style="margin: 20px 0 0 0; font-size: 14px; color: #475569;">The client has funded escrow for <strong>${title}</strong>. The money is real and waiting for you. Start working and upload evidence of your progress — it protects you if there's ever a dispute.</p>` +
-        buildCtaButton(link, "Start Working", "success")
+        buildHeroAmount(data.amount!, "locked in escrow") +
+        `<p style="margin: 20px 0 12px 0; font-size: 15px; color: #0f172a; font-weight: 600;">Step 1 of 3 — Payment locked. You're protected.</p>` +
+        `<p style="margin: 0 0 20px 0; font-size: 14px; color: #475569; line-height: 1.6;">The client has funded escrow for <strong>${title}</strong>. Your payment is secured in your name before you start any work. Upload evidence as you go — it builds your paper trail and protects you if anything goes wrong.</p>` +
+        `<p style="margin: 0 0 20px 0; font-size: 14px; color: #475569; line-height: 1.6;">When you're done, submit your work for review. The client has 72 hours to confirm delivery, or funds release to you automatically.</p>` +
+        buildCtaButton(link, "Open Your Deal", "success")
       );
     },
   },
@@ -1104,6 +1113,7 @@ const NOTIFICATION_CONFIG: Record<string, NotificationConfig> = {
     },
   },
 
+
   // ── Template: account_unsuspended ──
   account_unsuspended: {
     accent: "#16a34a",
@@ -1123,6 +1133,36 @@ const NOTIFICATION_CONFIG: Record<string, NotificationConfig> = {
       );
     },
   },
+  // ── Template: guest_accepted_welcome ──
+  // Sent to a guest freelancer immediately after they accept a deal.
+  // Confirms acceptance, explains the 3-step journey, and nudges them to
+  // bookmark the deal link since they don't have an account.
+  guest_accepted_welcome: {
+    accent: "#297a6d",
+    subject: (data) =>
+      `You accepted ${escapeHtml(data.dealTitle)} — here's what happens next`,
+    body: (data) => {
+      const title = escapeHtml(data.dealTitle);
+      const link = dealUrl(data.dealSlug);
+      const amount = data.amount ? formatAmount(data.amount) : "";
+      return (
+        `<p style="margin: 0 0 8px 0; font-size: 18px; font-weight: 700; color: #0f172a;">You're in!</p>` +
+        `<p style="margin: 0 0 20px 0; font-size: 14px; color: #475569; line-height: 1.6;">You accepted <strong>${title}</strong>${amount ? ` for ${amount}` : ""}. Your payment is secured in escrow — locked in your name before you do any work.</p>` +
+        `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 24px 0;">` +
+          `<tr><td style="padding: 16px; background-color: #f0faf8; border-radius: 8px;">` +
+            `<p style="margin: 0 0 12px 0; font-size: 13px; font-weight: 600; color: #297a6d; text-transform: uppercase; letter-spacing: 0.5px;">Your 3-step journey</p>` +
+            `<p style="margin: 0 0 8px 0; font-size: 14px; color: #0f172a;"><strong style="color: #297a6d;">Step 1 — Payment locked.</strong> Done. Your payment is waiting.</p>` +
+            `<p style="margin: 0 0 8px 0; font-size: 14px; color: #0f172a;"><strong style="color: #297a6d;">Step 2 — Upload your work.</strong> Add files, screenshots, or links as you go.</p>` +
+            `<p style="margin: 0; font-size: 14px; color: #0f172a;"><strong style="color: #297a6d;">Step 3 — Submit for review.</strong> Client confirms delivery, payment releases to you.</p>` +
+          `</td></tr>` +
+        `</table>` +
+        `<p style="margin: 0 0 20px 0; font-size: 14px; color: #475569; line-height: 1.6;"><strong>Bookmark this link</strong> — it's your only way back to the deal. You'll also need to connect Stripe to receive payment when work is complete. We'll guide you through that on the deal page.</p>` +
+        buildCtaButton(link, "Open Your Deal", "primary")
+      );
+    },
+  },
+
+
 };
 
 // ══════════════════════════════════════════════════════════════════════════════

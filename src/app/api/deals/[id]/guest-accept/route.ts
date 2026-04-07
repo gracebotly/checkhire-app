@@ -5,6 +5,7 @@ import { guestAcceptSchema } from "@/lib/validation/disputes";
 import { hashVerificationCode } from "@/lib/deals/verificationCode";
 import { generateGuestToken } from "@/lib/deals/guestToken";
 import { sendAndLogNotification } from "@/lib/email/logNotification";
+import { setGuestSessionCookie } from "@/lib/deals/guestSession";
 
 export const POST = withApiHandler(
   async (req: Request, { params }: { params: Promise<{ id: string }> }) => {
@@ -171,7 +172,7 @@ export const POST = withApiHandler(
       await sendAndLogNotification({
         supabase,
         type: "escrow_funded_after_accept",
-        userId: "guest",
+        userId: null,
         dealId: id,
         email: emailLower,
         data: {
@@ -184,7 +185,7 @@ export const POST = withApiHandler(
       await sendAndLogNotification({
         supabase,
         type: "deal_accepted_escrow_pending",
-        userId: "guest",
+        userId: null,
         dealId: id,
         email: emailLower,
         data: {
@@ -192,6 +193,28 @@ export const POST = withApiHandler(
           dealSlug: deal.deal_link_slug,
         },
       });
+    }
+
+    // Set httpOnly cookie so guest can return to the deal page without URL param
+    await setGuestSessionCookie(id, guestToken);
+
+    // Send welcome email with clear next steps — non-fatal on failure
+    try {
+      await sendAndLogNotification({
+        supabase,
+        type: "guest_accepted_welcome",
+        userId: null,
+        dealId: id,
+        email: emailLower,
+        data: {
+          dealTitle: deal.title,
+          dealSlug: deal.deal_link_slug,
+          amount: deal.total_amount,
+          guestName: name,
+        },
+      });
+    } catch (err) {
+      console.error("[guest-accept] Welcome email failed:", err);
     }
 
     return NextResponse.json({ ok: true, guest_token: guestToken });

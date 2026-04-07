@@ -6,11 +6,12 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 /**
  * Send a deal notification email and log it to email_notifications.
  * @param params.supabase — MUST be the service client (createServiceClient) to bypass RLS
+ * @param params.userId — User ID for the log row. Pass null for guest freelancers.
  */
 export async function sendAndLogNotification(params: {
   supabase: SupabaseClient;
   type: NotificationType;
-  userId: string;
+  userId: string | null;
   dealId: string;
   email: string;
   data: NotificationData;
@@ -20,7 +21,7 @@ export async function sendAndLogNotification(params: {
   const sent = await sendDealNotification({ type, to: email, data });
 
   await supabase.from("email_notifications").insert({
-    user_id: userId,
+    user_id: userId, // nullable — guests pass null
     deal_id: dealId,
     notification_type: type,
     email_address: email,

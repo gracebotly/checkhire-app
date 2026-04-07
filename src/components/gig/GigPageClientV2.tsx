@@ -41,9 +41,8 @@ import { ShareButton } from "@/components/gig/ShareButton";
 import { ShareHub } from "@/components/gig/ShareHub";
 import { CountdownTimer } from "@/components/gig/CountdownTimer";
 import { StripeConnectPrompt } from "@/components/gig/StripeConnectPrompt";
-import { InstantPayoutCard } from "@/components/gig/InstantPayoutCard";
-import { RatingForm } from "@/components/gig/RatingForm";
-import { StarRating } from "@/components/gig/StarRating";
+import { CompletionCard } from "@/components/gig/CompletionCard";
+import { SubmitWorkButton } from "@/components/gig/SubmitWorkButton";
 import { InterestForm } from "@/components/gig/InterestForm";
 import { InterestList } from "@/components/gig/InterestList";
 import { RepeatDealButton } from "@/components/gig/RepeatDealButton";
@@ -114,8 +113,8 @@ export function GigPageClientV2({
   role,
   currentUserId,
   fundedStatus,
-  userRating: initialUserRating,
-  otherRating: initialOtherRating,
+  userRating,
+  otherRating,
   interests,
   userInterest,
   applicantCount,
@@ -127,13 +126,13 @@ export function GigPageClientV2({
   const router = useRouter();
   const { toast } = useToast();
   const [activityEntries, setActivityEntries] = useState(initialActivity);
-  const [userRating, setUserRating] = useState(initialUserRating);
-  const [otherRating, setOtherRating] = useState(initialOtherRating);
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState("");
 
   const [guestToken, setGuestToken] = useState(initialGuestToken);
   const [termsExpanded, setTermsExpanded] = useState(role === "visitor");
+  void userRating;
+  void otherRating;
 
   const [editingSlug, setEditingSlug] = useState(false);
   const [slugInput, setSlugInput] = useState(deal.deal_link_slug);
@@ -197,13 +196,21 @@ export function GigPageClientV2({
   const status = statusMap[deal.status] || statusMap.pending_acceptance;
   const dealUrl = typeof window !== "undefined" ? window.location.href : "";
   const isParticipant = role === "client" || role === "freelancer";
-  const freelancerNeedsStripe =
+  const isGuestFreelancer = !!guestToken && role === "freelancer";
+  // Auth freelancer needs Stripe if their profile isn't onboarded
+  const authFreelancerNeedsStripe =
     role === "freelancer" &&
     !guestToken &&
     deal.freelancer?.stripe_onboarding_complete === false &&
     deal.escrow_status !== "unfunded" &&
     !["completed", "cancelled", "refunded"].includes(deal.status);
-  const isGuestFreelancer = !!guestToken && role === "freelancer";
+  // Guest freelancer needs Stripe if deal has no guest stripe account yet
+  const guestFreelancerNeedsStripe =
+    isGuestFreelancer &&
+    !deal.guest_freelancer_stripe_account_id &&
+    deal.escrow_status !== "unfunded" &&
+    !["completed", "cancelled", "refunded"].includes(deal.status);
+  const freelancerNeedsStripe = authFreelancerNeedsStripe || guestFreelancerNeedsStripe;
   const hasFreelancer = !!deal.freelancer_user_id || !!deal.guest_freelancer_email;
 
   // Grace period: 24 hours from acceptance
@@ -360,10 +367,15 @@ export function GigPageClientV2({
     setActionLoading(true);
     setError("");
     try {
-      const res = await fetch(`/api/deals/${deal.id}/submit`, {
+      const url = guestToken
+        ? `/api/deals/${deal.id}/guest-submit`
+        : `/api/deals/${deal.id}/submit`;
+      const body: Record<string, unknown> = { milestone_id: milestoneId };
+      if (guestToken) body.guest_token = guestToken;
+      const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ milestone_id: milestoneId }),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
       if (!data.ok) throw new Error(data.message);
@@ -448,7 +460,17 @@ export function GigPageClientV2({
   const handleStripeConnect = async () => {
     setActionLoading(true);
     try {
-      const res = await fetch("/api/stripe/connect", { method: "POST" });
+      // Guest freelancers use the parallel guest-connect endpoint
+      const isGuest = !!guestToken;
+      const url = isGuest ? "/api/stripe/guest-connect" : "/api/stripe/connect";
+      const init: RequestInit = isGuest
+        ? {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ deal_id: deal.id, guest_token: guestToken }),
+          }
+        : { method: "POST" };
+      const res = await fetch(url, init);
       const data = await res.json();
       if (!data.ok) throw new Error(data.message);
       if (data.already_connected) {
@@ -465,13 +487,17 @@ export function GigPageClientV2({
 
   // ── Action Card Builder — determines what action card shows in the timeline ──
   function buildActionCard(): React.ReactNode {
-    // Client: Fund Escrow
+    // Client: Fund Escrow (Step 1 of 3)
     if (role === "client" && deal.escrow_status === "unfunded" && deal.status !== "cancelled" && !deal.has_milestones) {
       return (
-        <TimelineActionCard delayIndex={activityEntries.length}>
+        <TimelineActionCard
+          delayIndex={activityEntries.length}
+          stepNumber={1}
+          headline="Fund escrow to start work"
+          subtext="Payment is locked until you confirm delivery. If the freelancer doesn't accept within 30 days, you get a full refund."
+        >
           <div className="rounded-xl border border-gray-200 bg-white p-4">
-            <p className="text-sm font-semibold text-slate-900">Fund escrow to start work</p>
-            <p className="mt-1 text-xs text-slate-600">
+            <p className="text-xs text-slate-600">
               ${(deal.total_amount / 100).toFixed(2)} + ${(platformFee / 100).toFixed(2)} fee (5%) + ${(stripeFee / 100).toFixed(2)} processing
             </p>
             <Button size="sm" onClick={() => handleFundEscrow()} disabled={actionLoading} className="mt-3">
@@ -483,50 +509,149 @@ export function GigPageClientV2({
         </TimelineActionCard>
       );
     }
-    // Client: Completed — rating
-    if (role === "client" && deal.status === "completed" && !userRating) {
+    // Client: Funded, waiting for freelancer to work (Step 2 of 3)
+    if (role === "client" && ["funded", "in_progress", "revision_requested"].includes(deal.status) && hasFreelancer) {
+      const headline =
+        deal.status === "revision_requested"
+          ? "Waiting for revised work"
+          : "Work in progress";
+      const subtext =
+        deal.status === "revision_requested"
+          ? "The freelancer is working on your requested changes. You'll be notified when they resubmit."
+          : "The freelancer is working and uploading evidence as they go. You'll be notified as soon as they submit the final work.";
       return (
-        <TimelineActionCard delayIndex={activityEntries.length}>
-          <RatingForm dealId={deal.id} onRated={() => router.refresh()} />
-        </TimelineActionCard>
-      );
-    }
-    // Freelancer: Stripe Connect needed
-    if (role === "freelancer" && deal.freelancer?.stripe_onboarding_complete === false && deal.escrow_status !== "unfunded") {
-      return (
-        <TimelineActionCard delayIndex={activityEntries.length}>
-          <StripeConnectPrompt onConnect={handleStripeConnect} loading={actionLoading} />
-        </TimelineActionCard>
-      );
-    }
-    // Freelancer: Work phase — evidence upload
-    if (role === "freelancer" && ["funded", "in_progress", "revision_requested"].includes(deal.status)) {
-      return (
-        <TimelineActionCard delayIndex={activityEntries.length}>
-          <EvidenceUploadCard dealId={deal.id} guestToken={guestToken} onUploaded={refreshActivity} dealStatus={deal.status} />
-        </TimelineActionCard>
-      );
-    }
-    // Freelancer: Waiting for client to fund
-    if (role === "freelancer" && deal.escrow_status === "unfunded" && hasFreelancer) {
-      return (
-        <TimelineActionCard delayIndex={activityEntries.length}>
-          <div className="rounded-xl border border-gray-200 bg-white p-4">
-            <p className="text-sm text-slate-600">Waiting for client to fund escrow...</p>
-            <p className="mt-1 text-xs text-slate-600">You&apos;ll be notified when payment is secured.</p>
+        <TimelineActionCard
+          delayIndex={activityEntries.length}
+          stepNumber={2}
+          headline={headline}
+          subtext={subtext}
+        >
+          <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
+            <p className="text-xs text-blue-700 leading-relaxed">
+              Check the timeline above to see uploaded evidence. No action needed from you right now.
+            </p>
           </div>
         </TimelineActionCard>
       );
     }
-    // Freelancer: Completed — payout + rating + referral
-    if (role === "freelancer" && deal.status === "completed") {
+    // Client: Completed — clean confirmation (no rating)
+    if (role === "client" && deal.status === "completed") {
+      return (
+        <TimelineActionCard delayIndex={activityEntries.length} completed>
+          <div className="rounded-xl border border-green-200 bg-green-50 p-5">
+            <p className="text-sm font-semibold text-slate-900">Deal complete</p>
+            <p className="mt-1 text-xs text-slate-600 leading-relaxed">
+              You confirmed delivery and{" "}
+              <span className="font-mono font-semibold tabular-nums text-slate-900">
+                ${(deal.total_amount / 100).toFixed(2)}
+              </span>{" "}
+              was released to the freelancer. A receipt has been sent to your email.
+            </p>
+          </div>
+        </TimelineActionCard>
+      );
+    }
+
+    // Freelancer: Waiting for client to fund escrow (pre-Step 1)
+    if (role === "freelancer" && deal.escrow_status === "unfunded" && hasFreelancer) {
       return (
         <TimelineActionCard delayIndex={activityEntries.length}>
+          <div className="rounded-xl border border-gray-200 bg-white p-4">
+            <p className="text-sm font-semibold text-slate-900">Waiting for client to fund escrow</p>
+            <p className="mt-1 text-xs text-slate-600 leading-relaxed">
+              You&apos;ll get an email notification as soon as payment is locked. Then you&apos;ll be ready to start work.
+            </p>
+          </div>
+        </TimelineActionCard>
+      );
+    }
+
+    // Freelancer: Stripe Connect needed (Step 1 of 3)
+    // Handles both auth freelancers (via their profile) and guest freelancers (via deal row)
+    if (role === "freelancer" && freelancerNeedsStripe) {
+      return (
+        <TimelineActionCard
+          delayIndex={activityEntries.length}
+          stepNumber={1}
+          headline="Connect Stripe to receive payment"
+          subtext="Your payment is locked and waiting. Connect a Stripe account so we can release it to you when the client confirms delivery."
+        >
+          <StripeConnectPrompt
+            dealId={deal.id}
+            guestToken={guestToken}
+            stripeConnected={false}
+            onConnect={handleStripeConnect}
+            loading={actionLoading}
+          />
+        </TimelineActionCard>
+      );
+    }
+
+    // Freelancer: Work phase — upload evidence and submit (Step 2 of 3)
+    if (role === "freelancer" && ["funded", "in_progress", "revision_requested"].includes(deal.status)) {
+      const headline =
+        deal.status === "revision_requested"
+          ? "Revision requested — upload and resubmit"
+          : "Upload your work and submit for review";
+      const subtext =
+        deal.status === "revision_requested"
+          ? "The client requested changes. Upload your revised work below, then submit. No limit on revisions — take as many rounds as you need."
+          : "Payment is locked. Upload evidence as you work to build your paper trail. When you're done, submit for review.";
+      return (
+        <TimelineActionCard
+          delayIndex={activityEntries.length}
+          stepNumber={2}
+          headline={headline}
+          subtext={subtext}
+        >
           <div className="space-y-4">
-            <InstantPayoutCard amount={deal.total_amount} dealId={deal.id} />
-            {!userRating && <RatingForm dealId={deal.id} onRated={() => router.refresh()} />}
+            <EvidenceUploadCard
+              dealId={deal.id}
+              guestToken={guestToken}
+              onUploaded={refreshActivity}
+              dealStatus={deal.status}
+              hasEvidence={activityEntries.some((e) => e.is_submission_evidence)}
+              onSubmitClick={() => setSubmitDialogOpen(true)}
+              submitting={actionLoading}
+            />
+            {isGuestFreelancer && (
+              <AccountNudgeBanner contextKey={deal.id} variant="early" />
+            )}
+          </div>
+        </TimelineActionCard>
+      );
+    }
+
+    // Freelancer: Work submitted, waiting for client to confirm (Step 3 of 3)
+    if (role === "freelancer" && deal.status === "submitted") {
+      return (
+        <TimelineActionCard
+          delayIndex={activityEntries.length}
+          stepNumber={3}
+          headline="Awaiting client review"
+          subtext="The client has 72 hours to confirm delivery or request changes. If they don't respond, payment releases to you automatically."
+        >
+          <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
+            <p className="text-sm font-semibold text-blue-900">Work submitted</p>
+            <p className="mt-1 text-xs text-blue-700 leading-relaxed">
+              You&apos;ll get an email when the client confirms or requests changes. No action needed from you right now.
+            </p>
+          </div>
+        </TimelineActionCard>
+      );
+    }
+
+    // Freelancer: Completed — payment released
+    if (role === "freelancer" && deal.status === "completed") {
+      return (
+        <TimelineActionCard delayIndex={activityEntries.length} completed>
+          <div className="space-y-4">
+            <CompletionCard
+              dealId={deal.id}
+              amountCents={deal.total_amount}
+              isGuestFreelancer={isGuestFreelancer}
+            />
             {currentUserId && <ReferralPromptCard amountCents={deal.total_amount} />}
-            {isGuestFreelancer && <AccountNudgeBanner />}
           </div>
         </TimelineActionCard>
       );
@@ -655,7 +780,15 @@ export function GigPageClientV2({
     }
     if ((role === "freelancer" || guestToken) && ["funded", "in_progress", "revision_requested"].includes(deal.status)) {
       const hasEvidence = activityEntries.some(e => e.is_submission_evidence);
-      return <Button onClick={() => setSubmitDialogOpen(true)} disabled={!hasEvidence} className="w-full">Submit Work</Button>;
+      return (
+        <SubmitWorkButton
+          onSubmit={() => setSubmitDialogOpen(true)}
+          loading={actionLoading}
+          hasEvidence={hasEvidence}
+          fullWidth
+          size="md"
+        />
+      );
     }
     if (role === "visitor" && currentUserId && deal.status === "pending_acceptance" && !hasFreelancer) {
       return <Button onClick={handleAccept} disabled={actionLoading} className="w-full">{actionLoading ? "Accepting..." : "Accept This Gig"}</Button>;
@@ -1153,28 +1286,6 @@ export function GigPageClientV2({
             <div className="mb-6"><ProposalReveal totalAmountCents={deal.total_amount} claimantPercentage={null} respondentPercentage={null} claimantName="Claimant" respondentName="Respondent" isResolved={false} negotiationRound={0} /></div>
           )}
 
-          {/* Ratings section for completed deals */}
-          {deal.status === "completed" && isParticipant && (
-            <div className="mb-6 space-y-4">
-              <h3 className="text-sm font-semibold text-slate-900">Ratings</h3>
-              {userRating && (
-                <div className="rounded-xl border border-gray-200 bg-white p-5">
-                  <p className="mb-2 text-xs font-semibold text-slate-600">Your rating</p>
-                  <div className="flex items-center gap-2"><StarRating rating={userRating.stars} size="md" /><span className="text-sm font-semibold text-slate-900">{userRating.stars}/5</span></div>
-                  {userRating.comment && <p className="mt-2 text-sm text-slate-600">{userRating.comment}</p>}
-                </div>
-              )}
-              {userRating && otherRating && (
-                <div className="rounded-xl border border-gray-200 bg-white p-5">
-                  <p className="mb-2 text-xs font-semibold text-slate-600">{role === "client" ? "Freelancer's" : "Client's"} rating</p>
-                  <div className="flex items-center gap-2"><StarRating rating={otherRating.stars} size="md" /><span className="text-sm font-semibold text-slate-900">{otherRating.stars}/5</span></div>
-                  {otherRating.comment && <p className="mt-2 text-sm text-slate-600">{otherRating.comment}</p>}
-                </div>
-              )}
-              {userRating && !otherRating && <p className="text-xs text-slate-600">Waiting for the other party to leave their rating...</p>}
-            </div>
-          )}
-
           {/* ZONE 6: Below-Timeline Actions (text links) */}
           <div className="mb-6 flex flex-wrap items-center gap-3 text-sm">
             {role === "client" && deal.status === "pending_acceptance" && deal.escrow_status === "unfunded" && (
@@ -1227,9 +1338,6 @@ export function GigPageClientV2({
               <DisputeButton dealId={deal.id} dealStatus={deal.status} completedAt={deal.completed_at} totalAmountCents={deal.total_amount} guestToken={guestToken} />
             )}
           </div>
-
-          {/* Guest freelancer account nudge */}
-          {isGuestFreelancer && deal.status !== "completed" && <div className="mb-6"><AccountNudgeBanner /></div>}
 
           {/* ZONE 7: Mobile Sticky CTA */}
           {mobileCTA && (
@@ -1287,7 +1395,7 @@ export function GigPageClientV2({
             <DialogContent>
               <DialogHeader
                 title="Request Revision"
-                description={`Revision ${deal.revision_count + 1} of 3. The 72-hour countdown will pause until the freelancer resubmits.`}
+                description="Tell the freelancer what needs to change. There's no limit on revisions — you can request as many rounds as needed. The 72-hour countdown pauses until they resubmit."
               />
               <textarea
                 value={revisionNotes}

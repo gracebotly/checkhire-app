@@ -25,54 +25,59 @@ export const POST = withApiHandler(
     const { data: clientProfile } = await supabase.from("user_profiles").select("display_name").eq("id", user.id).maybeSingle();
     const displayName = clientProfile?.display_name || "Client";
 
+    const serviceClient = createServiceClient();
+    let revNumber: number;
+
     if (milestone_id) {
       const { data: milestone } = await supabase.from("milestones").select("*").eq("id", milestone_id).eq("deal_id", id).maybeSingle();
       if (!milestone) return NextResponse.json({ ok: false, code: "NOT_FOUND", message: "Milestone not found" }, { status: 404 });
       if (milestone.status !== "submitted") return NextResponse.json({ ok: false, code: "INVALID_STATUS", message: "Milestone has not been submitted" }, { status: 400 });
-      if (milestone.revision_count >= 3) return NextResponse.json({ ok: false, code: "MAX_REVISIONS", message: "Maximum revisions reached (3/3). Please confirm delivery or open a dispute." }, { status: 400 });
 
-      const newCount = milestone.revision_count + 1;
-      await supabase.from("milestones").update({ status: "revision_requested", auto_release_at: null, revision_count: newCount }).eq("id", milestone_id);
-      await supabase.from("deal_activity_log").insert({ deal_id: id, user_id: null, entry_type: "system", content: `${displayName} requested revision on "${milestone.title}" (${newCount}/3): ${notes}` });
+      // No cap — unlimited revisions
+      revNumber = (milestone.revision_count || 0) + 1;
+      await serviceClient.from("milestones").update({ status: "revision_requested", auto_release_at: null, revision_count: revNumber }).eq("id", milestone_id);
+      await serviceClient.from("deal_activity_log").insert({ deal_id: id, user_id: null, entry_type: "system", content: `${displayName} requested revision on "${milestone.title}" (round ${revNumber}): ${notes}` });
     } else {
       if (deal.status !== "submitted") return NextResponse.json({ ok: false, code: "INVALID_STATUS", message: "Work has not been submitted" }, { status: 400 });
-      if (deal.revision_count >= 3) return NextResponse.json({ ok: false, code: "MAX_REVISIONS", message: "Maximum revisions reached (3/3). Please confirm delivery or open a dispute." }, { status: 400 });
 
-      const newCount = deal.revision_count + 1;
-      await supabase.from("deals").update({ status: "revision_requested", auto_release_at: null, revision_count: newCount }).eq("id", id);
-      await supabase.from("deal_activity_log").insert({ deal_id: id, user_id: null, entry_type: "system", content: `${displayName} requested revision (${newCount}/3): ${notes}` });
+      // No cap — unlimited revisions
+      revNumber = (deal.revision_count || 0) + 1;
+      await serviceClient.from("deals").update({ status: "revision_requested", auto_release_at: null, revision_count: revNumber }).eq("id", id);
+      await serviceClient.from("deal_activity_log").insert({ deal_id: id, user_id: null, entry_type: "system", content: `${displayName} requested revision (round ${revNumber}): ${notes}` });
     }
 
-    // Email freelancer
-    const { data: freelancerProfile } = await supabase
-      .from("user_profiles")
-      .select("email")
-      .eq("id", deal.freelancer_user_id!)
-      .maybeSingle();
+    // Email freelancer — handle both authenticated and guest freelancers
+    let freelancerEmail: string | null = null;
+    let freelancerUserId: string | null = null;
 
-    if (freelancerProfile?.email) {
-      const serviceClient = createServiceClient();
-      const revNumber = milestone_id
-        ? (
-            await supabase
-              .from("milestones")
-              .select("revision_count")
-              .eq("id", milestone_id)
-              .maybeSingle()
-          ).data?.revision_count || 1
-        : deal.revision_count + 1;
+    if (deal.freelancer_user_id) {
+      // Authenticated freelancer — look up profile email
+      const { data: freelancerProfile } = await supabase
+        .from("user_profiles")
+        .select("email")
+        .eq("id", deal.freelancer_user_id)
+        .maybeSingle();
+      freelancerEmail = freelancerProfile?.email || null;
+      freelancerUserId = deal.freelancer_user_id;
+    } else if (deal.guest_freelancer_email) {
+      // Guest freelancer — use email stored on the deal
+      freelancerEmail = deal.guest_freelancer_email;
+      freelancerUserId = null;
+    }
 
+    if (freelancerEmail) {
       await sendAndLogNotification({
         supabase: serviceClient,
         type: "revision_requested",
-        userId: deal.freelancer_user_id!,
+        userId: freelancerUserId,
         dealId: id,
-        email: freelancerProfile.email,
+        email: freelancerEmail,
         data: {
           dealTitle: deal.title,
           dealSlug: deal.deal_link_slug,
           notes,
           revisionNumber: revNumber,
+          isGuestFreelancer: !deal.freelancer_user_id,
         },
       });
     }

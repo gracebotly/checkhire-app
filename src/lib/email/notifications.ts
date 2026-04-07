@@ -985,8 +985,8 @@ const NOTIFICATION_CONFIG: Record<string, NotificationConfig> = {
         `<h2 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 700; color: #0f172a;">You've been invited to a gig</h2>` +
         `<p style="margin: 0 0 12px 0; font-size: 14px; color: #475569;">Someone wants to hire you for <strong>${title}</strong>. The amount will be <strong>${amount}</strong>.</p>` +
         `<div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 12px 16px; margin: 16px 0;">` +
-        `<p style="margin: 0; font-size: 13px; color: #92400e; font-weight: 600;">Payment is not yet locked in escrow.</p>` +
-        `<p style="margin: 6px 0 0 0; font-size: 13px; color: #92400e;">The client hasn't funded escrow yet. CheckHire will lock the full amount in your name before you start any work. You're under no obligation until the money is secured.</p>` +
+        `<p style="margin: 0; font-size: 13px; color: #92400e; font-weight: 600;">Payment pending.</p>` +
+        `<p style="margin: 6px 0 0 0; font-size: 13px; color: #92400e;">This gig is awaiting escrow funding. We&apos;ll notify you as soon as funds are locked.</p>` +
         `</div>` +
         `<p style="margin: 0 0 16px 0; font-size: 14px; color: #475569;">You can review the gig details now and decide if it's a fit. If you want to proceed, you'll be notified the moment the client funds escrow.</p>` +
         `<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; text-align: center; margin: 16px 0;">` +

@@ -158,6 +158,8 @@ function EmailConfirmationScreen({
     try {
       const res = await fetch("/api/auth/resend-confirmation", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
       });
       const data = await res.json();
       if (!data.ok) {
@@ -394,6 +396,21 @@ export default function AuthShell() {
         password: siPassword,
       });
       if (error) {
+        // If the account exists but email is not yet confirmed, route them
+        // to the check-your-email screen with their email prefilled, rather
+        // than showing a small red error and blocking the button.
+        const code = (error as { code?: string }).code;
+        const msg = (error.message || "").toLowerCase();
+        const isUnconfirmed =
+          code === "email_not_confirmed" || msg.includes("not confirmed");
+
+        if (isUnconfirmed) {
+          setSuEmail(siEmail.trim().toLowerCase());
+          setSuSuccess(true);
+          setSiError(null);
+          return;
+        }
+
         setSiError(error.message);
         return;
       }
@@ -500,6 +517,24 @@ export default function AuthShell() {
       });
 
       if (error) {
+        // If the user exists but is unconfirmed, Supabase returns an error.
+        // Route them to the check-your-email screen instead of showing
+        // raw error text. This covers the common "signed up once, didn't
+        // click the link, tried again" flow.
+        const code = (error as { code?: string }).code;
+        const msg = (error.message || "").toLowerCase();
+        const isUnconfirmedExisting =
+          code === "email_not_confirmed" ||
+          msg.includes("not confirmed") ||
+          msg.includes("already registered") ||
+          msg.includes("already been registered") ||
+          msg.includes("user already registered");
+
+        if (isUnconfirmedExisting) {
+          setSuSuccess(true);
+          return;
+        }
+
         setSuError(error.message);
         return;
       }

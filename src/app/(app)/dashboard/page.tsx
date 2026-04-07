@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion } from "motion/react";
 import Link from "next/link";
 import { Search, ArrowLeftRight, PlusCircle, FileText } from "lucide-react";
@@ -14,7 +14,7 @@ import type { DealWithParticipants } from "@/types/database";
 type Mode = "client" | "freelancer" | null;
 
 export default function DashboardPage() {
-  const [deals, setDeals] = useState<DealWithParticipants[]>([]);
+  const [allDeals, setAllDeals] = useState<DealWithParticipants[]>([]);
   const [loading, setLoading] = useState(true);
   const [modeLoading, setModeLoading] = useState(true);
   const [filter, setFilter] = useState("active");
@@ -48,10 +48,12 @@ export default function DashboardPage() {
     async function fetchDeals() {
       setLoading(true);
       try {
+        // Fetch ALL deals (no status filter) so we can compute accurate counts
+        // for every tab simultaneously and filter client-side.
         const roleParam = `&role=${mode || "client"}`;
-        const res = await fetch(`/api/deals/mine?filter=${filter}${roleParam}`);
+        const res = await fetch(`/api/deals/mine?filter=all${roleParam}`);
         const data = await res.json();
-        if (data.ok) setDeals(data.deals);
+        if (data.ok) setAllDeals(data.deals);
       } catch {
         // silent
       } finally {
@@ -59,7 +61,7 @@ export default function DashboardPage() {
       }
     }
     fetchDeals();
-  }, [filter, mode, modeLoading]);
+  }, [mode, modeLoading]);
 
   const handleSetMode = async (newMode: Mode) => {
     setMode(newMode);
@@ -83,14 +85,43 @@ export default function DashboardPage() {
   const effectiveMode = mode || "client";
   const isFreelancer = effectiveMode === "freelancer";
 
-  const counts = {
-    active: deals.filter(
-      (d) => !["completed", "cancelled", "refunded", "draft"].includes(d.status)
-    ).length,
-    drafts: deals.filter((d) => d.status === "draft").length,
-    completed: deals.filter((d) => d.status === "completed").length,
-    all: deals.length,
-  };
+  // Compute counts from the full deal set so all tabs are always accurate
+  const counts = useMemo(
+    () => ({
+      active: allDeals.filter(
+        (d) => !["completed", "cancelled", "refunded", "draft"].includes(d.status)
+      ).length,
+      drafts: allDeals.filter((d) => d.status === "draft").length,
+      completed: allDeals.filter((d) => d.status === "completed").length,
+      all: allDeals.length,
+    }),
+    [allDeals]
+  );
+
+  // Filter the displayed deals based on the active tab
+  const visibleDeals = useMemo(() => {
+    if (filter === "active") {
+      return allDeals.filter(
+        (d) => !["completed", "cancelled", "refunded", "draft"].includes(d.status)
+      );
+    }
+    if (filter === "drafts") {
+      return allDeals.filter((d) => d.status === "draft");
+    }
+    if (filter === "completed") {
+      return allDeals.filter((d) => d.status === "completed");
+    }
+    // "all" — return everything, sorted with cancelled/refunded at the bottom
+    // so active work is always seen first
+    const dead = ["cancelled", "refunded"];
+    return [...allDeals].sort((a, b) => {
+      const aDead = dead.includes(a.status);
+      const bDead = dead.includes(b.status);
+      if (aDead && !bDead) return 1;
+      if (!aDead && bDead) return -1;
+      return 0;
+    });
+  }, [allDeals, filter]);
 
   return (
     <div className="mx-auto max-w-4xl px-6 py-10">
@@ -122,11 +153,7 @@ export default function DashboardPage() {
           </Link>
         </div>
 
-        <Tabs
-          value={filter}
-          onValueChange={setFilter}
-          className="mt-6"
-        >
+        <Tabs value={filter} onValueChange={setFilter} className="mt-6">
           <TabsList>
             <TabsTrigger value="active">
               Active {!loading && `(${counts.active})`}
@@ -149,7 +176,7 @@ export default function DashboardPage() {
                   <Skeleton key={i} className="h-20 w-full rounded-xl" />
                 ))}
               </div>
-            ) : deals.length === 0 ? (
+            ) : visibleDeals.length === 0 ? (
               <div className="mt-12 flex flex-col items-center text-center">
                 <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-muted">
                   {filter === "drafts" ? (
@@ -186,7 +213,7 @@ export default function DashboardPage() {
               </div>
             ) : (
               <div className="mt-4 space-y-3">
-                {deals.map((deal, i) => (
+                {visibleDeals.map((deal, i) => (
                   <GigCard
                     key={deal.id}
                     deal={deal}

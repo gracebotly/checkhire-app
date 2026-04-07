@@ -7,7 +7,7 @@ import { ToastProvider } from "@/components/ui/toast";
 import { verifyGuestToken } from "@/lib/deals/guestToken";
 import { getGuestSessionFromCookie } from "@/lib/deals/guestSession";
 import type { Metadata } from "next";
-import type { ActivityLogEntryWithUser, Milestone, Rating, DealInterest, DealInterestWithUser, AcceptanceCriteria } from "@/types/database";
+import type { ActivityLogEntryWithUser, Milestone, Rating, DealInterest, DealInterestWithUser, AcceptanceCriteria, CancellationRequest } from "@/types/database";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -172,6 +172,23 @@ export default async function DealPage({ params, searchParams }: Props) {
     disputeId = activeDispute?.id || null;
   }
 
+  // Fetch cancellation requests (participants only)
+  // NOTE: We deliberately do NOT call the GET API endpoint here because the
+  // server page already has direct DB access. The lazy fallback escalation
+  // that lives in the GET endpoint won't fire here — but that's fine, because
+  // the client component will call the GET endpoint on mount as part of its
+  // refresh flow, which DOES trigger the lazy escalation.
+  let cancellationRequests: CancellationRequest[] = [];
+  if (role !== "visitor") {
+    const cancelClient = validGuestToken ? createServiceClient() : supabase;
+    const { data: cancelData } = await cancelClient
+      .from("cancellation_requests")
+      .select("*")
+      .eq("deal_id", deal.id)
+      .order("created_at", { ascending: false });
+    cancellationRequests = (cancelData || []) as CancellationRequest[];
+  }
+
   // Fetch interest data for public deals
   let interests: DealInterestWithUser[] = [];
   let userInterest: DealInterest | null = null;
@@ -231,6 +248,7 @@ export default async function DealPage({ params, searchParams }: Props) {
             guestFreelancerName={guestFreelancerName}
             guestToken={validGuestToken}
             acceptanceCriteria={acceptanceCriteria || []}
+            cancellationRequests={cancellationRequests}
           />
         </main>
       </div>

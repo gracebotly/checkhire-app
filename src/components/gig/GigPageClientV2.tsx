@@ -50,6 +50,10 @@ import { RepeatDealButton } from "@/components/gig/RepeatDealButton";
 import { ReferralPromptCard } from "@/components/gig/ReferralPromptCard";
 import { DisputeButton } from "@/components/gig/DisputeButton";
 import { ProposalReveal } from "@/components/gig/ProposalReveal";
+import { RequestCancellationDialog } from "@/components/gig/RequestCancellationDialog";
+import { CancellationRequestCard } from "@/components/gig/CancellationRequestCard";
+import { CancellationRequestsHistory } from "@/components/gig/CancellationRequestsHistory";
+import { getCancellationUiState } from "@/lib/cancellation-requests/eligibility";
 import { useToast } from "@/components/ui/toast";
 import type {
   DealWithParticipants,
@@ -60,6 +64,7 @@ import type {
   DealInterest,
   DealInterestWithUser,
   AcceptanceCriteria,
+  CancellationRequest,
 } from "@/types/database";
 
 type Props = {
@@ -78,6 +83,7 @@ type Props = {
   guestFreelancerName?: string | null;
   guestToken?: string | null;
   acceptanceCriteria: AcceptanceCriteria[];
+  cancellationRequests: CancellationRequest[];
 };
 
 const statusMap: Record<
@@ -123,10 +129,27 @@ export function GigPageClientV2({
   guestFreelancerName = null,
   guestToken: initialGuestToken = null,
   acceptanceCriteria,
+  cancellationRequests: initialCancellationRequests,
 }: Props) {
   const router = useRouter();
   const { toast } = useToast();
   const [activityEntries, setActivityEntries] = useState(initialActivity);
+  const [cancellationRequests, setCancellationRequests] = useState(
+    initialCancellationRequests
+  );
+
+  const refetchCancellationRequests = async () => {
+    try {
+      const res = await fetch(`/api/deals/${deal.id}/cancellation-requests`);
+      const data = await res.json();
+      if (data.ok && Array.isArray(data.cancellation_requests)) {
+        setCancellationRequests(data.cancellation_requests);
+      }
+      router.refresh();
+    } catch {
+      // Non-fatal — the page will still render with stale data
+    }
+  };
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -213,6 +236,33 @@ export function GigPageClientV2({
     !["completed", "cancelled", "refunded"].includes(deal.status);
   const freelancerNeedsStripe = authFreelancerNeedsStripe || guestFreelancerNeedsStripe;
   const hasFreelancer = !!deal.freelancer_user_id || !!deal.guest_freelancer_email;
+
+  const cancellationUiState = getCancellationUiState({
+    deal,
+    cancellationRequests,
+    currentUserId,
+    role,
+  });
+
+  const requesterDisplayName =
+    cancellationUiState.kind === "pending_for_responder" ||
+    cancellationUiState.kind === "pending_for_requester"
+      ? cancellationUiState.pendingRequest.requested_by_role === "client"
+        ? deal.client?.display_name || "the client"
+        : deal.freelancer?.display_name ||
+          deal.guest_freelancer_name ||
+          "the freelancer"
+      : "";
+
+  const responderDisplayName =
+    cancellationUiState.kind === "pending_for_responder" ||
+    cancellationUiState.kind === "pending_for_requester"
+      ? cancellationUiState.pendingRequest.requested_by_role === "client"
+        ? deal.freelancer?.display_name ||
+          deal.guest_freelancer_name ||
+          "the freelancer"
+        : deal.client?.display_name || "the client"
+      : "";
 
   // Grace period: 24 hours from acceptance
   const gracePeriodExpired = (() => {
@@ -1297,6 +1347,31 @@ export function GigPageClientV2({
             <div className="mb-6"><ProposalReveal totalAmountCents={deal.total_amount} claimantPercentage={null} respondentPercentage={null} claimantName="Claimant" respondentName="Respondent" isResolved={false} negotiationRound={0} /></div>
           )}
 
+          {/* Mutual cancellation pending request card */}
+          {(cancellationUiState.kind === "pending_for_responder" ||
+            cancellationUiState.kind === "pending_for_requester") &&
+            currentUserId && (
+              <CancellationRequestCard
+                request={cancellationUiState.pendingRequest}
+                dealId={deal.id}
+                totalAmountCents={deal.total_amount}
+                viewerIsRequester={
+                  cancellationUiState.kind === "pending_for_requester"
+                }
+                requesterDisplayName={requesterDisplayName}
+                responderDisplayName={responderDisplayName}
+                onResponded={refetchCancellationRequests}
+              />
+            )}
+
+          {/* Past cancellation requests history (collapsed) */}
+          {isParticipant && (
+            <CancellationRequestsHistory
+              requests={cancellationRequests}
+              currentUserId={currentUserId}
+            />
+          )}
+
           {/* ZONE 6: Below-Timeline Actions (text links) */}
           <div className="mb-6 flex flex-wrap items-center gap-3 text-sm">
             {role === "client" && deal.status === "pending_acceptance" && deal.escrow_status === "unfunded" && (
@@ -1347,6 +1422,30 @@ export function GigPageClientV2({
             )}
             {isParticipant && !["completed", "cancelled", "refunded", "disputed", "pending_acceptance"].includes(deal.status) && deal.escrow_status === "funded" && (
               <DisputeButton dealId={deal.id} dealStatus={deal.status} completedAt={deal.completed_at} totalAmountCents={deal.total_amount} guestToken={guestToken} />
+            )}
+
+            {/* Mutual cancellation request — available to either party in allowed states */}
+            {cancellationUiState.kind === "available" && (role === "client" || role === "freelancer") && (
+              <RequestCancellationDialog
+                dealId={deal.id}
+                dealTitle={deal.title}
+                totalAmountCents={deal.total_amount}
+                escrowStatus={deal.escrow_status}
+                role={role}
+                onSuccess={refetchCancellationRequests}
+              >
+                <button
+                  type="button"
+                  className="cursor-pointer text-slate-600 transition-colors duration-200 hover:text-slate-900"
+                >
+                  Request mutual cancellation
+                </button>
+              </RequestCancellationDialog>
+            )}
+            {cancellationUiState.kind === "request_blocked_cap" && (role === "client" || role === "freelancer") && (
+              <p className="text-xs text-slate-600">
+                Cancellation request limit reached — open a dispute if needed
+              </p>
             )}
           </div>
 

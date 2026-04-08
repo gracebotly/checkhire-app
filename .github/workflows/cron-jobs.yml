@@ -6,7 +6,11 @@ name: Scheduled Cron Jobs
 #
 # Required GitHub Actions secrets (configure in repo Settings → Secrets → Actions):
 #   CRON_SECRET    — same value as the CRON_SECRET in Vercel env vars
-#   CRON_BASE_URL  — production base URL with no trailing slash, e.g. https://checkhire.co
+#   CRON_BASE_URL  — production base URL with no trailing slash.
+#                    Use the EXACT canonical domain (check what your site
+#                    redirects to). Examples:
+#                      https://checkhire.co        (if apex is canonical)
+#                      https://www.checkhire.co    (if www is canonical)
 
 on:
   schedule:
@@ -18,7 +22,6 @@ on:
     - cron: '5 * * * *'
     # Every 2 hours at minute 10 — rating reminders
     - cron: '10 */2 * * *'
-  # Allow manual triggering from the GitHub Actions UI for testing
   workflow_dispatch:
     inputs:
       job:
@@ -34,7 +37,9 @@ on:
           - rating-reminders
 
 jobs:
+  # ─────────────────────────────────────────────────────────────────
   # Job 1 — Money flow (every 15 min)
+  # ─────────────────────────────────────────────────────────────────
   money-flow:
     if: |
       github.event.schedule == '*/15 * * * *' ||
@@ -52,7 +57,6 @@ jobs:
             echo "::error::CRON_BASE_URL is not set in repository secrets"
             exit 1
           fi
-
       - name: Hit money-flow endpoints in parallel
         continue-on-error: false
         env:
@@ -60,39 +64,54 @@ jobs:
           CRON_BASE_URL: ${{ secrets.CRON_BASE_URL }}
         run: |
           set -u
-
           call_endpoint() {
             local endpoint="$1"
             echo "Calling ${endpoint} at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-            response=$(curl -sS -w "\n%{http_code}" \
+            # -L follows redirects (handles www vs apex, trailing slash, etc.)
+            # -o captures body to a temp file so the -w output is just the code
+            # We also capture the FINAL effective URL for debugging
+            local tmpfile
+            tmpfile=$(mktemp)
+            local meta
+            meta=$(curl -sS -L -w "%{http_code}|%{url_effective}|%{num_redirects}" \
+              -o "$tmpfile" \
               -H "Authorization: Bearer $CRON_SECRET" \
               "$CRON_BASE_URL${endpoint}")
-            http_code=$(echo "$response" | tail -n1)
-            body=$(echo "$response" | sed '$d')
-            echo "${endpoint} -> HTTP ${http_code}"
+            local http_code
+            http_code=$(echo "$meta" | cut -d'|' -f1)
+            local final_url
+            final_url=$(echo "$meta" | cut -d'|' -f2)
+            local num_redirects
+            num_redirects=$(echo "$meta" | cut -d'|' -f3)
+            local body
+            body=$(cat "$tmpfile")
+            rm -f "$tmpfile"
+            echo "${endpoint} -> HTTP ${http_code} (after ${num_redirects} redirects)"
+            if [ "$num_redirects" != "0" ]; then
+              echo "::warning::${endpoint} was redirected to ${final_url} — update CRON_BASE_URL to the canonical domain to skip this hop"
+            fi
             echo "${endpoint} -> Response: ${body}"
             if [ "$http_code" != "200" ]; then
-              echo "::error::${endpoint} returned HTTP ${http_code}"
+              echo "::error::${endpoint} returned HTTP ${http_code}. Final URL: ${final_url}"
               return 1
             fi
             return 0
           }
-
           call_endpoint "/api/cron/auto-release" &
           pid1=$!
           call_endpoint "/api/cron/expire-cancellation-requests" &
           pid2=$!
-
           wait "$pid1"
           s1=$?
           wait "$pid2"
           s2=$?
-
           if [ "$s1" -ne 0 ] || [ "$s2" -ne 0 ]; then
             exit 1
           fi
 
+  # ─────────────────────────────────────────────────────────────────
   # Job 2 — Auto-release warnings (every 30 min)
+  # ─────────────────────────────────────────────────────────────────
   auto-release-warnings:
     if: |
       github.event.schedule == '*/30 * * * *' ||
@@ -110,27 +129,38 @@ jobs:
             echo "::error::CRON_BASE_URL is not set in repository secrets"
             exit 1
           fi
-
       - name: Hit auto-release-warnings
         continue-on-error: false
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
           CRON_BASE_URL: ${{ secrets.CRON_BASE_URL }}
         run: |
-          echo "Calling /api/cron/auto-release-warnings at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          response=$(curl -sS -w "\n%{http_code}" \
+          set -u
+          endpoint="/api/cron/auto-release-warnings"
+          echo "Calling ${endpoint} at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          tmpfile=$(mktemp)
+          meta=$(curl -sS -L -w "%{http_code}|%{url_effective}|%{num_redirects}" \
+            -o "$tmpfile" \
             -H "Authorization: Bearer $CRON_SECRET" \
-            "$CRON_BASE_URL/api/cron/auto-release-warnings")
-          http_code=$(echo "$response" | tail -n1)
-          body=$(echo "$response" | sed '$d')
-          echo "HTTP $http_code"
-          echo "Response: $body"
+            "$CRON_BASE_URL${endpoint}")
+          http_code=$(echo "$meta" | cut -d'|' -f1)
+          final_url=$(echo "$meta" | cut -d'|' -f2)
+          num_redirects=$(echo "$meta" | cut -d'|' -f3)
+          body=$(cat "$tmpfile")
+          rm -f "$tmpfile"
+          echo "HTTP ${http_code} (after ${num_redirects} redirects)"
+          if [ "$num_redirects" != "0" ]; then
+            echo "::warning::${endpoint} was redirected to ${final_url} — update CRON_BASE_URL to the canonical domain"
+          fi
+          echo "Response: ${body}"
           if [ "$http_code" != "200" ]; then
-            echo "::error::auto-release-warnings returned HTTP $http_code"
+            echo "::error::${endpoint} returned HTTP ${http_code}. Final URL: ${final_url}"
             exit 1
           fi
 
+  # ─────────────────────────────────────────────────────────────────
   # Job 3 — Hourly cleanups (auto-expire + expiration warnings)
+  # ─────────────────────────────────────────────────────────────────
   hourly-cleanups:
     if: |
       github.event.schedule == '5 * * * *' ||
@@ -148,7 +178,6 @@ jobs:
             echo "::error::CRON_BASE_URL is not set in repository secrets"
             exit 1
           fi
-
       - name: Hit hourly cleanup endpoints in parallel
         continue-on-error: false
         env:
@@ -156,39 +185,51 @@ jobs:
           CRON_BASE_URL: ${{ secrets.CRON_BASE_URL }}
         run: |
           set -u
-
           call_endpoint() {
             local endpoint="$1"
             echo "Calling ${endpoint} at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-            response=$(curl -sS -w "\n%{http_code}" \
+            local tmpfile
+            tmpfile=$(mktemp)
+            local meta
+            meta=$(curl -sS -L -w "%{http_code}|%{url_effective}|%{num_redirects}" \
+              -o "$tmpfile" \
               -H "Authorization: Bearer $CRON_SECRET" \
               "$CRON_BASE_URL${endpoint}")
-            http_code=$(echo "$response" | tail -n1)
-            body=$(echo "$response" | sed '$d')
-            echo "${endpoint} -> HTTP ${http_code}"
+            local http_code
+            http_code=$(echo "$meta" | cut -d'|' -f1)
+            local final_url
+            final_url=$(echo "$meta" | cut -d'|' -f2)
+            local num_redirects
+            num_redirects=$(echo "$meta" | cut -d'|' -f3)
+            local body
+            body=$(cat "$tmpfile")
+            rm -f "$tmpfile"
+            echo "${endpoint} -> HTTP ${http_code} (after ${num_redirects} redirects)"
+            if [ "$num_redirects" != "0" ]; then
+              echo "::warning::${endpoint} was redirected to ${final_url} — update CRON_BASE_URL to the canonical domain"
+            fi
             echo "${endpoint} -> Response: ${body}"
             if [ "$http_code" != "200" ]; then
-              echo "::error::${endpoint} returned HTTP ${http_code}"
+              echo "::error::${endpoint} returned HTTP ${http_code}. Final URL: ${final_url}"
               return 1
             fi
             return 0
           }
-
           call_endpoint "/api/cron/auto-expire" &
           pid1=$!
           call_endpoint "/api/cron/expiration-warnings" &
           pid2=$!
-
           wait "$pid1"
           s1=$?
           wait "$pid2"
           s2=$?
-
           if [ "$s1" -ne 0 ] || [ "$s2" -ne 0 ]; then
             exit 1
           fi
 
+  # ─────────────────────────────────────────────────────────────────
   # Job 4 — Rating reminders (every 2 hours)
+  # ─────────────────────────────────────────────────────────────────
   rating-reminders:
     if: |
       github.event.schedule == '10 */2 * * *' ||
@@ -206,22 +247,31 @@ jobs:
             echo "::error::CRON_BASE_URL is not set in repository secrets"
             exit 1
           fi
-
       - name: Hit rating-reminders
         continue-on-error: false
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
           CRON_BASE_URL: ${{ secrets.CRON_BASE_URL }}
         run: |
-          echo "Calling /api/cron/rating-reminders at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          response=$(curl -sS -w "\n%{http_code}" \
+          set -u
+          endpoint="/api/cron/rating-reminders"
+          echo "Calling ${endpoint} at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          tmpfile=$(mktemp)
+          meta=$(curl -sS -L -w "%{http_code}|%{url_effective}|%{num_redirects}" \
+            -o "$tmpfile" \
             -H "Authorization: Bearer $CRON_SECRET" \
-            "$CRON_BASE_URL/api/cron/rating-reminders")
-          http_code=$(echo "$response" | tail -n1)
-          body=$(echo "$response" | sed '$d')
-          echo "HTTP $http_code"
-          echo "Response: $body"
+            "$CRON_BASE_URL${endpoint}")
+          http_code=$(echo "$meta" | cut -d'|' -f1)
+          final_url=$(echo "$meta" | cut -d'|' -f2)
+          num_redirects=$(echo "$meta" | cut -d'|' -f3)
+          body=$(cat "$tmpfile")
+          rm -f "$tmpfile"
+          echo "HTTP ${http_code} (after ${num_redirects} redirects)"
+          if [ "$num_redirects" != "0" ]; then
+            echo "::warning::${endpoint} was redirected to ${final_url} — update CRON_BASE_URL to the canonical domain"
+          fi
+          echo "Response: ${body}"
           if [ "$http_code" != "200" ]; then
-            echo "::error::rating-reminders returned HTTP $http_code"
+            echo "::error::${endpoint} returned HTTP ${http_code}. Final URL: ${final_url}"
             exit 1
           fi
